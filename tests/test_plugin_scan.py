@@ -47,9 +47,9 @@ def header(masters: tuple[str, ...] = ()) -> bytes:
 
 def music(form_id: int, tracks: tuple[int, ...], *, name: str = "MUSExploreForest",
           priority: int = 50, flags: int = 0, compressed: bool = False,
-          extended: bool = False) -> bytes:
+          extended: bool = False, music_flags: int = 4) -> bytes:
     body = (sub("EDID", name.encode("ascii") + b"\0")
-            + sub("FNAM", struct.pack("<I", 4))
+            + sub("FNAM", struct.pack("<I", music_flags))
             + sub("PNAM", struct.pack("<HH", priority, 0))
             + sub("WNAM", struct.pack("<f", 4.0))
             + sub("TNAM", b"".join(struct.pack("<I", t) for t in tracks), extended=extended))
@@ -249,6 +249,131 @@ class PluginScanTests(unittest.TestCase):
         for order in itertools.permutations((base, a, patch)):
             with self.subTest(order=[p.name for p in order]):
                 self.assert_preserved(*order)
+
+    def conflicting_addons(self):
+        """Independent B overrides the ambient list and hides A's contribution."""
+        return (self.base(), self.addon(),
+                self.addon("B.esp", tracks=(self.BASE_TRACK, self.B_TRACK)))
+
+    def assert_only_b_restored(self, *plugins: Path):
+        allowed, additions, _ = self.run_scan(*plugins)
+        self.assertIn(self.TYPE, allowed, "Protecting one track must not disable the safe target")
+        self.assertEqual(additions.get(self.TYPE), ["b.esp:2304"])
+
+    def test_shared_custom_music_track_is_not_restored_to_ambient(self):
+        base, a, b = self.conflicting_addons()
+        a.write_bytes(a.read_bytes() + group(music(0x01000A00, (self.A_TRACK,), name="QuestFinale")))
+        self.assert_only_b_restored(base, a, b)
+
+    def test_shared_custom_track_protection_is_independent_of_scan_order(self):
+        base, a, b = self.conflicting_addons()
+        protection = self.write("Story.esp", header(("Skyrim.esm", "A.esp"))
+            + group(music(0x02000A00, (self.A_TRACK,), name="IndependentStoryMusic")))
+        for order in itertools.permutations((base, a, b, protection)):
+            with self.subTest(order=[p.name for p in order]):
+                self.assert_only_b_restored(*order)
+
+    def test_direct_script_track_reference_is_not_restored_to_ambient(self):
+        base, a, b = self.conflicting_addons()
+        quest = self.write("Story.esp", header(("Skyrim.esm", "A.esp"))
+                           + script_reference(0x02000A00, self.A_TRACK))
+        self.assert_only_b_restored(base, a, b, quest)
+
+    def test_direct_script_track_reference_resolves_reordered_masters(self):
+        base, a, b = self.conflicting_addons()
+        quest = self.write("Story.esp", header(("A.esp", "Skyrim.esm"))
+                           + script_reference(0x02000A00, 0x00000800))
+        self.assert_only_b_restored(base, a, b, quest)
+
+    def test_unrelated_script_track_local_id_does_not_block_ambient_addition(self):
+        base, a, b = self.conflicting_addons()
+        quest = self.write("Story.esp", header(("Skyrim.esm", "Other.esp"))
+                           + script_reference(0x02000A00, self.A_TRACK))
+        _, additions, _ = self.run_scan(base, a, b, quest)
+        self.assertCountEqual(additions[self.TYPE], ["a.esp:2048", "b.esp:2304"])
+
+    def test_track_shared_with_script_bound_base_type_is_not_restored(self):
+        base, a, b = self.conflicting_addons()
+        base.write_bytes(base.read_bytes() + group(music(0x300, (self.BASE_TRACK,), name="MUSTownScripted")))
+        a.write_bytes(a.read_bytes() + group(music(0x300, (self.BASE_TRACK, self.A_TRACK), name="MUSTownScripted")))
+        quest = self.write("Story.esp", header(("Skyrim.esm",))
+                           + script_reference(0x01000A00, 0x300))
+        self.assert_only_b_restored(base, a, b, quest)
+
+    def test_track_shared_with_one_shot_base_type_is_not_restored(self):
+        base, a, b = self.conflicting_addons()
+        base.write_bytes(base.read_bytes() + group(music(0x300, (self.BASE_TRACK,),
+                                                       name="MUSSpecial", music_flags=1)))
+        a.write_bytes(a.read_bytes() + group(music(0x300, (self.BASE_TRACK, self.A_TRACK),
+                                                  name="MUSSpecial", music_flags=1)))
+        self.assert_only_b_restored(base, a, b)
+
+    def test_track_shared_with_native_boss_type_is_not_restored(self):
+        base, a, b = self.conflicting_addons()
+        base.write_bytes(base.read_bytes() + group(music(0x300, (self.BASE_TRACK,), name="MUSCombatBoss")))
+        a.write_bytes(a.read_bytes() + group(music(0x300, (self.BASE_TRACK, self.A_TRACK), name="MUSCombatBoss")))
+        self.assert_only_b_restored(base, a, b)
+
+    def test_track_shared_with_other_mapped_type_is_not_restored(self):
+        for signature, field in (("CELL", "XCMO"), ("WRLD", "ZNAM"),
+                                 ("LCTN", "NAM1"), ("REGN", "RDMO")):
+            with self.subTest(signature=signature):
+                base, a, b = self.conflicting_addons()
+                base.write_bytes(base.read_bytes() + group(music(0x300, (self.BASE_TRACK,), name="MUSSpecial")))
+                a.write_bytes(a.read_bytes() + group(music(0x300, (self.BASE_TRACK, self.A_TRACK), name="MUSSpecial"))
+                              + group(record(signature, 0x01000B00,
+                                      sub(field, struct.pack("<I", 0x300))), signature.encode("ascii")))
+                self.assert_only_b_restored(base, a, b)
+
+    def test_ambient_target_own_map_assignment_does_not_block_its_additions(self):
+        base, a, b = self.conflicting_addons()
+        a.write_bytes(a.read_bytes() + group(record("CELL", 0x01000B00,
+                      sub("XCMO", struct.pack("<I", 0x100))), b"CELL"))
+        _, additions, _ = self.run_scan(base, a, b)
+        self.assertCountEqual(additions[self.TYPE], ["a.esp:2048", "b.esp:2304"])
+
+    def test_ordinary_ambient_lists_can_share_tracks_despite_map_assignments(self):
+        for signature, field in (("CELL", "XCMO"), ("WRLD", "ZNAM"),
+                                 ("LCTN", "NAM1"), ("REGN", "RDMO")):
+            with self.subTest(signature=signature):
+                base, a, b = self.conflicting_addons()
+                base.write_bytes(base.read_bytes() + group(music(0x300, (self.BASE_TRACK,), name="MUSTownRegional")))
+                a.write_bytes(a.read_bytes() + group(music(0x300, (self.BASE_TRACK, self.A_TRACK), name="MUSTownRegional"))
+                              + group(record(signature, 0x01000B00,
+                                      sub(field, struct.pack("<I", 0x300))), signature.encode("ascii")))
+                _, additions, _ = self.run_scan(base, a, b)
+                self.assertCountEqual(additions[self.TYPE], ["a.esp:2048", "b.esp:2304"])
+                self.assertEqual(additions["skyrim.esm:768"], ["a.esp:2048"])
+
+    def test_deleted_ambient_track_is_not_resurrected(self):
+        base, a, b = self.conflicting_addons()
+        patch = self.write("RemoveTrack.esp", header(("Skyrim.esm", "A.esp"))
+                           + group(record("MUST", self.A_TRACK, b"", flags=0x20), b"MUST"))
+        self.assert_only_b_restored(base, a, b, patch)
+
+    def test_invalid_ambient_track_conditions_are_not_restored(self):
+        base, a, b = self.conflicting_addons()
+        body = track(self.A_TRACK, "InvalidTrack")[24:] + sub("CITC", struct.pack("<I", 1))
+        patch = self.write("InvalidTrack.esp", header(("Skyrim.esm", "A.esp"))
+                           + group(record("MUST", self.A_TRACK, body), b"MUST"))
+        self.assert_only_b_restored(base, a, b, patch)
+
+    def test_malformed_ambient_track_condition_is_not_restored(self):
+        base, a, b = self.conflicting_addons()
+        body = (track(self.A_TRACK, "InvalidTrack")[24:] + sub("CITC", struct.pack("<I", 1))
+                + sub("CTDA", b"\0" * 31))
+        patch = self.write("InvalidTrack.esp", header(("Skyrim.esm", "A.esp"))
+                           + group(record("MUST", self.A_TRACK, body), b"MUST"))
+        self.assert_only_b_restored(base, a, b, patch)
+
+    def test_track_referenced_by_palette_is_not_restored_to_ambient(self):
+        base, a, b = self.conflicting_addons()
+        palette = (sub("EDID", b"StoryPalette\0") + sub("CNAM", struct.pack("<I", 0x23F678C3))
+                   + sub("SNAM", struct.pack("<I", 0x00000800)))
+        # A is index 0 in this plugin, unlike index 1 in A itself.
+        other = self.write("Story.esp", header(("A.esp", "Skyrim.esm"))
+                           + group(record("MUST", 0x02000C00, palette), b"MUST"))
+        self.assert_only_b_restored(base, a, b, other)
 
     def malformed(self, body: bytes):
         return self.write("Malformed.esp", header(("Skyrim.esm",)) + body)

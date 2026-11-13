@@ -229,6 +229,20 @@ class AutoCombatScanTests(unittest.TestCase):
         extra = music(0x01000A00, (0x01000800,), name='IndependentMusic', priority=2)
         self.assert_no_auto(self.base(), self.land(extra=extra))
 
+    def test_single_track_inside_special_palette_is_protected(self):
+        palette = (sub('EDID', b'BossPalette\0') + sub('CNAM', struct.pack('<I', 0x23F678C3))
+                   + sub('SNAM', struct.pack('<I', 0x01000800)))
+        # The custom MusicType owns the palette, not the candidate directly.
+        extra = (record('MUST', 0x01000C00, palette)
+                 + music(0x01000A00, (0x01000C00,), name='BossMusic', priority=2))
+        self.assert_no_auto(self.base(), self.land(extra=extra))
+
+    def test_track_shared_with_native_boss_type_is_protected(self):
+        base = self.base()
+        base.write_bytes(base.read_bytes() + group(music(0x400, (0x200,), name='MUSCombatBoss', priority=2)))
+        extra = music(0x400, (0x200, 0x01000800), name='MUSCombatBoss', priority=2)
+        self.assert_no_auto(base, self.land(extra=extra))
+
     def test_added_track_shared_with_one_shot_type_is_protected(self):
         extra = music(0x01000A00, (0x01000800,), name='SpecialMusic', priority=2)
         extra = extra.replace(sub('FNAM', struct.pack('<I', 4)), sub('FNAM', struct.pack('<I', 5)))

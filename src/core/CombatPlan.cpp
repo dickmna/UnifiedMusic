@@ -1,6 +1,5 @@
 #include "PluginScan.h"
 #include <algorithm>
-#include <array>
 #include <cstring>
 #include <cmath>
 #include <span>
@@ -91,18 +90,11 @@ void PluginScan::InferCombat(MergePlan& plan) const {
         if(changed) { plan.diagnostics.push_back("SKIP_COMBAT default battle metadata change or deliberate removal"); return; }
         for(const auto& track:r.tracks) if(!Contains(base->tracks,track)) candidates.insert(track);
     }
-    std::set<FormKey> protectedTracks;
-    for(const auto& [key,records]:music_) {
-        if(key==base->key) continue;
-        const auto custom=key.plugin!="skyrim.esm" && key.plugin!="update.esm" && key.plugin!="dawnguard.esm" && key.plugin!="hearthfires.esm" && key.plugin!="dragonborn.esm";
-        for(const auto& r:records) if(custom || plan.scriptBound.contains(key) || mappedTypes_.contains(key) || r.oneShot) {
-            protectedTracks.insert(r.tracks.begin(),r.tracks.end());
-        }
-    }
+    const auto protectedTracks=ProtectedTracks(base->key,plan.scriptBound);
     std::map<std::vector<Area>,std::vector<FormKey>> groups;
     for(const auto& key:candidates) {
         const auto skip=[&](const char* reason) {plan.diagnostics.push_back("SKIP_COMBAT "+ToString(key)+" "+reason);};
-        if(protectedTracks.contains(key)) { skip("independent custom, scripted, mapped or one-shot music"); continue; }
+        if(protectedTracks.contains(key) || ScriptReferences(key)) { skip("shared, scripted, deleted or invalid track"); continue; }
         const auto found=tracks_.find(key);
         if(found==tracks_.end()) {skip("missing track record");continue;}
         const auto origin=std::find_if(found->second.begin(),found->second.end(),[&](const auto& t){return t.source==key.plugin;});
@@ -118,15 +110,7 @@ void PluginScan::InferCombat(MergePlan& plan) const {
             auto form=areaForms_.find(area.form);
             if(form==areaForms_.end() || form->second!=area.kind || deletedAreas_.contains(area.form)) valid=false;
         }
-        // Direct script references to MUSTs are also outside automatic ownership.
-        for(const auto& script:scripts_) {
-            auto master=std::find(script.masters.begin(),script.masters.end(),key.plugin);
-            if(master==script.masters.end() && script.source!=key.plugin) continue;
-            auto raw=key.id | (std::uint32_t(master-script.masters.begin())<<24);
-            std::array<std::uint8_t,4> bytes{std::uint8_t(raw),std::uint8_t(raw>>8),std::uint8_t(raw>>16),std::uint8_t(raw>>24)};
-            if(std::search(script.bytes.begin(),script.bytes.end(),bytes.begin(),bytes.end())!=script.bytes.end()) valid=false;
-        }
-        if(!valid) {skip("changed conditions, unresolved geography or script reference");continue;}
+        if(!valid) {skip("changed conditions or unresolved geography");continue;}
         groups[gate->areas].push_back(key);
     }
     for(auto& [areas,tracks]:groups) plan.combatRules.push_back({areas,std::move(tracks)});

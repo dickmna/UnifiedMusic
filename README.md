@@ -1,47 +1,46 @@
 # UnifiedMusic
 
-An experimental, conservative music compatibility plugin for **Skyrim Steam 1.7.99 / 1.7.104**. One SKSE DLL combines a small MTD-derived INI adapter, CME's conditional default-music selection, and an independent plugin-record scanner. No music, paid Creation assets, ESP copies, or Papyrus replacements are distributed.
+A conservative playlist-restoration plugin for **Skyrim Steam 1.7.99 / 1.7.104**. One SKSE DLL reconstructs eligible music contributions lost when plugins override the same original playlist.
 
-**Status: 0.2.0 alpha. Native build and offline tests are reported in VALIDATION.md. In-game playback, quest progression, and save/reload behavior have not been tested. This is not a claim of universal compatibility.**
+**Status: 0.3.0 alpha. Builds and offline tests are recorded in VALIDATION.md. In-game playback, quests, transitions, and save/reload have not been tested.**
 
-## What is automatic
+## Runtime
 
-At `kDataLoaded`, the plugin reads the loaded ESP/ESM/ESL files through the game's visible Data directory. It resolves their own master tables and reconstructs the contributions to original exploration, town, dungeon and tavern music lists. Independent added tracks that lost a load-order conflict are appended once. Track conditions and final winning track forms are retained.
+At SKSE `kDataLoaded`, UnifiedMusic reads loaded ESP/ESM/ESL files through the visible Data directory, resolves their master tables, and builds a restoration plan. It appends missing track references to eligible original music lists once, retaining the final native track forms and their playback conditions.
 
-No third-party mod-name list is used. The same mechanism can recognize music packs that use the usual additive playlist records, including future packs. Separate music types for new lands remain separate. Audio replacement packs continue to use the original file-resolution mechanism; UnifiedMusic does not copy or rename audio. Lorkhan and Chapter II have not been installed in the validation environment, so specific releases are not yet verified.
+Version 0.3 removes the embedded MTD and CME implementations, INI/JSON parsing, playback selection hooks, and playback ownership state. SKSE hook and trampoline initialization are explicitly disabled. There are no forced play/stop calls, temporary MusicTypes, or polling loops. The runtime consists of the scanner, protection checks, and startup list adapter; an offline inspector is optional.
 
-Version 0.2 also reconstructs additions to the original `MUSCombat` list. An eligible track must already have been contributed to that list by an installed plugin. It must be a single audio track, either unconditional or carrying a mandatory positive Cell/Worldspace/Location condition on the player. Explicit removals, changed MusicType settings, changed track conditions, and tracks shared with custom or protected types prevent restoration. All track overrides are compared after resolving known form parameters against their own master tables.
+No third-party mod-name list is used. Audio replacement packs retain the game's file-resolution behavior. No audio, game plugins, paid Creation assets, or Papyrus replacements are distributed.
 
-These automatic rules are an in-memory restoration plan, **not generated CME JSON**. Accepted tracks are appended once to the same default battle list, retaining the final native track wrapper and all its conditions. The engine continues to choose and transition between tracks. The adapter also checks that the engine still uses the original battle MusicType; a changed default disables restoration. No additional hook, temporary MusicType, polling loop, condition pre-evaluation, or audio file is required.
+## Restoration and protection
 
-For conditional tracks, the deliberately small supported schema is `GetInCell` (67), `GetInWorldspace` (310), `GetInCurrentLoc` (359), plus `GetQuestRunning` (56), `GetStage` (58), `GetStageDone` (59), and `GetGlobalValue` (74). A geographic check must be an AND condition equivalent to `== 1` or `!= 0`, running on Self/player. OR, aliases, global comparisons, unsupported functions, invalid references, quest-only conditions, and deleted areas are skipped. Random conditions are left untouched because this scanner does not model their parameter schema. This is a conservative supported subset, not a translation of every possible condition.
+- Original exploration, town, dungeon and tavern types can receive independent additions lost to another override.
+- Original `MUSCombat` can receive proven single-audio additions that are unconditional or have supported positive Cell/Worldspace/Location conditions on the player.
+- Changed type settings, removed base tracks, deleted types, and explicit dependent patches removing earlier contributions protect the entire target list.
+- Custom MusicTypes and all CELL/worldspace/location/region assignments remain untouched.
+- Directly script-referenced tracks, palette subtracks, tracks shared with another custom/scripted/one-shot/nonambient type, and deleted or malformed tracks are excluded. Ordinary ambient types may share tracks; mapped ambient types additionally protect shared tracks against combat restoration.
+- Ambient targets referenced by VMAD scripts are protected. The original global `MUSCombat` is a deliberate exception to whole-type script-reference protection: its own contributions may be restored even when a cleanup script refers to that type. Direct references to candidate tracks and sharing with other protected types still exclude those tracks.
+- Partial Form and Ignored records do not contribute. The scanner completes structural parsing before any automatic list mutation.
 
-## Preservation rules
+Combat conditions use a small known schema: `GetInCell` (67), `GetInWorldspace` (310), `GetInCurrentLoc` (359), `GetQuestRunning` (56), `GetStage` (58), `GetStageDone` (59), and `GetGlobalValue` (74). A geographic condition must be AND, equivalent to `== 1` or `!= 0`, on Self/player. Form parameters are normalized against each override's master table. Changed conditions, OR, aliases, global comparisons, quest-only conditions, unknown functions and deleted/unresolved areas are skipped. The scanner never executes conditions; the engine evaluates them normally.
 
-- Custom music types, Boss/discovery/stinger/silence types, and one-shot types are not automatically merged. Original default combat uses only the restricted contribution-restoration policy above.
-- Changed priority/fade/flags, removed base tracks, deleted records, and explicit dependent patches removing earlier music additions cause the entire target type to be preserved.
-- Ambient MusicTypes found in VMAD script-property bytes are protected. Combat contributions are excluded when the track itself is script-referenced, or is also used by another custom, script-bound, mapped or one-shot type. A reference to the original global `MUSCombat` alone does not block restoring its own contributions; default-music cleanup scripts can refer to that type. This conservative reference scan can overprotect; it does not decompile Papyrus and cannot discover all dynamically constructed lookups.
-- No CELL, worldspace, region, or location music assignment is rewritten. Partial Form and Ignored records do not contribute.
-- CME cannot claim a script-bound MusicType as its own replacement. Active protected music also suppresses replacement. Actor-update silencing and forced `DoFinish` cleanup are omitted.
-- The mod does not repair two authors' incompatible conditions, scripts, same-path audio replacements, or intentionally conflicting design choices. Such cases require authored rules or a patch.
+## Independent music and limits
 
-## Existing configurations
+If a new land's quest already starts its own Boss MusicType, that relationship stays in the author's script. UnifiedMusic does not need to recreate it and does not intercept it. Asking a different music pack to replace that Boss theme creates a new choice that a record scan cannot infer; it needs an explicit authored rule or patch.
 
-`Data/*_MUS.ini` `[General]` append rules are accepted through the compact MTD adapter. Track identifiers retain `0xFormID~Plugin.esp` syntax. Empty-list (`!`) directives, new runtime music-type creation, location and region reassignment are deliberately unavailable. A protected target is skipped and logged. This is a supported subset of MTD, not a drop-in replacement for every MTD conversion.
+VMAD reference scanning is conservative and can overprotect. It cannot discover every dynamic script lookup or another DLL's runtime changes. Avoiding playback hooks reduces intervention; it does not certify arbitrary mod combinations. Same-path audio replacements and incompatible script/condition edits remain outside scope.
 
-Existing `Data/SKSE/Plugins/CombatMusic/*.json` rules use CME's format. Rules only select a replacement when the engine requests default battle or dungeon-cleared music; the protection guard can decline them. No universal geographical rules are guessed for custom quest/Boss content.
+## Installation and migration
 
-A new map or a music file by itself does not establish a replacement relationship. If an author uses a separate battle type, an arbitrary script, or a custom selector, keep that mechanism or supply an explicit authored rule. Default-list restoration does not add tracks into a separate MusicType selected by a manual CME rule.
+Install `SKSE/Plugins/UnifiedMusic.dll` with a mod manager. Use matching SKSE and Address Library for **Steam 1.7.99 or 1.7.104**; other runtimes are refused. MTD and CME are not dependencies. Keep your music packs' own plugins and audio installed.
 
-## Installation
+**0.3 does not read `*_MUS.ini` or `SKSE/Plugins/CombatMusic/*.json`.** It is not a drop-in replacement for 0.1/0.2 configurations that relied on those adapters. A pack distributing tracks only through configuration files does not gain a playlist contribution from file presence alone. Keep the required original framework or the older combined version when those features are needed; legacy rules are not migrated. Standalone frameworks are no longer blocked by filename, but co-installation and initialization order remain unverified.
 
-For experimental testing, install the packaged `SKSE/Plugins/UnifiedMusic.dll` using a mod manager. Use SKSE and Address Library matching **Steam 1.7.99 or 1.7.104**. Other runtimes are refused, including untested future releases. Keep your music packs and their audio installed.
-
-Disable standalone `MusicTypeDistributor.dll` and `CombatMusic.dll` before testing this combined plugin. Their INI/JSON configurations may remain, subject to the subset above. UnifiedMusic refuses to load when either original DLL is present to prevent double distribution/hooks. A successful compile does not establish runtime safety; test with a separate profile and disposable save first.
+Test this alpha in a separate profile with a disposable save. This project has not installed or launched the game for validation.
 
 ## Build
 
-Requires Visual Studio 2022 C++ Build Tools, a Windows SDK, Git and CMake 3.24+. Dependencies are fetched from pinned commits in `src/cme/Dependencies.cmake`.
+Requires Visual Studio 2022 C++ Build Tools, a Windows SDK, Git and CMake 3.24+. CommonLibSSE, commonlib-shared, spdlog and zlib are pinned in `cmake/Dependencies.cmake`. JsonCpp and SimpleIni are no longer used.
 
 ```powershell
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64
@@ -50,15 +49,10 @@ python tests/test_plugin_scan.py --inspect build/Release/UnifiedMusicInspect.exe
 python tests/test_auto_combat_scan.py --inspect build/Release/UnifiedMusicInspect.exe -v
 ```
 
-The optional `UNIFIED_MUSIC_DEPS_DIR` CMake setting reuses local dependency Git checkouts after checking their exact revisions. No game path is compiled into the DLL.
+`UNIFIED_MUSIC_DEPS_DIR` reuses local dependency Git checkouts after revision checks. No game path is compiled into the DLL.
 
-`UnifiedMusicInspect.exe plugin1.esm plugin2.esp ...` runs the same scanner offline. Contribution planning uses original definitions and explicit dependencies rather than assuming input order. It emits `ALLOW`, `APPEND`, `PRESERVE`, `BATTLE_DEFAULT`, `AUTO_COMBAT`, and `SKIP_COMBAT` diagnostics. `AUTO_COMBAT *` identifies unconditional combat contributions; other scopes use `0=Cell`, `1=Worldspace`, `2=Location`. These are proposed restorations, not a count of tracks actually missing at runtime. Numeric local IDs in this output are decimal.
+`UnifiedMusicInspect.exe plugin1.esm plugin2.esp ...` runs the same scanner offline. Planning compares original definitions and explicit dependencies without assuming input order. It emits `ALLOW`, `APPEND`, `PRESERVE`, `BATTLE_DEFAULT`, `AUTO_COMBAT`, and skip diagnostics. `AUTO_COMBAT *` means unconditional contributions; other scopes use `0=Cell`, `1=Worldspace`, `2=Location`. These are proposed restorations, not counts of tracks actually missing at runtime. Local IDs are decimal.
 
-## Attribution and licensing
+## License
 
-- MTD: ThirdEyeSqueegee, public `stop-sine/MusicTypeDistributor-RE`, commit `9a4cdf112c64bff91bec8f834c62bd00c46d2fe1`; GPL-3.0-or-later plus its original exceptions. The integration is reduced to append-only parsing and distribution.
-- CME: SeaSparrowOG/CombatMusic, commit `302c6df30348ce83cfcf72cbf6ae4e8681fcc7b6`; AGPL-3.0. The checked-out LICENSE governs this code, rather than conflicting website summaries.
-- The new scanner/integration code is AGPL-3.0-or-later. MTD-derived parts retain their GPL terms and exceptions under the GPL/AGPL combined-work provisions. See the original license texts in `vendor/MTD` and `vendor/CME`.
-- CommonLibSSE, commonlib-shared, spdlog, JsonCpp, SimpleIni and zlib retain their upstream licenses. Pinned build sources provide these notices; binary packages include them.
-
-No external service is used at runtime. This repository does not contain the local paid-mod audit data or music assets.
+The project remains AGPL-3.0-or-later. Historical MTD/CME attribution and license notices remain in `PROVENANCE.md` and `vendor/`; their execution code is absent from the 0.3 source tree. Remaining dependencies retain their original licenses, included in binary packages. Earlier combined implementations remain in Git history and prior releases.

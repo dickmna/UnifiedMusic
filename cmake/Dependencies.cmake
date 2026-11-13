@@ -1,7 +1,7 @@
 include_guard(GLOBAL)
 include(FetchContent)
 
-# Sources are pinned to revisions verified with the upstream Steam 1.7 CME.
+# Keep the previously verified Steam 1.7 SDK and compression-library revisions.
 # Optional local Git checkout cache; content is checked before it is used.
 set(UNIFIED_MUSIC_DEPS_DIR "" CACHE PATH "Existing pinned dependency Git checkouts")
 function(unified_music_dependency name repository revision)
@@ -41,23 +41,6 @@ FetchContent_MakeAvailable(commonlib-shared)
 set(SKYRIM_SUPPORT_AE ON CACHE BOOL "" FORCE)
 unified_music_dependency(CommonLibSSE https://github.com/SeaSparrowOG/CommonLibSSE.git 2415cc998b611d3f0ac15fcfeadca9c83b1bf7f8)
 FetchContent_MakeAvailable(CommonLibSSE)
-
-set(JSONCPP_WITH_TESTS OFF CACHE BOOL "" FORCE)
-set(JSONCPP_WITH_POST_BUILD_UNITTEST OFF CACHE BOOL "" FORCE)
-set(JSONCPP_WITH_PKGCONFIG_SUPPORT OFF CACHE BOOL "" FORCE)
-set(JSONCPP_WITH_CMAKE_PACKAGE ON CACHE BOOL "" FORCE)
-set(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)
-set(BUILD_OBJECT_LIBS OFF CACHE BOOL "" FORCE)
-unified_music_dependency(jsoncpp https://github.com/open-source-parsers/jsoncpp.git 89e2973c754a9c02a49974d839779b151e95afd6)
-FetchContent_MakeAvailable(jsoncpp)
-if(NOT TARGET JsonCpp::JsonCpp)
-    add_library(JsonCpp::JsonCpp ALIAS jsoncpp_static)
-endif()
-
-unified_music_dependency(simpleini https://github.com/brofield/simpleini.git 09c21bda1dc1b578fa55f4a005d79b0afd481296)
-# The pinned upstream enables tests only when it is the top-level project.
-FetchContent_MakeAvailable(simpleini)
-target_compile_definitions(SimpleIni INTERFACE SI_NO_CONVERSION)
 
 set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 unified_music_dependency(zlib https://github.com/madler/zlib.git 51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf)

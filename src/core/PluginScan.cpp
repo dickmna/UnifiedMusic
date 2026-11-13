@@ -80,7 +80,7 @@ void PluginScan::Read(const std::filesystem::path& path) {
     std::vector<MusicRecord> pending;
     std::vector<TrackRecord> trackPending;
     std::map<FormKey, AreaKind> areaPending;
-    std::set<FormKey> deletedAreaPending, mappedPending;
+    std::set<FormKey> deletedAreaPending, mappedPending, nestedPending;
     std::vector<ScriptProperties> scriptPending;
     std::function<void(size_t,size_t,unsigned)> walk = [&](size_t start,size_t end,unsigned depth) {
         if(depth>32) throw std::runtime_error("plugin group depth exceeded");
@@ -139,12 +139,21 @@ void PluginScan::Read(const std::filesystem::path& path) {
                     unsigned cnams=0, anams=0;
                     std::optional<std::uint32_t> conditionCount;
                     for(auto& [s,v]:subs) {
-                        if(s=="CTDA") record.conditions.emplace_back(v.begin(),v.end());
+                        if(s=="CTDA") {
+                            record.conditions.emplace_back(v.begin(),v.end());
+                            if(v.size()!=32) record.invalid=true;
+                        }
                         if(s=="CNAM") { ++cnams; single=v.size()==4 && U32(v,0)==0x6ed7e048; }
                         if(s=="ANAM") { ++anams; audio=!String(v).empty(); }
                         if(s=="CITC") {
                             if(v.size()!=4 || conditionCount) record.invalid=true;
                             else conditionCount=U32(v,0);
+                        }
+                        // Palette members have another owner. Conservatively
+                        // protect every referenced child, including nested palettes.
+                        if(s=="SNAM") {
+                            if(v.size()%4) throw std::runtime_error("unaligned nested music track array");
+                            for(size_t j=0;j<v.size();j+=4) if(U32(v,j)) nestedPending.insert(Resolve(U32(v,j),masters,own));
                         }
                     }
                     record.singleAudio=audio && single && cnams==1 && anams==1;
@@ -170,22 +179,49 @@ void PluginScan::Read(const std::filesystem::path& path) {
     areaForms_.insert(areaPending.begin(),areaPending.end());
     deletedAreas_.insert(deletedAreaPending.begin(),deletedAreaPending.end());
     mappedTypes_.insert(mappedPending.begin(),mappedPending.end());
+    nestedTracks_.insert(nestedPending.begin(),nestedPending.end());
     scripts_.insert(scripts_.end(),std::make_move_iterator(scriptPending.begin()),std::make_move_iterator(scriptPending.end()));
+}
+
+bool PluginScan::ScriptReferences(const FormKey& key) const {
+    // A byte-level VMAD search can overprotect, but does not guess incomplete
+    // properties or require script execution to discover an explicit reference.
+    for(const auto& script:scripts_) {
+        auto it=std::find(script.masters.begin(),script.masters.end(),key.plugin);
+        size_t index=it-script.masters.begin();
+        if(it==script.masters.end() && script.source!=key.plugin) continue;
+        auto raw=key.id | (static_cast<std::uint32_t>(index)<<24);
+        std::array<std::uint8_t,4> needle{std::uint8_t(raw),std::uint8_t(raw>>8),std::uint8_t(raw>>16),std::uint8_t(raw>>24)};
+        if(std::search(script.bytes.begin(),script.bytes.end(),needle.begin(),needle.end())!=script.bytes.end()) return true;
+    }
+    return false;
+}
+
+std::set<FormKey> PluginScan::ProtectedTracks(const FormKey& excludedType,const std::set<FormKey>& scriptBound) const {
+    auto protectedTracks=nestedTracks_;
+    const auto target=music_.find(excludedType);
+    const bool ambientTarget=target!=music_.end() && std::ranges::any_of(target->second,Ambient);
+    for(const auto& [key,records]:music_) {
+        if(key==excludedType) continue;
+        const auto origin=std::find_if(records.begin(),records.end(),[&](const auto& r){return r.source==key.plugin;});
+        const bool ordinaryAmbient=origin!=records.end() && Ambient(*origin);
+        // Ordinary ambient lists can share tracks across biomes. A map binding
+        // alone is not exclusive ownership, but must not leak into combat.
+        for(const auto& r:records) if(!ordinaryAmbient || scriptBound.contains(key) || (!ambientTarget && mappedTypes_.contains(key)) || r.oneShot) {
+            protectedTracks.insert(r.tracks.begin(),r.tracks.end());
+        }
+    }
+    for(const auto& [key,records]:tracks_) {
+        if(std::ranges::any_of(records,[](const auto& r){return r.deleted || r.invalid;})) protectedTracks.insert(key);
+    }
+    return protectedTracks;
 }
 
 MergePlan PluginScan::Plan() const {
     MergePlan plan;
+    // Complete this set before checking tracks shared with any other type.
+    for(const auto& [key,chain]:music_) if(ScriptReferences(key)) plan.scriptBound.insert(key);
     for(const auto& [key,chain]:music_) {
-        // A conservative byte-level VMAD reference search can overprotect a type,
-        // but never makes a script-bound type eligible by parsing incomplete properties.
-        for(const auto& script:scripts_) {
-            auto it=std::find(script.masters.begin(),script.masters.end(),key.plugin);
-            size_t index=it-script.masters.begin();
-            if(it==script.masters.end() && script.source!=key.plugin) continue;
-            auto raw=key.id | (static_cast<std::uint32_t>(index)<<24);
-            std::array<std::uint8_t,4> needle{std::uint8_t(raw),std::uint8_t(raw>>8),std::uint8_t(raw>>16),std::uint8_t(raw>>24)};
-            if(std::search(script.bytes.begin(),script.bytes.end(),needle.begin(),needle.end())!=script.bytes.end()) { plan.scriptBound.insert(key); break; }
-        }
         const auto origin=std::find_if(chain.begin(),chain.end(),[&](const auto& r){return r.source==key.plugin;});
         if(origin==chain.end() || !Ambient(*origin)) continue;
         const auto& base=*origin;
@@ -207,10 +243,16 @@ MergePlan PluginScan::Plan() const {
         }
         plan.allowed.insert(key);
         auto& additions=plan.additions[key];
+        const auto protectedTracks=ProtectedTracks(key,plan.scriptBound);
         for(const auto& r:chain) {
             if(IsBase(r.source)) continue;
             for(const auto& track:r.tracks) {
-                if(!IsBase(track.plugin) && !Contains(base.tracks,track) && !Contains(additions,track)) additions.push_back(track);
+                if(IsBase(track.plugin) || Contains(base.tracks,track) || Contains(additions,track)) continue;
+                if(protectedTracks.contains(track) || ScriptReferences(track)) {
+                    plan.diagnostics.push_back("SKIP_TRACK "+ToString(track)+" -> "+ToString(key)+" (shared, scripted, deleted or invalid track)");
+                    continue;
+                }
+                additions.push_back(track);
             }
         }
     }

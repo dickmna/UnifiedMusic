@@ -57,11 +57,13 @@ public:
     MergePlan Plan() const;
     const auto& Records() const { return music_; }
 private:
+    bool ScriptReferences(const FormKey& key) const;
+    std::set<FormKey> ProtectedTracks(const FormKey& excludedType, const std::set<FormKey>& scriptBound) const;
     void InferCombat(MergePlan& plan) const;
     std::map<FormKey, std::vector<MusicRecord>> music_;
     std::map<FormKey, std::vector<TrackRecord>> tracks_;
     std::map<FormKey, AreaKind> areaForms_;
-    std::set<FormKey> deletedAreas_, mappedTypes_;
+    std::set<FormKey> deletedAreas_, mappedTypes_, nestedTracks_;
     std::vector<ScriptProperties> scripts_;
 };
 std::string ToString(const FormKey& key);

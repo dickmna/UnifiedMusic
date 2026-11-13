@@ -38,16 +38,18 @@ test_plain_battle_contributions_survive_independent_playlist_overrides (__main__
 test_random_and_unknown_conditions_cannot_be_resampled_by_inference (__main__.AutoCombatScanTests.test_random_and_unknown_conditions_cannot_be_resampled_by_inference) ... ok
 test_region_condition_is_unsupported_not_guessed (__main__.AutoCombatScanTests.test_region_condition_is_unsupported_not_guessed) ... ok
 test_silent_palette_and_empty_audio_path_do_not_infer (__main__.AutoCombatScanTests.test_silent_palette_and_empty_audio_path_do_not_infer) ... ok
+test_single_track_inside_special_palette_is_protected (__main__.AutoCombatScanTests.test_single_track_inside_special_palette_is_protected) ... ok
 test_source_file_enumeration_order_does_not_change_rules (__main__.AutoCombatScanTests.test_source_file_enumeration_order_does_not_change_rules) ... ok
 test_supported_positive_comparisons (__main__.AutoCombatScanTests.test_supported_positive_comparisons) ... ok
 test_supported_stable_quest_and_global_conditions_are_retained (__main__.AutoCombatScanTests.test_supported_stable_quest_and_global_conditions_are_retained) ... ok
 test_track_condition_override_change_is_protected (__main__.AutoCombatScanTests.test_track_condition_override_change_is_protected) ... ok
+test_track_shared_with_native_boss_type_is_protected (__main__.AutoCombatScanTests.test_track_shared_with_native_boss_type_is_protected) ... ok
 test_track_shared_with_unbound_custom_type_is_protected (__main__.AutoCombatScanTests.test_track_shared_with_unbound_custom_type_is_protected) ... ok
 test_track_used_by_authored_area_music_is_protected (__main__.AutoCombatScanTests.test_track_used_by_authored_area_music_is_protected) ... ok
 test_two_tracks_with_same_area_share_rule_or_remain_equivalent (__main__.AutoCombatScanTests.test_two_tracks_with_same_area_share_rule_or_remain_equivalent) ... ok
 test_unsafe_additional_condition_blocks_whole_track (__main__.AutoCombatScanTests.test_unsafe_additional_condition_blocks_whole_track) ... ok
 
 ----------------------------------------------------------------------
-Ran 48 tests in 1.086s
+Ran 50 tests in 1.069s
 
 OK
