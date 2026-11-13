@@ -84,12 +84,13 @@ void PluginScan::InferCombat(MergePlan& plan) const {
         bool changed=r.deleted || r.oneShot || r.settings!=base->settings;
         for(const auto& track:base->tracks) if(!Contains(r.tracks,track)) changed=true;
         for(const auto& prior:*chain) {
-            if(std::find(r.dependencies.begin(),r.dependencies.end(),prior.source)==r.dependencies.end()) continue;
+            if(!DependsOn(r.source,prior.source)) continue;
             for(const auto& track:prior.tracks) if(!Contains(r.tracks,track)) changed=true;
         }
         if(changed) { plan.diagnostics.push_back("SKIP_COMBAT default battle metadata change or deliberate removal"); return; }
         for(const auto& track:r.tracks) if(!Contains(base->tracks,track)) candidates.insert(track);
     }
+    plan.battleMergeSafe=true;
     const auto protectedTracks=ProtectedTracks(base->key,plan.scriptBound);
     std::map<std::vector<Area>,std::vector<FormKey>> groups;
     for(const auto& key:candidates) {

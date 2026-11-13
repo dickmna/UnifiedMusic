@@ -135,10 +135,18 @@ void PluginScan::Read(const std::filesystem::path& path) {
                 if(sig=="MUST") {
                     TrackRecord record{Resolve(id,masters,own),own,masters};
                     record.deleted=(flags&0x20)!=0;
+                    const auto semanticFlags=flags&~0x40000u;
+                    record.metadata.append(reinterpret_cast<const char*>(&semanticFlags),4);
                     bool audio=false, single=false;
                     unsigned cnams=0, anams=0;
                     std::optional<std::uint32_t> conditionCount;
                     for(auto& [s,v]:subs) {
+                        if(s!="CTDA" && s!="CITC") {
+                            record.metadata+=s;
+                            const auto size=static_cast<std::uint32_t>(v.size());
+                            record.metadata.append(reinterpret_cast<const char*>(&size),4);
+                            record.metadata.append(reinterpret_cast<const char*>(v.data()),v.size());
+                        }
                         if(s=="CTDA") {
                             record.conditions.emplace_back(v.begin(),v.end());
                             if(v.size()!=32) record.invalid=true;
@@ -174,6 +182,7 @@ void PluginScan::Read(const std::filesystem::path& path) {
         }
     };
     walk(0,data.size(),0);
+    dependencies_[own]=masters;
     for(auto& r:pending) music_[r.key].push_back(std::move(r));
     for(auto& r:trackPending) tracks_[r.key].push_back(std::move(r));
     areaForms_.insert(areaPending.begin(),areaPending.end());
@@ -193,6 +202,21 @@ bool PluginScan::ScriptReferences(const FormKey& key) const {
         auto raw=key.id | (static_cast<std::uint32_t>(index)<<24);
         std::array<std::uint8_t,4> needle{std::uint8_t(raw),std::uint8_t(raw>>8),std::uint8_t(raw>>16),std::uint8_t(raw>>24)};
         if(std::search(script.bytes.begin(),script.bytes.end(),needle.begin(),needle.end())!=script.bytes.end()) return true;
+    }
+    return false;
+}
+
+bool PluginScan::DependsOn(const std::string& source,const std::string& dependency) const {
+    std::set<std::string> visited{source};
+    auto found=dependencies_.find(source);
+    if(found==dependencies_.end()) return false;
+    auto pending=found->second;
+    while(!pending.empty()) {
+        const auto name=pending.back(); pending.pop_back();
+        if(name==dependency) return true;
+        if(!visited.insert(name).second) continue;
+        found=dependencies_.find(name);
+        if(found!=dependencies_.end()) pending.insert(pending.end(),found->second.begin(),found->second.end());
     }
     return false;
 }
@@ -233,7 +257,7 @@ MergePlan PluginScan::Plan() const {
             for(size_t j=0;j<chain.size();++j) {
                 if(i==j) continue;
                 const auto& prior=chain[j];
-                if(std::find(r.dependencies.begin(),r.dependencies.end(),prior.source)==r.dependencies.end()) continue;
+                if(!DependsOn(r.source,prior.source)) continue;
                 for(const auto& track:prior.tracks) if(!Contains(r.tracks,track)) protectedType=true;
             }
         }
@@ -257,6 +281,7 @@ MergePlan PluginScan::Plan() const {
         }
     }
     InferCombat(plan);
+    InferConditionRepairs(plan);
     return plan;
 }
 }

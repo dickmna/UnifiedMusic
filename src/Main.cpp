@@ -51,7 +51,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
 }
 extern "C" __declspec(dllexport) constinit auto SKSEPlugin_Version=[] {
     SKSE::PluginVersionData version{};
-    version.PluginVersion(REL::Version(0,3,0,0));
+    version.PluginVersion(REL::Version(0,4,0,0));
     version.PluginName("UnifiedMusic");
     version.AuthorName("UnifiedMusic contributors");
     version.UsesAddressLibrary(); version.UsesUpdatedStructs();

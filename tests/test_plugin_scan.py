@@ -243,6 +243,15 @@ class PluginScanTests(unittest.TestCase):
         patch = self.addon("RemoveA.esp", masters=("Skyrim.esm", "A.esp"), tracks=(self.BASE_TRACK,))
         self.assert_preserved(self.base(), self.addon(), patch)
 
+    def test_transitive_dependent_patch_removing_addition_is_preserved(self):
+        base, addon = self.base(), self.addon()
+        bridge = self.write('Bridge.esp', header(('Skyrim.esm', 'A.esp')))
+        patch = self.write('Patch.esp', header(('Skyrim.esm', 'Bridge.esp'))
+                           + group(music(0x100, (self.BASE_TRACK,))))
+        for paths in [(base, addon, bridge, patch), (patch, bridge, addon, base)]:
+            with self.subTest(order=[p.name for p in paths]):
+                self.assert_preserved(*paths)
+
     def test_dependent_removal_patch_read_before_dependency_still_protects(self):
         base, a = self.base(), self.addon()
         patch = self.addon("RemoveA.esp", masters=("Skyrim.esm", "A.esp"), tracks=(self.BASE_TRACK,))

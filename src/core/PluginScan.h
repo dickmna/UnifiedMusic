@@ -42,6 +42,24 @@ struct TrackRecord {
     std::vector<std::string> masters;
     std::vector<std::vector<std::uint8_t>> conditions;
     bool singleAudio{}, deleted{}, invalid{};
+    std::string metadata;
+};
+struct ConditionTerm {
+    std::uint32_t function{}, comparison{}, parameter2{};
+    FormKey parameter;
+    std::uint8_t opcode{};
+    bool onPlayerReference{};
+    auto operator<=>(const ConditionTerm&) const = default;
+};
+struct ConditionVersion {
+    std::string source;
+    std::vector<ConditionTerm> conditions;
+};
+struct ConditionRepair {
+    FormKey track;
+    std::vector<Area> exclusions;
+    std::vector<ConditionVersion> versions;
+    std::vector<FormKey> requiredBattleTracks;
 };
 struct MergePlan {
     std::map<FormKey, std::vector<FormKey>> additions;
@@ -49,6 +67,8 @@ struct MergePlan {
     std::set<FormKey> scriptBound;
     std::optional<FormKey> battleType;
     std::vector<AutoCombatRule> combatRules;
+    bool battleMergeSafe{};
+    std::vector<ConditionRepair> conditionRepairs;
     std::vector<std::string> diagnostics;
 };
 class PluginScan {
@@ -58,13 +78,16 @@ public:
     const auto& Records() const { return music_; }
 private:
     bool ScriptReferences(const FormKey& key) const;
+    bool DependsOn(const std::string& source, const std::string& dependency) const;
     std::set<FormKey> ProtectedTracks(const FormKey& excludedType, const std::set<FormKey>& scriptBound) const;
     void InferCombat(MergePlan& plan) const;
+    void InferConditionRepairs(MergePlan& plan) const;
     std::map<FormKey, std::vector<MusicRecord>> music_;
     std::map<FormKey, std::vector<TrackRecord>> tracks_;
     std::map<FormKey, AreaKind> areaForms_;
     std::set<FormKey> deletedAreas_, mappedTypes_, nestedTracks_;
     std::vector<ScriptProperties> scripts_;
+    std::map<std::string, std::vector<std::string>> dependencies_;
 };
 std::string ToString(const FormKey& key);
 }

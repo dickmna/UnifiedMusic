@@ -11,6 +11,15 @@ int main(int argc,char**argv) {
             for(auto& track:tracks) std::cout<<"APPEND "<<UnifiedMusic::ToString(type)<<" <- "<<UnifiedMusic::ToString(track)<<'\n';
         }
         if(plan.battleType) std::cout<<"BATTLE_DEFAULT "<<UnifiedMusic::ToString(*plan.battleType)<<'\n';
+        for(const auto& repair:plan.conditionRepairs) {
+            std::cout<<"CONDITION_UNION "<<UnifiedMusic::ToString(repair.track)<<" <- ";
+            for(size_t i=0;i<repair.exclusions.size();++i) {
+                if(i) std::cout<<',';
+                const auto& area=repair.exclusions[i];
+                std::cout<<static_cast<int>(area.kind)<<':'<<UnifiedMusic::ToString(area.form);
+            }
+            std::cout<<'\n';
+        }
         for(const auto& rule:plan.combatRules) {
             std::cout<<"AUTO_COMBAT ";
             if(rule.areas.empty()) std::cout<<'*';

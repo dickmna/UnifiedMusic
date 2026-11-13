@@ -38,6 +38,7 @@ test_track_shared_with_native_boss_type_is_not_restored (__main__.PluginScanTest
 test_track_shared_with_one_shot_base_type_is_not_restored (__main__.PluginScanTests.test_track_shared_with_one_shot_base_type_is_not_restored) ... ok
 test_track_shared_with_other_mapped_type_is_not_restored (__main__.PluginScanTests.test_track_shared_with_other_mapped_type_is_not_restored) ... ok
 test_track_shared_with_script_bound_base_type_is_not_restored (__main__.PluginScanTests.test_track_shared_with_script_bound_base_type_is_not_restored) ... ok
+test_transitive_dependent_patch_removing_addition_is_preserved (__main__.PluginScanTests.test_transitive_dependent_patch_removing_addition_is_preserved) ... ok
 test_truncated_record_header_is_rejected (__main__.PluginScanTests.test_truncated_record_header_is_rejected) ... ok
 test_two_independent_addons_union_even_when_last_override_hides_first (__main__.PluginScanTests.test_two_independent_addons_union_even_when_last_override_hides_first) ... ok
 test_unaligned_music_reference_array_is_rejected (__main__.PluginScanTests.test_unaligned_music_reference_array_is_rejected) ... ok
@@ -48,6 +49,6 @@ test_vanilla_boss_music_is_never_merged (__main__.PluginScanTests.test_vanilla_b
 test_vmad_reference_respects_master_order (__main__.PluginScanTests.test_vmad_reference_respects_master_order) ... ok
 
 ----------------------------------------------------------------------
-Ran 48 tests in 1.111s
+Ran 49 tests in 1.257s
 
 OK

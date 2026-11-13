@@ -50,6 +50,6 @@ test_two_tracks_with_same_area_share_rule_or_remain_equivalent (__main__.AutoCom
 test_unsafe_additional_condition_blocks_whole_track (__main__.AutoCombatScanTests.test_unsafe_additional_condition_blocks_whole_track) ... ok
 
 ----------------------------------------------------------------------
-Ran 50 tests in 1.069s
+Ran 50 tests in 1.345s
 
 OK
