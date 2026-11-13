@@ -7,6 +7,7 @@
 #include "core/PluginScan.h"
 #include "mtd/Integration.h"
 #include "cme/Module.h"
+#include "AutoCombat.h"
 
 namespace {
 std::set<RE::FormID> appendAllowed;
@@ -62,6 +63,7 @@ void Distribute() {
     }
     MTD::SetTypePolicy(AllowAppend);
     if(MTD::PrepareDistribution()) MTD::ApplyDistribution();
+    if(!UnifiedMusic::ConfigureAutoCombat(plan)) REX::WARN("Automatic combat rules disabled; existing battle selection preserved");
     REX::INFO("Automatic merge complete: {} allowed ambient types, {} restored additions",appendAllowed.size(),appended);
 }
 void OnMessage(SKSE::MessagingInterface::Message* message) {
@@ -80,7 +82,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
 }
 extern "C" __declspec(dllexport) constinit auto SKSEPlugin_Version=[] {
     SKSE::PluginVersionData version{};
-    version.PluginVersion(REL::Version(0,1,0,0));
+    version.PluginVersion(REL::Version(0,2,0,0));
     version.PluginName("UnifiedMusic");
     version.AuthorName("UnifiedMusic contributors; MTD and CME upstream authors");
     version.UsesAddressLibrary(); version.UsesUpdatedStructs();

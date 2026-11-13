@@ -2,18 +2,20 @@
 
 ## Completed
 
-- Release x64 build of `UnifiedMusic.dll` and `UnifiedMusicInspect.exe` using MSVC 19.44 / VS 2022 and pinned dependencies. Final rebuild includes CME ownership and strict JSON-field validation changes.
-- 33 synthetic scanner test methods, including multiple subcases and all six input permutations for dependency-removal and original-definition ordering tests: passed. See `tests/latest-results.txt`.
-- Read-only native scan of 94 locally installed plugins (base game, official content and 14 enabled Creation plugins): successful, approximately 2.75 seconds on the development machine. No automatic append proposals for this installed set. Existing custom music types remained outside the generic ambient merge policy.
-- Source review covered MusicTrack FormWrapper identity, partial-record handling, load-order independence, transactional file parsing, explicit dependent-patch deletions, script-bound replacement suppression, and CME ownership boundaries.
+- Release x64 build of version 0.2.0 `UnifiedMusic.dll` and `UnifiedMusicInspect.exe` using MSVC 19.44 / VS 2022 and pinned dependencies. Final rebuild includes conditional combat contribution analysis and the small default-list restoration adapter.
+- 81 synthetic scanner test methods passed: 33 ambient/parser tests (`tests/latest-results.txt`) and 48 automatic combat tests (`tests/latest-combat-results.txt`), including multiple subcases and input permutations.
+- Combat cases cover unconditional additions, independent overriding packs, positive Cell/Worldspace/Location gates, player references, master-table reindexing for geographic and quest/global parameters, deliberate removals, changed conditions, script references, custom-type sharing, one-shot content, malformed conditions, Ignored/Partial records, compressed tracks, and unresolved/deleted areas.
+- Read-only native scan of 94 locally installed plugins (base game, official content and 14 enabled Creation plugins): successful. No ambient append proposals and no eligible automatic combat restoration groups for this installed set. The Orsinium Boss track was excluded because it also belongs to protected custom music. This demonstrates preservation for that scanned sample, not runtime compatibility certification.
+- Source review covered MusicTrack FormWrapper identity, partial/ignored record handling, load-order independence, transactional file parsing, explicit dependent-patch deletions, script-bound replacement suppression, and CME ownership boundaries. The automatic adapter reuses the original default list; it does not allocate MusicTypes or pre-evaluate native track conditions.
 - Neither the game Data directory nor its load order or saves were modified.
 
 ## Not completed
 
-- No Skyrim process was launched. Hook execution, playback transitions, combat start/end, scripted music restoration, and save/reload behavior are unverified.
+- No Skyrim process was launched. Hook execution, restored-track playback, entering/leaving an area during combat, quest-stage changes, combat start/end, scripted music restoration, and save/reload behavior are unverified. Synthetic scanner tests do not validate runtime append operations or audio-manager behavior.
 - Lorkhan and Chapter II were not installed in the development environment. Their particular release combinations are not certified by these tests.
 - Synthetic ESP tests exercise the same scanner used by the DLL; they do not exercise SKSE or the real audio manager.
-- DLLs or scripts using dynamically constructed lookups can bypass static VMAD discovery. Existing script-bound types and already-active candidates are protected, but this cannot guarantee every future runtime interaction.
+- DLLs or scripts using dynamically constructed lookups can bypass static VMAD discovery. The default battle list is a deliberate exception to whole-type VMAD protection: its own proven contributions can be restored even when a script references that global type. Direct script references to candidate tracks and sharing with other custom/protected types still prevent restoration. Runtime modifications by other DLLs are not fully represented in the static scan.
+- Automatic restoration supports plain single-track additions and a restricted condition schema. Unknown condition functions, OR branches, quest-only tracks, palette/silence tracks, and unproven custom battle mappings are not automatically merged. Existing manual CME selection remains separate from default-list restoration.
 - Same-path audio file replacement conflicts and incompatible track-condition edits require an explicit policy/patch; this plugin leaves winning track conditions intact.
 
 This is an experimental alpha, not a production compatibility certification.

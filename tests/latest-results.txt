@@ -33,6 +33,6 @@ test_vanilla_boss_music_is_never_merged (__main__.PluginScanTests.test_vanilla_b
 test_vmad_reference_respects_master_order (__main__.PluginScanTests.test_vmad_reference_respects_master_order) ... ok
 
 ----------------------------------------------------------------------
-Ran 33 tests in 0.494s
+Ran 33 tests in 0.533s
 
 OK

@@ -14,6 +14,14 @@ Call `ResetOwnedMusicState()` for new-game/pre-load bookkeeping; it does not
 stop music. Set the optional `ReplacementGuard` before hooks are active.
 The guard may veto a proposed replacement based on protected music or context.
 
+The host can restore proven contributions to the original default battle list
+before `OnDataLoaded()`. It preserves the original track wrappers and conditions;
+the game evaluates their geographic and quest requirements during playback.
+This does not create MusicTypes, pre-evaluate track conditions, generate JSON,
+or change this module's selection hooks. A new map alone does not establish an
+author's intended replacement music; explicit CME rules remain available when
+that relationship is not present in the plugin records.
+
 The module still reads existing `Data/SKSE/Plugins/CombatMusic/*.json`, with
 upstream `combatMusic`, `isCombatMusic`, `newMusic`, and condition schemas.
 Plugin-local form references retain `Plugin.esp|0x12345` syntax.

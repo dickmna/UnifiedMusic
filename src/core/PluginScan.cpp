@@ -78,6 +78,9 @@ void PluginScan::Read(const std::filesystem::path& path) {
     bool sawHeader=false;
     // Commit only after the complete file passes structural validation.
     std::vector<MusicRecord> pending;
+    std::vector<TrackRecord> trackPending;
+    std::map<FormKey, AreaKind> areaPending;
+    std::set<FormKey> deletedAreaPending, mappedPending;
     std::vector<ScriptProperties> scriptPending;
     std::function<void(size_t,size_t,unsigned)> walk = [&](size_t start,size_t end,unsigned depth) {
         if(depth>32) throw std::runtime_error("plugin group depth exceeded");
@@ -110,7 +113,7 @@ void PluginScan::Read(const std::filesystem::path& path) {
                     if(master.empty() || master.find_first_of("/\\:")!=std::string::npos) throw std::runtime_error("invalid master filename");
                     masters.push_back(master);
                 }
-            } else if (!(flags&0x4000)) {
+            } else if (!(flags&(0x4000|0x1000))) {
                 if(sig=="MUSC") {
                     MusicRecord record{Resolve(id,masters,own),own}; record.deleted=(flags&0x20)!=0;
                     record.dependencies=masters;
@@ -129,6 +132,33 @@ void PluginScan::Read(const std::filesystem::path& path) {
                     }
                     pending.push_back(std::move(record));
                 }
+                if(sig=="MUST") {
+                    TrackRecord record{Resolve(id,masters,own),own,masters};
+                    record.deleted=(flags&0x20)!=0;
+                    bool audio=false, single=false;
+                    unsigned cnams=0, anams=0;
+                    std::optional<std::uint32_t> conditionCount;
+                    for(auto& [s,v]:subs) {
+                        if(s=="CTDA") record.conditions.emplace_back(v.begin(),v.end());
+                        if(s=="CNAM") { ++cnams; single=v.size()==4 && U32(v,0)==0x6ed7e048; }
+                        if(s=="ANAM") { ++anams; audio=!String(v).empty(); }
+                        if(s=="CITC") {
+                            if(v.size()!=4 || conditionCount) record.invalid=true;
+                            else conditionCount=U32(v,0);
+                        }
+                    }
+                    record.singleAudio=audio && single && cnams==1 && anams==1;
+                    if(conditionCount && *conditionCount!=record.conditions.size()) record.invalid=true;
+                    trackPending.push_back(std::move(record));
+                }
+                if(sig=="CELL" || sig=="WRLD" || sig=="LCTN" || sig=="REGN") {
+                    const auto key=Resolve(id,masters,own);
+                    auto kind=sig=="CELL"?AreaKind::Cell:sig=="WRLD"?AreaKind::Worldspace:sig=="LCTN"?AreaKind::Location:AreaKind::Region;
+                    if(key.plugin==own) areaPending[key]=kind;
+                    if(flags&0x20) deletedAreaPending.insert(key);
+                    const auto musicField=sig=="CELL"?"XCMO":sig=="WRLD"?"ZNAM":sig=="LCTN"?"NAM1":"RDMO";
+                    for(auto& [s,v]:subs) if(s==musicField && v.size()==4 && U32(v,0)) mappedPending.insert(Resolve(U32(v,0),masters,own));
+                }
                 for(auto& [s,v]:subs) if(s=="VMAD") scriptPending.push_back({own,masters,{v.begin(),v.end()}});
             }
             p+=24+n;
@@ -136,6 +166,10 @@ void PluginScan::Read(const std::filesystem::path& path) {
     };
     walk(0,data.size(),0);
     for(auto& r:pending) music_[r.key].push_back(std::move(r));
+    for(auto& r:trackPending) tracks_[r.key].push_back(std::move(r));
+    areaForms_.insert(areaPending.begin(),areaPending.end());
+    deletedAreas_.insert(deletedAreaPending.begin(),deletedAreaPending.end());
+    mappedTypes_.insert(mappedPending.begin(),mappedPending.end());
     scripts_.insert(scripts_.end(),std::make_move_iterator(scriptPending.begin()),std::make_move_iterator(scriptPending.end()));
 }
 
@@ -180,6 +214,7 @@ MergePlan PluginScan::Plan() const {
             }
         }
     }
+    InferCombat(plan);
     return plan;
 }
 }
