@@ -69,6 +69,11 @@ class DistributionTests(unittest.TestCase):
         self.assertIn('DISTRIBUTE skyrim.esm:256 <- pack.esl:2048', output)
         return output
 
+    def assert_isolated(self, paths, extra=(), configs=()):
+        out = self.assert_guard(paths, False, extra=extra, configs=configs)
+        self.assertIn('ISOLATE_GUARD pack.esl:2048 IN skyrim.esm:256 <- 1:land.esp:2304', out)
+        return out
+
     def test_config_only_pack_distributes_without_music_override(self):
         base, pack, config = self.simple()
         out = self.scan(base, pack, configs=(config,))
@@ -201,24 +206,25 @@ class DistributionTests(unittest.TestCase):
                       (condition(707, 0x35D59, comparison=0, flags=1),)):
             self.assert_guard(self.regional(copy_role=terms), False)
 
-    def test_config_boss_sharing_blocks_guard_even_without_tnam_owner(self):
+    def test_config_boss_sharing_isolates_only_the_ordinary_owner(self):
         paths = self.regional(base_extra=music(0x101, (), name='MUSCombatBoss'))
         other = self.write('Boss_MUS.ini', '[General]\nMUSCombatBoss=800~Pack.esl')
-        self.assert_guard(paths, False, configs=(other,))
+        self.assert_isolated(paths, configs=(other,))
 
     def test_config_civil_war_sharing_preserves_dedicated_use(self):
         paths = self.regional(base_extra=music(0x101, (), name='MUSCombatCivilWar'))
         other = self.write('War_MUS.ini', '[General]\nMUSCombatCivilWar=800~Pack.esl')
-        self.assert_guard(paths, False, configs=(other,))
+        self.assert_isolated(paths, configs=(other,))
 
     def test_plugin_boss_sharing_and_direct_script_reference_block_guard(self):
-        for extra in (music(0x01000101, (0x01000800,), name='Boss'), script_reference(0x01000A00, 0x01000800)):
-            self.assert_guard(self.regional(pack_extra=extra), False)
+        self.assert_isolated(self.regional(pack_extra=music(0x01000101, (0x01000800,), name='Boss')))
+        out = self.assert_guard(self.regional(pack_extra=script_reference(0x01000A00, 0x01000800)), False)
+        self.assertNotIn('ISOLATE_GUARD ', out)
 
     def test_palette_child_is_not_globally_restricted(self):
         palette = record('MUST', 0x01000801, sub('CNAM', struct.pack('<I', 0x23F678C3))
                          + sub('SNAM', struct.pack('<I', 0x01000800)))
-        self.assert_guard(self.regional(pack_extra=palette), False)
+        self.assert_isolated(self.regional(pack_extra=palette))
 
     def test_partial_policy_and_quest_gated_replacement_do_not_invent_coverage(self):
         self.assert_guard(self.regional(all_excluded=False), False)
@@ -241,7 +247,7 @@ class DistributionTests(unittest.TestCase):
     def test_ambient_shared_copy_is_not_changed_for_another_biome(self):
         paths = self.regional(battle=False, base_extra=music(0x101, (), name='MUSExploreSnow'))
         other = self.write('Other_MUS.ini', '[General]\nMUSExploreSnow=800~Pack.esl')
-        self.assert_guard(paths, False, configs=(other,))
+        self.assert_isolated(paths, configs=(other,))
 
     def test_ambient_original_policies_are_read_only(self):
         paths = self.regional(battle=False)
@@ -274,6 +280,30 @@ class DistributionTests(unittest.TestCase):
         for plugins in itertools.permutations((base, land, pack)):
             out = self.scan(*plugins, configs=(config,))
             self.assertIn('CONDITION_GUARD pack.esl:2048 <- 1:land.esp:2304', out)
+
+    def test_two_shared_ambient_uses_receive_different_local_policies(self):
+        base_extra = music(0x101, (0x202, 0x203), name='MUSExploreSnow') + single_track(0x202) + single_track(0x203)
+        land_extra = (area('WRLD', 0x01000901) + music(0x101, (0x202, 0x203, 0x01000801), name='MUSExploreSnow')
+                      + single_track(0x202, (condition(parameter=0x01000901, comparison=0),))
+                      + single_track(0x203, (condition(parameter=0x01000901, comparison=0),))
+                      + single_track(0x01000801, (condition(parameter=0x01000901),)))
+        paths = self.regional(battle=False, base_extra=base_extra, land_extra=land_extra)
+        other = self.write('Snow_MUS.ini', '[General]\nMUSExploreSnow=800~Pack.esl')
+        out = self.assert_isolated(paths, configs=(other,))
+        self.assertIn('ISOLATE_GUARD pack.esl:2048 IN skyrim.esm:257 <- 1:land.esp:2305', out)
+        self.assertEqual(out.count('ISOLATE_GUARD pack.esl:2048'), 2)
+
+    def test_a_b_and_land_c_inherit_policy_without_any_distribution_config(self):
+        for battle in (False, True):
+            base, land, pack, config = self.regional(battle=battle, copy_role=())
+            name = 'MUSCombat' if battle else 'MUSExploreForest'
+            a = self.write('MusicA.esp', header(('Skyrim.esm',)) + music(0x100, (0x200, 0x201, 0x01000800), name=name)
+                           + single_track(0x01000800))
+            b = self.write('MusicB.esp', a.read_bytes())
+            out = self.scan(base, a, b, land)
+            for plugin in ('musica.esp', 'musicb.esp'):
+                self.assertIn(f'CONDITION_GUARD {plugin}:2048 <- 1:land.esp:2304', out)
+            self.assertNotIn('CONDITION_GUARD land.esp:', out)
 
 
 if __name__ == '__main__':

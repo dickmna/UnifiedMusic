@@ -1,0 +1,29 @@
+{
+  "executable_version": "1.7.104.0",
+  "executable_sha256": "846efccf0c1374d71f892907f46549560f2fcb0a75cb87a3eed438baa0f1402f",
+  "checks": {
+    "single_factory_create_entry": true,
+    "single_factory_destroy_entry": true,
+    "single_allocation_size_0x80": true,
+    "fresh_main_sound_handle": true,
+    "fresh_finale_sound_handle": true,
+    "fresh_loop_pointer": true,
+    "single_can_play_entry": true,
+    "conditions_are_pointer_at_0x10": true,
+    "condition_holder_allocation_size_8": true,
+    "condition_holder_pointer_store": true,
+    "music_type_play_entry": true,
+    "type_uses_track_interface_can_play": true,
+    "type_uses_track_interface_play": true,
+    "type_uses_track_interface_status": true,
+    "type_uses_track_interface_update": true,
+    "cme_entry_0_calls_default_object": true,
+    "cme_entry_1_calls_default_object": true,
+    "cme_entry_2_calls_default_object": true,
+    "cme_entry_3_calls_default_object": true,
+    "cme_entry_4_calls_default_object": true,
+    "cme_entry_5_calls_default_object": true
+  },
+  "native_execution": false,
+  "address_library_resolution_executed": false
+}

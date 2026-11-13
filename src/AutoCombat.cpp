@@ -1,4 +1,5 @@
 #include "AutoCombat.h"
+#include "NativeTracks.h"
 #include "core/PluginScan.h"
 #include <RE/Skyrim.h>
 #include <REX/REX.h>
@@ -74,12 +75,12 @@ bool Matches(const Node* node,const ConditionTerm& expected,RE::TESDataHandler* 
     return true;
 }
 
-bool Matches(const RE::TESCondition& conditions,const ConditionVersion& expected,RE::TESDataHandler* data,Node*& tail)
+bool Matches(const RE::TESCondition* conditions,const ConditionVersion& expected,RE::TESDataHandler* data,Node*& tail)
 {
     // Exact length bounds traversal and also rejects cycles without evaluating
     // conditions or interpreting unrelated native memory as serialized CTDA.
     if (expected.conditions.size()>4096) return false;
-    auto* node=conditions.head;
+    auto* node=conditions?conditions->head:nullptr;
     tail=nullptr;
     for (const auto& term:expected.conditions) {
         if (!Matches(node,term,data)) return false;
@@ -117,6 +118,10 @@ struct PreparedRepair {
     Node* tail;
     const ConditionVersion* version;
     std::vector<std::unique_ptr<Node>> nodes;
+    PrivateSingle isolated;
+    Track* original{};
+    RE::BGSMusicType* owner{};
+    std::unique_ptr<RE::TESCondition> newConditions;
 };
 
 bool PlaylistMatches(RE::BGSMusicType* type,const std::vector<MusicRecord>& versions,RE::TESDataHandler* data) {
@@ -150,10 +155,13 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
     if(plan.battleType) for(const auto& rule:plan.combatRules)
         contributions[*plan.battleType].insert(rule.tracks.begin(),rule.tracks.end());
     for(const auto& repair:plan.conditionRepairs) contributions.try_emplace(repair.musicType);
+    for(const auto& candidate:plan.audioCandidates) contributions.try_emplace(candidate.musicType);
     if(contributions.empty()) return true;
     auto* data=RE::TESDataHandler::GetSingleton();
     if(!data) return fail("data handler unavailable");
-    const bool battleWork=!plan.combatRules.empty() || std::ranges::any_of(plan.conditionRepairs,[&](const auto& repair) {
+    const bool battleWork=!plan.combatRules.empty() || std::ranges::any_of(plan.audioCandidates,[&](const auto& candidate) {
+        return plan.battleType && candidate.musicType==*plan.battleType;
+    }) || std::ranges::any_of(plan.conditionRepairs,[&](const auto& repair) {
         return plan.battleType && repair.musicType==*plan.battleType;
     });
     if(battleWork) {
@@ -191,7 +199,7 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
             if (!wrapper || !wrapper->track || wrapper->GetType()!=RE::BSIMusicTrack::TrackType::kSingleTrack) return false;
             const auto* version=WinningVersion(wrapper,witness.versions);
             Node* tail=nullptr;
-            if (!version || !Matches(wrapper->track->conditions,*version,data,tail)) return false;
+            if (!version || !Matches(TrackConditions(wrapper->track),*version,data,tail)) return false;
         }
         return true;
     };
@@ -211,9 +219,19 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
         }
         const auto* version=WinningVersion(wrapper,repair.versions);
         if (!version) return fail("unrecognized winning condition source");
-        PreparedRepair prepared{wrapper->track,wrapper->track->conditions.head,nullptr,version,{}};
-        if (!Matches(wrapper->track->conditions,*version,data,prepared.tail))
+        const auto* originalConditions=TrackConditions(wrapper->track);
+        PreparedRepair prepared{wrapper->track,originalConditions?originalConditions->head:nullptr,nullptr,version,{}};
+        if (!Matches(originalConditions,*version,data,prepared.tail))
             return fail("runtime conditions differ from the scanned winning record");
+        prepared.original=wrapper;
+        prepared.owner=playlists.at(repair.musicType).target;
+        if(repair.isolate) {
+            prepared.isolated=CloneSingle(wrapper->track);
+            if(!prepared.isolated) return fail("could not create an independent native single track");
+            prepared.track=prepared.isolated.get();
+            const auto* copied=TrackConditions(prepared.track);prepared.head=copied?copied->head:nullptr;
+            if(!Matches(copied,*version,data,prepared.tail)) return fail("private conditions differ from original");
+        }
         if (std::ranges::any_of(repairs,[&](const auto& prior) {
             return prior.track==prepared.track || (prepared.tail && prior.tail==prepared.tail);
         })) return fail("condition chains have shared ownership");
@@ -235,6 +253,11 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
             missing.push_back(area);
         }
         conditionCount+=prepared.nodes.size();
+        if(!prepared.nodes.empty() && !TrackConditions(prepared.track)) {
+            auto* memory=RE::malloc(sizeof(RE::TESCondition));
+            if(!memory) return fail("condition holder allocation failed");
+            prepared.newConditions.reset(std::construct_at(static_cast<RE::TESCondition*>(memory)));
+        }
         repairs.push_back(std::move(prepared));
     }
 
@@ -249,22 +272,34 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
         return fail("playlist changed during preparation");
     for (const auto& repair:repairs) {
         Node* tail=nullptr;
-        if (repair.track->conditions.head!=repair.head || !Matches(repair.track->conditions,*repair.version,data,tail) || tail!=repair.tail)
+        const auto* conditions=TrackConditions(repair.track);
+        if ((conditions?conditions->head:nullptr)!=repair.head || !Matches(conditions,*repair.version,data,tail) || tail!=repair.tail)
             return fail("condition chain changed during preparation");
+        if(repair.isolated && !Matches(TrackConditions(repair.original->track),*repair.version,data,tail))
+            return fail("shared source conditions changed during preparation");
     }
     std::size_t appended=0;
     for(const auto& [key,list]:playlists) for(auto* track:list.pending) {list.target->tracks.push_back(track);++appended;}
-    std::size_t repairedTracks=0;
+    std::size_t repairedTracks=0,isolatedTracks=0;
     for (auto& repair:repairs) {
         if (repair.nodes.empty()) continue;
         for (std::size_t i=1;i<repair.nodes.size();++i) repair.nodes[i-1]->next=repair.nodes[i].get();
         auto* first=repair.nodes.front().get();
         for (auto& node:repair.nodes) node.release();
+        if(repair.newConditions) SetTrackConditions(repair.track,repair.newConditions.release());
         if (repair.tail) repair.tail->next=first;
-        else repair.track->conditions.head=first;
+        else TrackConditions(repair.track)->head=first;
+        if(repair.isolated) {
+            // Scope changes to this list only; other lists, palettes and scripts
+            // retain the original wrapper and conditions. No persistent FormID.
+            for(auto*& item:repair.owner->tracks)
+                if(item==static_cast<RE::BSIMusicTrack*>(repair.original)) item=repair.isolated.get();
+            repair.isolated.release(); // bounded startup allocation, engine-lifetime
+            ++isolatedTracks;
+        }
         ++repairedTracks;
     }
-    REX::INFO("Music batch: {} contributed tracks, {} condition lists updated, {} exclusions appended",appended,repairedTracks,conditionCount);
+    REX::INFO("Music batch: {} contributed tracks, {} condition lists updated, {} exclusions appended, {} playlist-local instances",appended,repairedTracks,conditionCount,isolatedTracks);
     return true;
 }
 }

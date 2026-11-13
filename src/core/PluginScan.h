@@ -54,6 +54,7 @@ struct TrackRecord {
     std::vector<std::vector<std::uint8_t>> conditions;
     bool singleAudio{}, deleted{}, invalid{};
     std::string metadata;
+    std::string audioPath, finalePath;
 };
 struct ConditionTerm {
     std::uint32_t function{}, comparison{}, parameter2{};
@@ -73,11 +74,19 @@ struct ConditionRepair {
     std::vector<ConditionVersion> versions;
     std::vector<FormKey> requiredTracks;
     bool genericGuard{};
+    bool isolate{}; // Replace only this playlist's reference with a private instance.
+};
+struct AudioCandidate {
+    FormKey musicType, track;
+    std::string audioPath, finalePath;
 };
 struct ConditionWitness {
     FormKey track;
     std::vector<ConditionVersion> versions;
 };
+enum class SelectorKind { Worldspace, Cell, Location, LocationKeyword, Target, TargetKeyword };
+struct SelectorFilter { SelectorKind kind; bool required{}; std::vector<FormKey> forms; };
+struct SelectorRule { bool combat{}; FormKey music; std::vector<SelectorFilter> filters; std::string source; };
 struct MergePlan {
     std::map<FormKey, std::vector<FormKey>> additions;
     std::map<FormKey, std::vector<FormKey>> distributions;
@@ -89,6 +98,8 @@ struct MergePlan {
     std::vector<ConditionRepair> conditionRepairs;
     std::vector<ConditionWitness> conditionWitnesses;
     std::vector<MappingRepair> mappingRepairs;
+    std::vector<AudioCandidate> audioCandidates;
+    std::vector<SelectorRule> selectors;
     std::vector<std::string> diagnostics;
 };
 class PluginScan {
@@ -96,10 +107,13 @@ public:
     void Read(const std::filesystem::path& path);
     void ReadConfig(const std::filesystem::path& path);
     void ReadConfigs(const std::filesystem::path& directory);
+    void ReadSelector(const std::filesystem::path& path);
+    void ReadSelectors(const std::filesystem::path& directory);
     MergePlan Plan() const;
     const auto& Records() const { return music_; }
+    const auto& Tracks() const { return tracks_; }
 private:
-    bool ScriptReferences(const FormKey& key) const;
+    bool ScriptReferences(const FormKey& key, bool modsOnly = false) const;
     bool DependsOn(const std::string& source, const std::string& dependency) const;
     std::set<FormKey> ProtectedTracks(const FormKey& excludedType, const MergePlan& plan) const;
     bool PlanDistribution(MergePlan& plan) const;
@@ -107,6 +121,8 @@ private:
     void InferConditionRepairs(MergePlan& plan) const;
     void InferConditionsFor(MergePlan& plan, const FormKey& type, bool battle) const;
     void InferMappings(MergePlan& plan) const;
+    void PlanAudio(MergePlan& plan) const;
+    bool PlanSelectors(MergePlan& plan) const;
     std::map<FormKey, std::vector<MusicRecord>> music_;
     std::map<FormKey, std::vector<TrackRecord>> tracks_;
     std::map<FormKey, AreaKind> areaForms_;
@@ -117,6 +133,11 @@ private:
     struct DistributionEntry { std::string target, source; std::vector<FormKey> tracks; };
     std::vector<DistributionEntry> distributionEntries_;
     std::vector<std::string> configErrors_;
+    struct Definition { FormKey key; std::string source,editorID,type; bool deleted{}; };
+    std::vector<Definition> definitions_;
+    struct RawFilter { SelectorKind kind; bool required{}; std::vector<std::string> forms; };
+    struct RawSelector { bool combat{}; std::string music,source; std::vector<RawFilter> filters; };
+    std::vector<RawSelector> selectorInputs_;
 };
 std::string ToString(const FormKey& key);
 }

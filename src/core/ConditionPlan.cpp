@@ -68,7 +68,7 @@ Role BaselineRole(const std::vector<ConditionTerm>& terms) {
 
 void PluginScan::InferConditionRepairs(MergePlan& plan) const {
     if(plan.battleMergeSafe && plan.battleType) InferConditionsFor(plan,*plan.battleType,true);
-    for(const auto& type:plan.allowed) if(plan.distributions.contains(type)) InferConditionsFor(plan,type,false);
+    for(const auto& type:plan.allowed) InferConditionsFor(plan,type,false);
 }
 
 void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool battle) const {
@@ -168,7 +168,7 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
         if(conflict && !protectedTrack) plan.conditionRepairs.push_back(std::move(repair));
     }
 
-    // Only extend ordinary unshared tracks. A regional policy requires
+    // Only extend ordinary roles, isolating shared instances. A policy requires
     // unanimity among the original ordinary tracks and a pure positive-area
     // replacement contributed to the same list.
     // Dragon-only tracks are separate; all other original predicates are opaque.
@@ -202,6 +202,8 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
         available.insert(configured->second.begin(),configured->second.end());
         candidates.insert(configured->second.begin(),configured->second.end());
     }
+    if(const auto restored=plan.additions.find(type);restored!=plan.additions.end())
+        candidates.insert(restored->second.begin(),restored->second.end());
     if(battle) for(const auto& rule:plan.combatRules) {
         available.insert(rule.tracks.begin(),rule.tracks.end());
         if(rule.areas.empty()) candidates.insert(rule.tracks.begin(),rule.tracks.end());
@@ -238,10 +240,13 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
     bool guarded=false;
     for(const auto& key:candidates) {
         if(originalTracks.contains(key)) continue;
-        if(protectedCandidate(key)) {plan.diagnostics.push_back("SKIP_GUARD "+ToString(key)+" shared or scripted ownership");continue;}
+        if(ScriptReferences(key)) {plan.diagnostics.push_back("SKIP_GUARD "+ToString(key)+" direct script reference");continue;}
         const auto& records=tracks_.at(key);
         ConditionRepair guard;
         guard.track=key; guard.musicType=type; guard.genericGuard=true;
+        // A shared single may be guarded in this proven ordinary role without
+        // changing the object retained by Boss, Civil War or palette owners.
+        guard.isolate=protectedCandidate(key);
         bool valid=std::ranges::any_of(records,[&](const auto& r){return r.source==key.plugin;});
         const auto baseline=Decode(records.front());
         for(const auto& record:records) {

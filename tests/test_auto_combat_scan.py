@@ -163,9 +163,26 @@ class AutoCombatScanTests(unittest.TestCase):
         self.assertEqual({r for regions, _ in rules for r in regions}, {'1:' + self.REGION})
         self.assertCountEqual([t for _, tracks in rules for t in tracks], [self.TRACK, 'land.esp:2049'])
 
-    def test_default_battle_script_reference_does_not_hide_eligible_additions(self):
+    def test_vanilla_script_reference_keeps_known_public_battle_role(self):
         _, rules, _ = self.scan(self.base(script_bound=True), self.land())
-        self.assertEqual(len(rules), 1)
+        self.assertEqual(rules, [(('1:' + self.REGION,), (self.TRACK,))])
+
+    def test_new_mod_script_owner_preserves_author_battle_playlist(self):
+        _, rules, result = self.scan(self.base(), self.land(extra=script_reference(0x01000C00, 0x100)))
+        self.assertEqual(rules, [])
+        self.assertIn('SKIP_COMBAT explicit/mod-scripted battle owner', result.stdout)
+
+    def test_ordinary_negative_dragon_role_is_restored_without_boss_rule(self):
+        for flags, comparison in [(0, 0.0), (0x20, 1.0)]:
+            for run_on, reference in [(0, 0), (2, 0x14)]:
+                with self.subTest(flags=flags, run_on=run_on):
+                    ordinary = condition(707, 0x35D59, flags=flags,
+                                         comparison=comparison, run_on=run_on,
+                                         reference=reference)
+                    _, rules, _ = self.scan(self.base(), self.land(conditions=(ordinary,)))
+                    self.assertEqual(rules, [(('*',), (self.TRACK,))])
+        boss = condition(707, 0x35D59)
+        self.assert_no_auto(self.base(), self.land(conditions=(boss,)))
 
     def test_source_file_enumeration_order_does_not_change_rules(self):
         base, land = self.base(), self.land()

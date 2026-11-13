@@ -83,6 +83,7 @@ void PluginScan::Read(const std::filesystem::path& path) {
     std::map<FormKey, AreaKind> areaPending;
     std::set<FormKey> deletedAreaPending, mappedPending, nestedPending;
     std::vector<ScriptProperties> scriptPending;
+    std::vector<Definition> definitionPending;
     std::function<void(size_t,size_t,unsigned)> walk = [&](size_t start,size_t end,unsigned depth) {
         if(depth>32) throw std::runtime_error("plugin group depth exceeded");
         for(size_t p=start;p<end;) {
@@ -115,6 +116,11 @@ void PluginScan::Read(const std::filesystem::path& path) {
                     masters.push_back(master);
                 }
             } else if (!(flags&(0x4000|0x1000))) {
+                if(sig=="MUSC" || sig=="WRLD" || sig=="CELL" || sig=="LCTN" || sig=="KYWD" || sig=="NPC_") {
+                    Definition definition{Resolve(id,masters,own),own,{},sig,(flags&0x20)!=0};
+                    for(const auto& [s,v]:subs) if(s=="EDID") definition.editorID=String(v);
+                    definitionPending.push_back(std::move(definition));
+                }
                 if(sig=="MUSC") {
                     MusicRecord record{Resolve(id,masters,own),own}; record.deleted=(flags&0x20)!=0;
                     record.dependencies=masters;
@@ -153,7 +159,8 @@ void PluginScan::Read(const std::filesystem::path& path) {
                             if(v.size()!=32) record.invalid=true;
                         }
                         if(s=="CNAM") { ++cnams; single=v.size()==4 && U32(v,0)==0x6ed7e048; }
-                        if(s=="ANAM") { ++anams; audio=!String(v).empty(); }
+                        if(s=="ANAM") { ++anams; record.audioPath=String(v); audio=!record.audioPath.empty(); }
+                        if(s=="BNAM") record.finalePath=String(v);
                         if(s=="CITC") {
                             if(v.size()!=4 || conditionCount) record.invalid=true;
                             else conditionCount=U32(v,0);
@@ -195,6 +202,7 @@ void PluginScan::Read(const std::filesystem::path& path) {
     };
     walk(0,data.size(),0);
     dependencies_[own]=masters;
+    definitions_.insert(definitions_.end(),std::make_move_iterator(definitionPending.begin()),std::make_move_iterator(definitionPending.end()));
     for(auto& r:pending) music_[r.key].push_back(std::move(r));
     for(auto& r:trackPending) tracks_[r.key].push_back(std::move(r));
     for(auto& r:mappingPending) mappings_[r.area.form].push_back(std::move(r));
@@ -205,10 +213,11 @@ void PluginScan::Read(const std::filesystem::path& path) {
     scripts_.insert(scripts_.end(),std::make_move_iterator(scriptPending.begin()),std::make_move_iterator(scriptPending.end()));
 }
 
-bool PluginScan::ScriptReferences(const FormKey& key) const {
+bool PluginScan::ScriptReferences(const FormKey& key,bool modsOnly) const {
     // A byte-level VMAD search can overprotect, but does not guess incomplete
     // properties or require script execution to discover an explicit reference.
     for(const auto& script:scripts_) {
+        if(modsOnly && IsBase(script.source)) continue;
         auto it=std::find(script.masters.begin(),script.masters.end(),key.plugin);
         size_t index=it-script.masters.begin();
         if(it==script.masters.end() && script.source!=key.plugin) continue;
@@ -261,9 +270,10 @@ std::set<FormKey> PluginScan::ProtectedTracks(const FormKey& excludedType,const 
 
 MergePlan PluginScan::Plan() const {
     MergePlan plan;
-    if(!PlanDistribution(plan)) return plan;
+    if(!PlanDistribution(plan) || !PlanSelectors(plan)) return plan;
     // Complete this set before checking tracks shared with any other type.
     for(const auto& [key,chain]:music_) if(ScriptReferences(key)) plan.scriptBound.insert(key);
+    for(const auto& rule:plan.selectors) plan.scriptBound.insert(rule.music);
     for(const auto& [key,chain]:music_) {
         const auto origin=std::find_if(chain.begin(),chain.end(),[&](const auto& r){return r.source==key.plugin;});
         if(origin==chain.end() || !Ambient(*origin)) continue;
@@ -302,6 +312,7 @@ MergePlan PluginScan::Plan() const {
     InferCombat(plan);
     InferConditionRepairs(plan);
     InferMappings(plan);
+    PlanAudio(plan);
     return plan;
 }
 }

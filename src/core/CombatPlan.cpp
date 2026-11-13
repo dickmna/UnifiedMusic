@@ -29,6 +29,19 @@ std::optional<Gate> GeographicGate(const TrackRecord& track) {
         if(c.size()!=32 || (c[0]&0x1f)!=0 || (c[0]>>5)>5 || Word(c,28)!=0xffffffff) return {};
         std::fill(c.begin()+1,c.begin()+4,0); // unused padding
         const auto function=Word(c,8);
+        // Ordinary combat packs often copy vanilla's negative dragon test.
+        // Keep that role; a positive dragon/Boss test is never generic music.
+        if(function==707) {
+            const auto parameter=ResolveTrack(Word(c,12),track);
+            const auto reference=ResolveTrack(Word(c,24),track);
+            if(!parameter || *parameter!=FormKey{"skyrim.esm",0x35d59} || Word(c,16) ||
+                !((Word(c,20)==0 && Word(c,24)==0) || (Word(c,20)==2 && reference==FormKey{"skyrim.esm",0x14})) ||
+                !((c[0]==0 && Word(c,4)==0) || (c[0]==0x20 && Word(c,4)==0x3f800000))) return {};
+            gate.conditionIdentity+="ordinary-dragon;";
+            std::fill(c.begin()+12,c.begin()+16,0);std::fill(c.begin()+24,c.begin()+28,0);
+            gate.conditionIdentity.append(reinterpret_cast<const char*>(c.data()),c.size());
+            continue;
+        }
         // This intentionally small schema lets us compare every form-valued
         // field across master tables. Unknown conditions remain author-owned.
         if(function!=56 && function!=58 && function!=59 && function!=74 &&
@@ -62,7 +75,8 @@ std::optional<Gate> GeographicGate(const TrackRecord& track) {
     // An unconditional addition to MUSCombat already has an explicit role.
     // Conditional additions need geography so quest-only special music stays
     // outside automatic merging.
-    if(gate.areas.empty() && !track.conditions.empty()) return {};
+    if(gate.areas.empty() && !track.conditions.empty() &&
+        !(track.conditions.size()==1 && Word(track.conditions.front(),8)==707)) return {};
     std::sort(gate.areas.begin(),gate.areas.end());
     gate.areas.erase(std::unique(gate.areas.begin(),gate.areas.end()),gate.areas.end());
     return gate;
@@ -80,6 +94,12 @@ void PluginScan::InferCombat(MergePlan& plan) const {
     }
     if(!base) return;
     plan.battleType=base->key;
+    // Vanilla scripts also reference the public default battle list; that is
+    // its ordinary role, not a dedicated soundtrack. Preserve new mod-owned
+    // script/selector uses, while retaining the known base game's public role.
+    if(ScriptReferences(base->key,true) || std::ranges::any_of(plan.selectors,[&](const auto& rule){return rule.music==base->key;})) {
+        plan.diagnostics.push_back("SKIP_COMBAT explicit/mod-scripted battle owner");return;
+    }
     std::set<FormKey> candidates;
     for(const auto& r:*chain) {
         bool changed=r.deleted || r.oneShot || r.settings!=base->settings;
