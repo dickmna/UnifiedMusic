@@ -197,7 +197,7 @@ namespace CME::JSONSettings
 				}
 
 				auto entryCellCondition = Hooks::CombatMusicCalls::CellCondition();
-				const auto& entryCells = entry["cells"]; 
+				const auto& entryCells = entry["cells"];
 				if (entryCells && entryCells.isObject()) {
 					const auto& conditionArray = entryCells["forms"];
 					const auto& conditionAND = entryCells["AND"];
@@ -318,7 +318,7 @@ namespace CME::JSONSettings
 					REX::WARN("<{}> -> <{}> could not resolve form.", path, entryNewMusic.asString());
 					continue;
 				}
-				
+
 				auto newCombatMusic = Hooks::CombatMusicCalls::ConditionalBattleMusic(entryMusicForm);
 				if (!entryWorldspaceCondition.worldspaces.empty()) {
 					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::WorldspaceCondition>(entryWorldspaceCondition));
@@ -345,7 +345,7 @@ namespace CME::JSONSettings
 				else {
 					Hooks::CombatMusicCalls::GetSingleton()->PushNewClearedMusic(std::move(newCombatMusic));
 				}
-				
+
 				REX::INFO("Created new {} music: ", isCombatMusic ? "combat" : "dungeon cleared");
 				if (!entryWorldspaceCondition.worldspaces.empty()) {
 					REX::INFO("  >Music will apply to these worldspaces ({}):", entryWorldspaceCondition.AND ? "AND" : "OR");
