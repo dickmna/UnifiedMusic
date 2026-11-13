@@ -1,0 +1,135 @@
+{
+  "repository": "https://github.com/SeaSparrowOG/CombatMusic",
+  "commit": "302c6df30348ce83cfcf72cbf6ae4e8681fcc7b6",
+  "license": "AGPL-3.0 as in upstream LICENSE (metadata differs)",
+  "files": [
+    {
+      "path": ".gitatributes",
+      "sha256": "241a5898105ad8ce97b0591c59c961e60538e1927496a2dca9b39a67740e382c"
+    },
+    {
+      "path": ".github/workflows/build.yml",
+      "sha256": "7e2c319d72abdcd0e57646fdfa321942b21b0d3e7d2f57122314e871017c97ef"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "78c274349867d2fefc0bf6bb8c4fc7d0d4dc1c22bc21bb8ef00f5ec96f0f9725"
+    },
+    {
+      "path": ".gitmodules",
+      "sha256": "a99b4a2472cb2e4b44d01e34ea1bf29a992921edb591de634c5006bd8ea30232"
+    },
+    {
+      "path": "CMakeLists.txt",
+      "sha256": "b2eae68e0ef98c12a71e63a90bec1193a2b91862612f92f7d18f873d904e85b0"
+    },
+    {
+      "path": "CMakePresets.json",
+      "sha256": "0968a7d3c4a964aab44333c650701b5f77e5c863b52d62db1afb5959a5536ab6"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "e0eedba615d5cd1b986afb6c5b3a4b1ae33713e7e9dc74d19daec5e3221f9d2e"
+    },
+    {
+      "path": "README.md",
+      "sha256": "2bdd813bee7aebfcb92ac098401c9d7258d994d3bade73e4a28a6d7cbdfc73ae"
+    },
+    {
+      "path": "cmake/Plugin.h.in",
+      "sha256": "6d9d0582e132cb7494e68143ced0f812d3b3aae847d1cd3cc3f8da1e56f991f1"
+    },
+    {
+      "path": "cmake/Scripts/CMake-Copy-Archive.cmake",
+      "sha256": "6539604ae8c9eb22dee73986e31d2f1b596bfcc1b51e22c47003846a3fdc30de"
+    },
+    {
+      "path": "cmake/Scripts/CMake-Copy-Artifacts.cmake",
+      "sha256": "e5fb447ac0d1dc4fab1b8484e5458ae5e467792b447bc2168d11e29bd18a2aad"
+    },
+    {
+      "path": "cmake/Scripts/CMake-Copy-Scripts.cmake",
+      "sha256": "388632fbee22283130b7e8dee80dec678d91db2082a4ba9005314b02a37e19c9"
+    },
+    {
+      "path": "cmake/Scripts/CMake-Copy-Sources.cmake",
+      "sha256": "ddb97f3212465ce6b01a6b9481f2104526e54f3a44d7ed4bd6c7a752778fd9cc"
+    },
+    {
+      "path": "cmake/ports/.gitignore",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "cmake/ports/clib-util/portfile.cmake",
+      "sha256": "d1349cfa8c7c1a18429d8f8802c2ed8b0c9b37097a0e4802706adccdbb99405e"
+    },
+    {
+      "path": "cmake/ports/clib-util/vcpkg.json",
+      "sha256": "e658eb47a4bf4ed90d11ccc1c25012177bf6fd5c4de6ababac104e528a85dbd1"
+    },
+    {
+      "path": "cmake/version.rc.in",
+      "sha256": "b651cd7b685d76db02c4099eb85a03953438a489ac3b0dafc3a641bf108fcde7"
+    },
+    {
+      "path": "components.cmake",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "data/SKSE/Plugins/CombatMusic.ini",
+      "sha256": "b3d735bb9503d1c35a9414b4ae76d3f5e8a0c64c1666a8f4de6a66ea30fa4eed"
+    },
+    {
+      "path": "src/common/PCH.cpp",
+      "sha256": "92852bb27ca5390292dfc20df9249c7746dd5160822c12827bb538394f7b40cf"
+    },
+    {
+      "path": "src/common/PCH.h",
+      "sha256": "bda9cdbf1999abc79623b16ae579fcd8aa31a8982f5db8c0b0b0d19205ae03cb"
+    },
+    {
+      "path": "src/events/combatEvent.cpp",
+      "sha256": "599c424a8f794b5d6db37919c2796cd6fc5a567e06ab392b5f17a2897bfe225d"
+    },
+    {
+      "path": "src/events/combatEvent.h",
+      "sha256": "3da7c0e03ebd1c2d6688f0ffd3ae7e6dd97590e3c58d00f486992b06e3900f7a"
+    },
+    {
+      "path": "src/export/SKSEPlugin.cpp",
+      "sha256": "7ec8bb0ecdca78465b8fb04ab2a98517f6f4d01522676453d07bc40b7066349d"
+    },
+    {
+      "path": "src/hooks/hooks.cpp",
+      "sha256": "efd679e707ebc8320edd78d759cecec8e6debb7dc139c6de864d9932fd70bbe7"
+    },
+    {
+      "path": "src/hooks/hooks.h",
+      "sha256": "62008f8c37971448cfddce6dc429296908be03a7f44166409bb3484d8390a5fe"
+    },
+    {
+      "path": "src/settings/INISettings.cpp",
+      "sha256": "737aa0eda131f2f2ab606af691ed7a128dc64c1ab597ca26470d8633f26a8bad"
+    },
+    {
+      "path": "src/settings/INISettings.h",
+      "sha256": "6b71f71c42d5fed43cedba90511b5408209850b9c7e981709618099a8b03b5a3"
+    },
+    {
+      "path": "src/settings/JSONSettings.cpp",
+      "sha256": "6eceb267c24904a907f34e39e78926a7dbcdb807a47e7b27675be1cbb3cc0e36"
+    },
+    {
+      "path": "src/settings/JSONSettings.h",
+      "sha256": "9a781120dcac54e6466111afe863ba28be5f2e71744e9126852d19d6904a3cdc"
+    },
+    {
+      "path": "src/utilities/utilities.h",
+      "sha256": "204312f7a95bceee69dea08c9d34ee748b0753f5fa78baaa8d92078213e97738"
+    },
+    {
+      "path": "vcpkg.json",
+      "sha256": "7d8105228459586e862bf865f4fc01466c46f42cc00e4ab36d11cbbc84c5b327"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "repository": "https://github.com/stop-sine/MusicTypeDistributor-RE",
+  "commit": "9a4cdf112c64bff91bec8f834c62bd00c46d2fe1",
+  "license": "GPL-3.0-or-later with accompanying EXCEPTIONS",
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809"
+    },
+    {
+      "path": "EXCEPTIONS",
+      "sha256": "b46412bb31b2b4f3e0a567713b28fd75ddf196fb44b60ca45585b1ede4993f81"
+    },
+    {
+      "path": "CMakeLists.txt",
+      "sha256": "b3ab45510f08de6607e5cb87320702dce1739b364c14cfe113f352d75a434bd6"
+    },
+    {
+      "path": "CMakePresets.json",
+      "sha256": "e1774fe10bf8309abf2e74c479480a34263a6b175e919e6b4870e711ae10202b"
+    },
+    {
+      "path": "vcpkg.json",
+      "sha256": "ea713a08f4bf039343c62167e5ee1e60ea81b3082d703d900e5235eaee20c74f"
+    },
+    {
+      "path": "include/Distributor.h",
+      "sha256": "c64590b299b22943f3e6aceb50ce2045c03625ba431708344b6ec47a7815bebb"
+    },
+    {
+      "path": "include/Logging.h",
+      "sha256": "c887ba26d79c6c3a691e797edc270a43d9c46ea5393d50eaf9810a3cd86aa04a"
+    },
+    {
+      "path": "include/Map.h",
+      "sha256": "8e9c75564e268e1a13ee638913f6da9700b9531bde78ad71958762e850e02722"
+    },
+    {
+      "path": "include/Parser.h",
+      "sha256": "3c7abe45c6c44a8a1d3ef8b4893b76e304c33901f5b851e8778e8a2c802b3f41"
+    },
+    {
+      "path": "include/PCH.h",
+      "sha256": "2c7139fafdf592074c9362948998d6f9177dcbcdeb9686ffd92af8dc6287976b"
+    },
+    {
+      "path": "include/Settings.h",
+      "sha256": "468eb9d549a7cf5b80a7b8ec8a077d450cf1f06aab7e1d7d7f19e85431979c9b"
+    },
+    {
+      "path": "include/Utility.h",
+      "sha256": "a53360e80e7a7472f44b82825ec93fae02809699650632274aaf91011e981488"
+    },
+    {
+      "path": "src/Distributor.cpp",
+      "sha256": "dadc20ba7d2ff7a080b7efbc4be77e65f9a1a9e6200bed619bcf110223d0b3ce"
+    },
+    {
+      "path": "src/Logging.cpp",
+      "sha256": "770844db19de92e6a7dd64aaae01213b19dc1a95a2720be58157bad55977ee74"
+    },
+    {
+      "path": "src/Main.cpp",
+      "sha256": "b12a370aa08236d113a8feaf0ae7accedc08fe2c5d112d9d8630c3e7a99e46ea"
+    },
+    {
+      "path": "src/Parser.cpp",
+      "sha256": "fd31006dea8387dbeb90f95c657bd9d5470eca428426981c34d9a032ea6c4727"
+    },
+    {
+      "path": "src/Settings.cpp",
+      "sha256": "38f07097a305ec2eb80ccc8fe706e449a097c970f778f523a7c018ec1bcf1997"
+    },
+    {
+      "path": "contrib/Config/MusicTypeDistributor.ini",
+      "sha256": "1b05fb932f6f59c6dc21327b80a46eecd2c79c89ea92bce2036a66bd76d97778"
+    },
+    {
+      "path": "cmake/version.rc.in",
+      "sha256": "b001fc8fde6932643180ace704be4e213ada8dd579e969d92a9edd8bdbf9ef87"
+    }
+  ]
+}
