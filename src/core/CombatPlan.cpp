@@ -26,7 +26,8 @@ std::optional<Gate> GeographicGate(const TrackRecord& track) {
     Gate gate;
     for(auto c:track.conditions) {
         // Do not project OR/alias/global/package/swap conditions into a wider scope.
-        if(c.size()!=32 || (c[0]&0x1f)!=0 || (c[0]>>5)>5) return {};
+        if(c.size()!=32 || (c[0]&0x1f)!=0 || (c[0]>>5)>5 || Word(c,28)!=0xffffffff) return {};
+        std::fill(c.begin()+1,c.begin()+4,0); // unused padding
         const auto function=Word(c,8);
         // This intentionally small schema lets us compare every form-valued
         // field across master tables. Unknown conditions remain author-owned.
@@ -36,7 +37,7 @@ std::optional<Gate> GeographicGate(const TrackRecord& track) {
         std::memcpy(&comparison,c.data()+4,sizeof(comparison));
         if(!std::isfinite(comparison)) return {};
         const auto runOn=Word(c,20);
-        if(runOn!=0 && runOn!=2) return {};
+        if((runOn!=0 && runOn!=2) || (runOn==0 && Word(c,24)!=0)) return {};
         const auto parameter=ResolveTrack(Word(c,12),track);
         if(!parameter || (function!=59 && Word(c,16)!=0)) return {};
         // All supported functions take a form in parameter 1; GetStageDone

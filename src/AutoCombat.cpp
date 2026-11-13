@@ -98,6 +98,19 @@ bool Excludes(const ConditionVersion& version,const Area& area)
     });
 }
 
+const ConditionVersion* WinningVersion(Track* track,const std::vector<ConditionVersion>& versions)
+{
+    auto* source=track->GetFile();
+    if (!source) return nullptr;
+    const auto name=Lower(source->GetFilename());
+    const ConditionVersion* match=nullptr;
+    for (const auto& version:versions) if (version.source==name) {
+        if (match) return nullptr;
+        match=&version;
+    }
+    return match;
+}
+
 struct PreparedRepair {
     RE::BGSMusicTrack* track;
     Node* head;
@@ -132,25 +145,32 @@ bool ConfigureAutoCombat(const MergePlan& plan)
         }
     }
 
+    const auto witnessesMatch=[&] {
+        for (const auto& witness:plan.conditionWitnesses) {
+            auto* wrapper=data->LookupForm<Track>(witness.track.id,witness.track.plugin);
+            if (!wrapper || !wrapper->track || wrapper->GetType()!=RE::BSIMusicTrack::TrackType::kSingleTrack ||
+                (!Contains(target,wrapper) && std::ranges::find(pending,wrapper)==pending.end())) return false;
+            const auto* version=WinningVersion(wrapper,witness.versions);
+            Node* tail=nullptr;
+            if (!version || !Matches(wrapper->track->conditions,*version,data,tail)) return false;
+        }
+        return true;
+    };
+    if (!witnessesMatch()) return fail("regional policy or replacement changed at runtime");
+
     std::vector<PreparedRepair> repairs;
     std::size_t conditionCount=0;
     for (const auto& repair:plan.conditionRepairs) {
         auto* wrapper=data->LookupForm<Track>(repair.track.id,repair.track.plugin);
-        if (!wrapper || !wrapper->track || wrapper->GetType()!=RE::BSIMusicTrack::TrackType::kSingleTrack || !Contains(target,wrapper))
+        if (!wrapper || !wrapper->track || wrapper->GetType()!=RE::BSIMusicTrack::TrackType::kSingleTrack ||
+            (!Contains(target,wrapper) && std::ranges::find(pending,wrapper)==pending.end()))
             return fail("condition target is not a current single battle track");
         for (const auto& required:repair.requiredBattleTracks) {
             auto* track=data->LookupForm<Track>(required.id,required.plugin);
             if (!track || !track->track || (!Contains(target,track) && std::ranges::find(pending,track)==pending.end()))
                 return fail("replacement contribution missing; preserving conditions to avoid silence");
         }
-        auto* source=wrapper->GetFile();
-        if (!source) return fail("condition target has no source file");
-        const auto sourceName=Lower(source->GetFilename());
-        const ConditionVersion* version=nullptr;
-        for (const auto& candidate:repair.versions) if (candidate.source==sourceName) {
-            if (version) return fail("ambiguous source snapshot");
-            version=&candidate;
-        }
+        const auto* version=WinningVersion(wrapper,repair.versions);
         if (!version) return fail("unrecognized winning condition source");
         PreparedRepair prepared{wrapper->track,wrapper->track->conditions.head,nullptr,version,{}};
         if (!Matches(wrapper->track->conditions,*version,data,prepared.tail))
@@ -183,6 +203,7 @@ bool ConfigureAutoCombat(const MergePlan& plan)
     target->tracks.reserve(static_cast<std::uint32_t>(target->tracks.size()+pending.size()));
     // No logical list mutation precedes this point. Validate once more before
     // the non-allocating commit; never replace or delete existing condition nodes.
+    if (!witnessesMatch()) return fail("regional policy changed during preparation");
     for (const auto& repair:repairs) {
         Node* tail=nullptr;
         if (repair.track->conditions.head!=repair.head || !Matches(repair.track->conditions,*repair.version,data,tail) || tail!=repair.tail)
@@ -199,7 +220,7 @@ bool ConfigureAutoCombat(const MergePlan& plan)
         else repair.track->conditions.head=first;
         ++repairedTracks;
     }
-    REX::INFO("Auto combat: {} restored tracks, {} repaired condition lists, {} restored exclusions",pending.size(),repairedTracks,conditionCount);
+    REX::INFO("Auto combat: {} restored tracks, {} condition lists updated, {} exclusions appended",pending.size(),repairedTracks,conditionCount);
     return true;
 }
 }

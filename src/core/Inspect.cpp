@@ -12,7 +12,7 @@ int main(int argc,char**argv) {
         }
         if(plan.battleType) std::cout<<"BATTLE_DEFAULT "<<UnifiedMusic::ToString(*plan.battleType)<<'\n';
         for(const auto& repair:plan.conditionRepairs) {
-            std::cout<<"CONDITION_UNION "<<UnifiedMusic::ToString(repair.track)<<" <- ";
+            std::cout<<(repair.genericGuard?"CONDITION_GUARD ":"CONDITION_UNION ")<<UnifiedMusic::ToString(repair.track)<<" <- ";
             for(size_t i=0;i<repair.exclusions.size();++i) {
                 if(i) std::cout<<',';
                 const auto& area=repair.exclusions[i];
@@ -20,6 +20,9 @@ int main(int argc,char**argv) {
             }
             std::cout<<'\n';
         }
+        for(const auto& repair:plan.mappingRepairs)
+            std::cout<<"RESTORE_MAPPING "<<static_cast<int>(repair.area.kind)<<':'<<UnifiedMusic::ToString(repair.area.form)
+                <<" <- "<<UnifiedMusic::ToString(repair.music)<<'\n';
         for(const auto& rule:plan.combatRules) {
             std::cout<<"AUTO_COMBAT ";
             if(rule.areas.empty()) std::cout<<'*';

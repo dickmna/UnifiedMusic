@@ -79,6 +79,7 @@ void PluginScan::Read(const std::filesystem::path& path) {
     // Commit only after the complete file passes structural validation.
     std::vector<MusicRecord> pending;
     std::vector<TrackRecord> trackPending;
+    std::vector<MappingRecord> mappingPending;
     std::map<FormKey, AreaKind> areaPending;
     std::set<FormKey> deletedAreaPending, mappedPending, nestedPending;
     std::vector<ScriptProperties> scriptPending;
@@ -174,7 +175,18 @@ void PluginScan::Read(const std::filesystem::path& path) {
                     if(key.plugin==own) areaPending[key]=kind;
                     if(flags&0x20) deletedAreaPending.insert(key);
                     const auto musicField=sig=="CELL"?"XCMO":sig=="WRLD"?"ZNAM":sig=="LCTN"?"NAM1":"RDMO";
-                    for(auto& [s,v]:subs) if(s==musicField && v.size()==4 && U32(v,0)) mappedPending.insert(Resolve(U32(v,0),masters,own));
+                    MappingRecord mapping{{kind,key},own,{},(flags&0x20)!=0};
+                    unsigned fields=0;
+                    for(auto& [s,v]:subs) if(s==musicField) {
+                        if(++fields>1 || v.size()!=4) mapping.invalid=true;
+                        if(v.size()==4 && U32(v,0)) {
+                            mapping.music=Resolve(U32(v,0),masters,own);
+                            mappedPending.insert(*mapping.music);
+                        }
+                    }
+                    // REGN sound entries have additional ordering/override rules.
+                    // Keep their ownership protection, but never flatten them.
+                    if(kind!=AreaKind::Region) mappingPending.push_back(std::move(mapping));
                 }
                 for(auto& [s,v]:subs) if(s=="VMAD") scriptPending.push_back({own,masters,{v.begin(),v.end()}});
             }
@@ -185,6 +197,7 @@ void PluginScan::Read(const std::filesystem::path& path) {
     dependencies_[own]=masters;
     for(auto& r:pending) music_[r.key].push_back(std::move(r));
     for(auto& r:trackPending) tracks_[r.key].push_back(std::move(r));
+    for(auto& r:mappingPending) mappings_[r.area.form].push_back(std::move(r));
     areaForms_.insert(areaPending.begin(),areaPending.end());
     deletedAreas_.insert(deletedAreaPending.begin(),deletedAreaPending.end());
     mappedTypes_.insert(mappedPending.begin(),mappedPending.end());
@@ -282,6 +295,7 @@ MergePlan PluginScan::Plan() const {
     }
     InferCombat(plan);
     InferConditionRepairs(plan);
+    InferMappings(plan);
     return plan;
 }
 }

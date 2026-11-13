@@ -1,14 +1,14 @@
-# UnifiedMusic
+# Harmonia — Automatic Music Compatibility
 
-A conservative playlist-restoration plugin for **Skyrim Steam 1.7.99 / 1.7.104**. One SKSE DLL reconstructs eligible music contributions lost when plugins override the same original playlist.
+A conservative music compatibility plugin for **Skyrim Steam 1.7.99 / 1.7.104**, previously called UnifiedMusic. One SKSE DLL restores eligible playlist contributions, reconciles proven geographic exclusions, and recovers music assignments lost to independent area overrides. The repository, DLL and inspector retain their technical UnifiedMusic names for upgrades.
 
-**Status: 0.4.0 alpha. Builds and offline tests are recorded in VALIDATION.md. In-game playback, quests, transitions, and save/reload have not been tested.**
+**Status: 0.5.0 alpha. Builds and offline tests are recorded in VALIDATION.md. In-game playback, quests, transitions, and save/reload have not been tested.**
 
 ## Runtime
 
-At SKSE `kDataLoaded`, UnifiedMusic reads loaded ESP/ESM/ESL files through the visible Data directory, resolves their master tables, and builds a restoration plan. It appends missing track references to eligible original music lists once, retaining the final native track forms. Version 0.4 also restores a restricted class of overwritten geographic exclusions on original battle tracks while retaining their existing condition nodes.
+At SKSE `kDataLoaded`, Harmonia reads loaded ESP/ESM/ESL files through the visible Data directory, resolves their master tables, and builds a restoration plan. It appends missing track references to eligible original music lists once, retaining the final native track forms. Existing condition nodes and author-controlled playback remain in place.
 
-Since version 0.3, the project has removed the embedded MTD and CME implementations, INI/JSON parsing, playback selection hooks, and playback ownership state. SKSE hook and trampoline initialization are explicitly disabled. There are no forced play/stop calls, temporary MusicTypes, or polling loops. The runtime consists of the scanner, protection checks, and startup list/condition adapter; an offline inspector is optional.
+Since version 0.3, the project has removed the embedded MTD and CME implementations, INI/JSON parsing, playback selection hooks, and playback ownership state. SKSE hook and trampoline initialization are explicitly disabled. There are no forced play/stop calls, temporary MusicTypes, or polling loops. The runtime consists of the scanner, protection checks, and startup list/condition/assignment adapters; an offline inspector is optional.
 
 No third-party mod-name list is used. Audio replacement packs retain the game's file-resolution behavior. No audio, game plugins, paid Creation assets, or Papyrus replacements are distributed.
 
@@ -17,7 +17,7 @@ No third-party mod-name list is used. Audio replacement packs retain the game's 
 - Original exploration, town, dungeon and tavern types can receive independent additions lost to another override.
 - Original `MUSCombat` can receive proven single-audio additions that are unconditional or have supported positive Cell/Worldspace/Location conditions on the player.
 - Changed type settings, removed base tracks, deleted types, and explicit dependent patches removing earlier contributions protect the entire target list.
-- Custom MusicTypes and all CELL/worldspace/location/region assignments remain untouched.
+- Custom MusicTypes are not merged internally. CELL/worldspace/location music fields can recover a single proven authored assignment under the rules below; region sound-data assignments remain untouched.
 - Directly script-referenced tracks, palette subtracks, tracks shared with another custom/scripted/one-shot/nonambient type, and deleted or malformed tracks are excluded. Ordinary ambient types may share tracks; mapped ambient types additionally protect shared tracks against combat restoration.
 - Ambient targets referenced by VMAD scripts are protected. The original global `MUSCombat` is a deliberate exception to whole-type script-reference protection: its own contributions may be restored even when a cleanup script refers to that type. Direct references to candidate tracks and sharing with other protected types still exclude those tracks.
 - Partial Form and Ignored records do not contribute. The scanner completes structural parsing before any automatic list mutation.
@@ -39,6 +39,26 @@ Independent mods can preserve an original track's conditions but respectively ap
 Track-presence checks reduce the risk of excluding vanilla music without restoring its alternatives. They do not prove audio-file availability or that an alternative is playable in every quest state. Runtime allocation, playback and save/reload require game testing.
 
 **This is not a verified replacement for Nexus 89099 (Music Patch for New Lands).** Its complete ESP variants have not been compared against generated results. Keep authored compatibility patches for unsupported logic and unverified combinations; passing a synthetic AND case does not demonstrate replacement of every new-land patch.
+
+## New in 0.5: regional guards and area assignments
+
+**Regional guards.** A new unconditional battle track can otherwise play in a land whose authors excluded the original battle music. Harmonia can append the same exclusions to that new track when all of the following evidence is available:
+
+- Every original ordinary battle track agrees on the exclusion after the conservative reconciliation above. The only accepted ordinary baselines are no conditions or the vanilla negative `GetCombatTargetHasKeyword(ActorTypeDragon)` condition; dragon-only baselines are separate. Unknown baseline roles abort this inference.
+- Shared original tracks can supply read-only evidence, but are never repaired. An exclusion must exist in every dependency-maximal version of such a track; competing versions cannot establish a common policy.
+- The same default battle list contains an eligible unshared single-audio replacement with exactly one positive Self condition for that area. Quest-gated replacements and conjunctions of several areas cannot prove coverage of the whole area.
+- The new generic track is unconditional, not scripted/shared/palette-owned, and has unchanged audio/metadata across its overrides. Existing authored conditional tracks are not broadened or rewritten.
+- Original policy tracks, the replacement, and the target are checked against their winning native condition snapshots before commit. A changed witness or missing track skips the complete battle batch. This guards record eligibility, not audio decoding or every native selection behavior.
+
+Only the proven area's negative AND conditions are added. A second independent land can contribute another exclusion. The regional and Boss tracks retain their own conditions and ownership.
+
+**Area assignments.** If the original CELL/WRLD/LCTN assigns music A, one mod explicitly assigns B, and an independent override still carries A, Harmonia can restore B. B may be a new land's custom MusicType; the tool restores the assignment without merging that custom list. The original A may be null. Only the music pointer changes; CELL uses its existing or newly created music extra-data node.
+
+Two different new assignments, an explicit clear, a deleted/malformed record, missing/cyclic dependencies, or a dependent patch reverting B all prevent recovery. An unchanged ancestor cannot overwrite its own dependent author and creates no proposal. Runtime source and pointer checks preserve unexpected changes from other systems. REGN sound-data entries and worldspace inheritance flags are not rewritten. This field merge follows declared dependencies; an independent author deliberately carrying the baseline is indistinguishable from an accidental overwrite.
+
+Both features reuse startup scanning. They do not require generating duplicate CME JSON or MTD INI rules. A custom playback relationship absent from the records still requires an authored decision; configuration syntax cannot supply that missing intent.
+
+Before restoring an ambient or battle playlist, the runtime compares its current track multiset with the winning plugin snapshot. Earlier framework additions, replacements or explicit clears cause that playlist to be skipped. This does not prevent a later framework from changing it, and does not validate priority fields or scripted playback state.
 
 ## Independent music and limits
 
@@ -64,11 +84,13 @@ cmake --build build --config Release --target UnifiedMusic UnifiedMusicInspect -
 python tests/test_plugin_scan.py --inspect build/Release/UnifiedMusicInspect.exe -v
 python tests/test_auto_combat_scan.py --inspect build/Release/UnifiedMusicInspect.exe -v
 python tests/test_condition_repair.py --inspect build/Release/UnifiedMusicInspect.exe -v
+$env:UNIFIED_MUSIC_INSPECT = (Resolve-Path build/Release/UnifiedMusicInspect.exe).Path
+python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 `UNIFIED_MUSIC_DEPS_DIR` reuses local dependency Git checkouts after revision checks. No game path is compiled into the DLL.
 
-`UnifiedMusicInspect.exe plugin1.esm plugin2.esp ...` runs the same scanner offline. Planning compares original definitions and explicit dependencies without assuming input order. It emits `ALLOW`, `APPEND`, `PRESERVE`, `BATTLE_DEFAULT`, `AUTO_COMBAT`, `CONDITION_UNION`, and skip diagnostics. `AUTO_COMBAT *` means unconditional contributions; other scopes use `0=Cell`, `1=Worldspace`, `2=Location`. These are proposed reconciliations, not counts of tracks or exclusions actually missing at runtime. Local IDs are decimal.
+`UnifiedMusicInspect.exe plugin1.esm plugin2.esp ...` runs the same scanner offline. Planning compares original definitions and explicit dependencies without assuming input order. It emits `ALLOW`, `APPEND`, `PRESERVE`, `BATTLE_DEFAULT`, `AUTO_COMBAT`, `CONDITION_UNION`, `CONDITION_GUARD`, `RESTORE_MAPPING`, and skip diagnostics. `AUTO_COMBAT *` means unconditional contributions; other scopes use `0=Cell`, `1=Worldspace`, `2=Location`. These are proposed reconciliations, not counts of changes actually missing at runtime. Local IDs are decimal.
 
 ## License
 
