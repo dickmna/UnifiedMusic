@@ -68,9 +68,10 @@ struct ConditionVersion {
 };
 struct ConditionRepair {
     FormKey track;
+    FormKey musicType;
     std::vector<Area> exclusions;
     std::vector<ConditionVersion> versions;
-    std::vector<FormKey> requiredBattleTracks;
+    std::vector<FormKey> requiredTracks;
     bool genericGuard{};
 };
 struct ConditionWitness {
@@ -79,6 +80,7 @@ struct ConditionWitness {
 };
 struct MergePlan {
     std::map<FormKey, std::vector<FormKey>> additions;
+    std::map<FormKey, std::vector<FormKey>> distributions;
     std::set<FormKey> allowed;
     std::set<FormKey> scriptBound;
     std::optional<FormKey> battleType;
@@ -92,14 +94,18 @@ struct MergePlan {
 class PluginScan {
 public:
     void Read(const std::filesystem::path& path);
+    void ReadConfig(const std::filesystem::path& path);
+    void ReadConfigs(const std::filesystem::path& directory);
     MergePlan Plan() const;
     const auto& Records() const { return music_; }
 private:
     bool ScriptReferences(const FormKey& key) const;
     bool DependsOn(const std::string& source, const std::string& dependency) const;
-    std::set<FormKey> ProtectedTracks(const FormKey& excludedType, const std::set<FormKey>& scriptBound) const;
+    std::set<FormKey> ProtectedTracks(const FormKey& excludedType, const MergePlan& plan) const;
+    bool PlanDistribution(MergePlan& plan) const;
     void InferCombat(MergePlan& plan) const;
     void InferConditionRepairs(MergePlan& plan) const;
+    void InferConditionsFor(MergePlan& plan, const FormKey& type, bool battle) const;
     void InferMappings(MergePlan& plan) const;
     std::map<FormKey, std::vector<MusicRecord>> music_;
     std::map<FormKey, std::vector<TrackRecord>> tracks_;
@@ -108,6 +114,9 @@ private:
     std::set<FormKey> deletedAreas_, mappedTypes_, nestedTracks_;
     std::vector<ScriptProperties> scripts_;
     std::map<std::string, std::vector<std::string>> dependencies_;
+    struct DistributionEntry { std::string target, source; std::vector<FormKey> tracks; };
+    std::vector<DistributionEntry> distributionEntries_;
+    std::vector<std::string> configErrors_;
 };
 std::string ToString(const FormKey& key);
 }

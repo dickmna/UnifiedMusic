@@ -54,14 +54,28 @@ std::optional<Area> Exclusion(const ConditionTerm& term) {
     if(term.function==359) return Area{AreaKind::Location,term.parameter};
     return {};
 }
+enum class Role { Ordinary, Dragon, Unknown };
+Role BaselineRole(const std::vector<ConditionTerm>& terms) {
+    if(terms.empty()) return Role::Ordinary;
+    if(terms.size()!=1) return Role::Unknown;
+    const auto& term=terms.front();
+    if(term.function!=707 || term.parameter!=FormKey{"skyrim.esm",0x35d59}) return Role::Unknown;
+    if((term.opcode==0 && term.comparison==0x3f800000) || (term.opcode==1 && term.comparison==0)) return Role::Dragon;
+    if((term.opcode==0 && term.comparison==0) || (term.opcode==1 && term.comparison==0x3f800000)) return Role::Ordinary;
+    return Role::Unknown;
+}
 }
 
 void PluginScan::InferConditionRepairs(MergePlan& plan) const {
-    if(!plan.battleMergeSafe || !plan.battleType) return;
-    const auto& music=music_.at(*plan.battleType);
-    const auto baseMusic=std::find_if(music.begin(),music.end(),[&](const auto& r){return r.source==plan.battleType->plugin;});
+    if(plan.battleMergeSafe && plan.battleType) InferConditionsFor(plan,*plan.battleType,true);
+    for(const auto& type:plan.allowed) if(plan.distributions.contains(type)) InferConditionsFor(plan,type,false);
+}
+
+void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool battle) const {
+    const auto& music=music_.at(type);
+    const auto baseMusic=std::find_if(music.begin(),music.end(),[&](const auto& r){return r.source==type.plugin;});
     if(baseMusic==music.end()) return;
-    const auto protectedTracks=ProtectedTracks(*plan.battleType,plan.scriptBound);
+    const auto protectedTracks=ProtectedTracks(type,plan);
 
     // Resolve transitive dependencies even when an intermediate plugin does not
     // override this track. A dependent patch's deliberate removal wins.
@@ -84,11 +98,10 @@ void PluginScan::InferConditionRepairs(MergePlan& plan) const {
     const std::set<FormKey> originalTracks(baseMusic->tracks.begin(),baseMusic->tracks.end());
     std::map<FormKey,ConditionRepair> policies;
     for(const auto& key:originalTracks) {
-        if(key.plugin!="skyrim.esm") continue;
         const auto found=tracks_.find(key);
         if(found==tracks_.end()) continue;
         const auto skip=[&](const char* reason){plan.diagnostics.push_back("SKIP_CONDITIONS "+ToString(key)+" "+reason);};
-        const bool protectedTrack=protectedTracks.contains(key) || ScriptReferences(key);
+        const bool protectedTrack=!battle || protectedTracks.contains(key) || ScriptReferences(key);
         if(protectedTrack) skip("shared or protected track; policy evidence only");
         const auto& records=found->second;
         auto origin=std::find_if(records.begin(),records.end(),[&](const auto& r){return r.source==key.plugin;});
@@ -97,6 +110,7 @@ void PluginScan::InferConditionRepairs(MergePlan& plan) const {
         if(!baseline) {skip("unsupported original conditions");continue;}
         ConditionRepair repair;
         repair.track=key;
+        repair.musicType=type;
         std::map<std::string,std::set<Area>> contributions;
         std::map<std::string,std::set<std::string>> parents;
         std::set<Area> combined;
@@ -148,15 +162,15 @@ void PluginScan::InferConditionRepairs(MergePlan& plan) const {
                 required.insert(type.tracks.begin(),type.tracks.end());
             }
         }
-        repair.requiredBattleTracks.assign(required.begin(),required.end());
+        repair.requiredTracks.assign(required.begin(),required.end());
         policies.emplace(key,repair);
         const bool conflict=std::ranges::any_of(contributions,[&](const auto& entry){return entry.first!=key.plugin && entry.second!=combined;});
         if(conflict && !protectedTrack) plan.conditionRepairs.push_back(std::move(repair));
     }
 
-    // Only extend new, unconditional, unshared battle tracks. A regional policy
-    // requires unanimity among the original ordinary battle tracks and a pure
-    // positive-area replacement already contributed to the same default list.
+    // Only extend ordinary unshared tracks. A regional policy requires
+    // unanimity among the original ordinary tracks and a pure positive-area
+    // replacement contributed to the same list.
     // Dragon-only tracks are separate; all other original predicates are opaque.
     std::optional<std::set<Area>> common;
     std::vector<ConditionWitness> witnesses;
@@ -167,13 +181,10 @@ void PluginScan::InferConditionRepairs(MergePlan& plan) const {
         if(origin==found->second.end()) return;
         const auto baseline=Decode(*origin);
         if(!baseline) return;
-        if(!baseline->empty()) {
-            if(baseline->size()!=1) return;
-            const auto& term=baseline->front();
-            if(term.function!=707 || term.parameter!=FormKey{"skyrim.esm",0x35d59}) return;
-            if((term.opcode==0 && term.comparison==0x3f800000) || (term.opcode==1 && term.comparison==0)) continue;
-            if(!((term.opcode==0 && term.comparison==0) || (term.opcode==1 && term.comparison==0x3f800000))) return;
-        }
+        if(!battle && !baseline->empty()) return;
+        const auto role=BaselineRole(*baseline);
+        if(role==Role::Dragon) continue;
+        if(role!=Role::Ordinary) return;
         const auto policy=policies.find(key);
         if(policy==policies.end()) return;
         // Do not equate Self and an explicit reference when inferring a new rule.
@@ -185,47 +196,70 @@ void PluginScan::InferConditionRepairs(MergePlan& plan) const {
         witnesses.push_back({key,policy->second.versions});
     }
     if(!common || common->empty()) return;
+    std::set<FormKey> available,candidates;
+    for(const auto& record:music) available.insert(record.tracks.begin(),record.tracks.end());
+    if(const auto configured=plan.distributions.find(type);configured!=plan.distributions.end()) {
+        available.insert(configured->second.begin(),configured->second.end());
+        candidates.insert(configured->second.begin(),configured->second.end());
+    }
+    if(battle) for(const auto& rule:plan.combatRules) {
+        available.insert(rule.tracks.begin(),rule.tracks.end());
+        if(rule.areas.empty()) candidates.insert(rule.tracks.begin(),rule.tracks.end());
+    }
+    const auto protectedCandidate=[&](const FormKey& key) {
+        if(protectedTracks.contains(key) || ScriptReferences(key)) return true;
+        for(const auto& [owner,records]:music_) if(owner!=type)
+            for(const auto& record:records) if(std::ranges::find(record.tracks,key)!=record.tracks.end()) return true;
+        return false;
+    };
     std::map<Area,ConditionWitness> replacements;
-    for(const auto& rule:plan.combatRules) {
-        if(rule.areas.size()!=1 || !common->contains(rule.areas.front())) continue;
-        for(const auto& key:rule.tracks) {
-            const auto& records=tracks_.at(key);
-            ConditionWitness witness{key,{}};
-            bool valid=true;
-            for(const auto& record:records) {
-                const auto terms=Decode(record);
-                if(record.metadata!=records.front().metadata || !terms || terms->size()!=1 || terms->front().onPlayerReference) {valid=false;break;}
-                witness.versions.push_back({record.source,*terms});
-            }
-            // InferCombat has already proved this one condition is the positive
-            // gate for this exact area, with no script or special-type sharing.
-            if(valid) {replacements.emplace(rule.areas.front(),std::move(witness));break;}
+    for(const auto& key:available) {
+        if(originalTracks.contains(key) || protectedCandidate(key)) continue;
+        const auto found=tracks_.find(key);
+        if(found==tracks_.end()) continue;
+        const auto& records=found->second;
+        const auto terms=Decode(records.front());
+        if(!terms || terms->size()!=1 || terms->front().onPlayerReference) continue;
+        auto negative=terms->front();
+        if(!((negative.opcode==0 && negative.comparison==0x3f800000) || (negative.opcode==1 && negative.comparison==0))) continue;
+        negative.opcode=0; negative.comparison=0;
+        const auto area=Exclusion(negative);
+        if(!area || !common->contains(*area)) continue;
+        ConditionWitness witness{key,{}};
+        bool valid=std::ranges::any_of(records,[&](const auto& r){return r.source==key.plugin;});
+        for(const auto& record:records) {
+            const auto other=Decode(record);
+            if(record.metadata!=records.front().metadata || !other || *other!=*terms) {valid=false;break;}
+            witness.versions.push_back({record.source,*other});
         }
+        if(valid) replacements.emplace(*area,std::move(witness));
     }
     if(replacements.empty()) return;
     bool guarded=false;
-    for(const auto& rule:plan.combatRules) if(rule.areas.empty()) {
-        for(const auto& key:rule.tracks) {
-            const auto& records=tracks_.at(key);
-            ConditionRepair guard;
-            guard.track=key; guard.genericGuard=true;
-            bool valid=true;
-            for(const auto& record:records) {
-                const auto terms=Decode(record);
-                if(record.metadata!=records.front().metadata || !terms || !terms->empty()) {valid=false;break;}
-                guard.versions.push_back({record.source,*terms});
-            }
-            if(!valid) {plan.diagnostics.push_back("SKIP_GUARD "+ToString(key)+" changed or conditional generic track");continue;}
-            guard.requiredBattleTracks.assign(originalTracks.begin(),originalTracks.end());
-            for(const auto& [area,witness]:replacements) {
-                guard.exclusions.push_back(area);
-                guard.requiredBattleTracks.push_back(witness.track);
-            }
-            plan.conditionRepairs.push_back(std::move(guard)); guarded=true;
+    for(const auto& key:candidates) {
+        if(originalTracks.contains(key)) continue;
+        if(protectedCandidate(key)) {plan.diagnostics.push_back("SKIP_GUARD "+ToString(key)+" shared or scripted ownership");continue;}
+        const auto& records=tracks_.at(key);
+        ConditionRepair guard;
+        guard.track=key; guard.musicType=type; guard.genericGuard=true;
+        bool valid=std::ranges::any_of(records,[&](const auto& r){return r.source==key.plugin;});
+        const auto baseline=Decode(records.front());
+        for(const auto& record:records) {
+            const auto terms=Decode(record);
+            if(record.metadata!=records.front().metadata || !baseline || !terms || *terms!=*baseline ||
+               BaselineRole(*terms)!=Role::Ordinary || (!battle && !terms->empty())) {valid=false;break;}
+            guard.versions.push_back({record.source,*terms});
         }
+        if(!valid) {plan.diagnostics.push_back("SKIP_GUARD "+ToString(key)+" changed or conditional generic track");continue;}
+        guard.requiredTracks.assign(originalTracks.begin(),originalTracks.end());
+        for(const auto& [area,witness]:replacements) {
+            guard.exclusions.push_back(area);
+            guard.requiredTracks.push_back(witness.track);
+        }
+        plan.conditionRepairs.push_back(std::move(guard)); guarded=true;
     }
     if(guarded) {
-        plan.conditionWitnesses=std::move(witnesses);
+        plan.conditionWitnesses.insert(plan.conditionWitnesses.end(),witnesses.begin(),witnesses.end());
         for(auto& [area,witness]:replacements) plan.conditionWitnesses.push_back(std::move(witness));
     }
 }

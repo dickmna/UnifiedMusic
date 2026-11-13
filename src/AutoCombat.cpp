@@ -118,38 +118,77 @@ struct PreparedRepair {
     const ConditionVersion* version;
     std::vector<std::unique_ptr<Node>> nodes;
 };
+
+bool PlaylistMatches(RE::BGSMusicType* type,const std::vector<MusicRecord>& versions,RE::TESDataHandler* data) {
+    if(!type || !type->GetFile()) return false;
+    const auto source=Lower(type->GetFile()->GetFilename());
+    const MusicRecord* snapshot=nullptr;
+    for(const auto& version:versions) if(version.source==source) {
+        if(snapshot) return false;
+        snapshot=&version;
+    }
+    if(!snapshot || snapshot->deleted || snapshot->tracks.size()!=type->tracks.size()) return false;
+    std::multiset<RE::BSIMusicTrack*> expected;
+    for(const auto& key:snapshot->tracks) {
+        auto* track=data->LookupForm<Track>(key.id,key.plugin);
+        if(!track) return false;
+        expected.insert(track);
+    }
+    return expected==std::multiset<RE::BSIMusicTrack*>(type->tracks.begin(),type->tracks.end());
+}
 }
 
-bool ConfigureAutoCombat(const MergePlan& plan)
+bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<MusicRecord>>& records)
 {
-    if (plan.combatRules.empty() && plan.conditionRepairs.empty()) return true;
     const auto fail=[](std::string_view reason) {
-        REX::WARN("Auto combat batch skipped: {}",reason);
+        REX::WARN("Music batch skipped: {}",reason);
         return false;
     };
+    std::map<FormKey,std::set<FormKey>> contributions;
+    for(const auto* source:{&plan.additions,&plan.distributions}) for(const auto& [type,tracks]:*source)
+        if(!tracks.empty()) contributions[type].insert(tracks.begin(),tracks.end());
+    if(plan.battleType) for(const auto& rule:plan.combatRules)
+        contributions[*plan.battleType].insert(rule.tracks.begin(),rule.tracks.end());
+    for(const auto& repair:plan.conditionRepairs) contributions.try_emplace(repair.musicType);
+    if(contributions.empty()) return true;
     auto* data=RE::TESDataHandler::GetSingleton();
-    auto* objects=RE::BGSDefaultObjectManager::GetSingleton();
-    if (!data || !objects || !plan.battleType || !plan.battleMergeSafe) return fail("unavailable or protected default battle list");
-    auto* target=data->LookupForm<RE::BGSMusicType>(plan.battleType->id,plan.battleType->plugin);
-    auto* native=objects->GetObject<RE::BGSMusicType>(RE::BGSDefaultObjectManager::DefaultObject::kBattleMusic);
-    if (!target || target!=native) return fail("engine default differs from the original battle type");
+    if(!data) return fail("data handler unavailable");
+    const bool battleWork=!plan.combatRules.empty() || std::ranges::any_of(plan.conditionRepairs,[&](const auto& repair) {
+        return plan.battleType && repair.musicType==*plan.battleType;
+    });
+    if(battleWork) {
+        auto* objects=RE::BGSDefaultObjectManager::GetSingleton();
+        if(!objects || !plan.battleType || !plan.battleMergeSafe) return fail("unavailable or protected default battle list");
+        auto* target=data->LookupForm<RE::BGSMusicType>(plan.battleType->id,plan.battleType->plugin);
+        if(!target || target!=objects->GetObject<RE::BGSMusicType>(RE::BGSDefaultObjectManager::DefaultObject::kBattleMusic))
+            return fail("engine default differs from the original battle type");
+    }
 
     // Prepare all list additions and condition nodes before either is applied.
-    std::vector<Track*> pending;
-    for (const auto& rule:plan.combatRules) {
-        for (const auto& key:rule.tracks) {
+    struct Playlist { RE::BGSMusicType* target; std::vector<Track*> pending; };
+    std::map<FormKey,Playlist> playlists;
+    for(const auto& [type,tracks]:contributions) {
+        auto* target=data->LookupForm<RE::BGSMusicType>(type.id,type.plugin);
+        const auto found=records.find(type);
+        if(found==records.end() || !PlaylistMatches(target,found->second,data)) return fail("native playlist differs from winning plugin snapshot");
+        auto& list=playlists.emplace(type,Playlist{target,{}}).first->second;
+        for(const auto& key:tracks) {
             auto* track=data->LookupForm<Track>(key.id,key.plugin);
-            if (!track || !track->track || track->GetType()!=RE::BSIMusicTrack::TrackType::kSingleTrack)
-                return fail("unresolved/non-single restored track");
-            if (!Contains(target,track) && std::ranges::find(pending,track)==pending.end()) pending.push_back(track);
+            // Explicit distributions may contain palettes/silence. Only
+            // condition edits below require single tracks.
+            if(!track || !track->track) return fail("unresolved/unusable contributed track");
+            if(!Contains(target,track)) list.pending.push_back(track);
         }
     }
+    const auto present=[&](const FormKey& type,Track* track) {
+        const auto& list=playlists.at(type);
+        return Contains(list.target,track) || std::ranges::find(list.pending,track)!=list.pending.end();
+    };
 
     const auto witnessesMatch=[&] {
         for (const auto& witness:plan.conditionWitnesses) {
             auto* wrapper=data->LookupForm<Track>(witness.track.id,witness.track.plugin);
-            if (!wrapper || !wrapper->track || wrapper->GetType()!=RE::BSIMusicTrack::TrackType::kSingleTrack ||
-                (!Contains(target,wrapper) && std::ranges::find(pending,wrapper)==pending.end())) return false;
+            if (!wrapper || !wrapper->track || wrapper->GetType()!=RE::BSIMusicTrack::TrackType::kSingleTrack) return false;
             const auto* version=WinningVersion(wrapper,witness.versions);
             Node* tail=nullptr;
             if (!version || !Matches(wrapper->track->conditions,*version,data,tail)) return false;
@@ -163,11 +202,11 @@ bool ConfigureAutoCombat(const MergePlan& plan)
     for (const auto& repair:plan.conditionRepairs) {
         auto* wrapper=data->LookupForm<Track>(repair.track.id,repair.track.plugin);
         if (!wrapper || !wrapper->track || wrapper->GetType()!=RE::BSIMusicTrack::TrackType::kSingleTrack ||
-            (!Contains(target,wrapper) && std::ranges::find(pending,wrapper)==pending.end()))
-            return fail("condition target is not a current single battle track");
-        for (const auto& required:repair.requiredBattleTracks) {
+            !present(repair.musicType,wrapper))
+            return fail("condition target is not a current/contributed single track");
+        for (const auto& required:repair.requiredTracks) {
             auto* track=data->LookupForm<Track>(required.id,required.plugin);
-            if (!track || !track->track || (!Contains(target,track) && std::ranges::find(pending,track)==pending.end()))
+            if (!track || !track->track || !present(repair.musicType,track))
                 return fail("replacement contribution missing; preserving conditions to avoid silence");
         }
         const auto* version=WinningVersion(wrapper,repair.versions);
@@ -199,17 +238,22 @@ bool ConfigureAutoCombat(const MergePlan& plan)
         repairs.push_back(std::move(prepared));
     }
 
-    if (pending.size()>std::numeric_limits<std::uint32_t>::max()-target->tracks.size()) return fail("battle list capacity exceeded");
-    target->tracks.reserve(static_cast<std::uint32_t>(target->tracks.size()+pending.size()));
+    for(const auto& [key,list]:playlists) {
+        if(list.pending.size()>std::numeric_limits<std::uint32_t>::max()-list.target->tracks.size()) return fail("playlist capacity exceeded");
+        list.target->tracks.reserve(static_cast<std::uint32_t>(list.target->tracks.size()+list.pending.size()));
+    }
     // No logical list mutation precedes this point. Validate once more before
     // the non-allocating commit; never replace or delete existing condition nodes.
     if (!witnessesMatch()) return fail("regional policy changed during preparation");
+    for(const auto& [key,list]:playlists) if(!PlaylistMatches(list.target,records.at(key),data))
+        return fail("playlist changed during preparation");
     for (const auto& repair:repairs) {
         Node* tail=nullptr;
         if (repair.track->conditions.head!=repair.head || !Matches(repair.track->conditions,*repair.version,data,tail) || tail!=repair.tail)
             return fail("condition chain changed during preparation");
     }
-    for (auto* track:pending) target->tracks.push_back(track);
+    std::size_t appended=0;
+    for(const auto& [key,list]:playlists) for(auto* track:list.pending) {list.target->tracks.push_back(track);++appended;}
     std::size_t repairedTracks=0;
     for (auto& repair:repairs) {
         if (repair.nodes.empty()) continue;
@@ -220,7 +264,7 @@ bool ConfigureAutoCombat(const MergePlan& plan)
         else repair.track->conditions.head=first;
         ++repairedTracks;
     }
-    REX::INFO("Auto combat: {} restored tracks, {} condition lists updated, {} exclusions appended",pending.size(),repairedTracks,conditionCount);
+    REX::INFO("Music batch: {} contributed tracks, {} condition lists updated, {} exclusions appended",appended,repairedTracks,conditionCount);
     return true;
 }
 }

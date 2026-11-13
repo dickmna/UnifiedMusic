@@ -92,7 +92,7 @@ void PluginScan::InferCombat(MergePlan& plan) const {
         for(const auto& track:r.tracks) if(!Contains(base->tracks,track)) candidates.insert(track);
     }
     plan.battleMergeSafe=true;
-    const auto protectedTracks=ProtectedTracks(base->key,plan.scriptBound);
+    const auto protectedTracks=ProtectedTracks(base->key,plan);
     std::map<std::vector<Area>,std::vector<FormKey>> groups;
     for(const auto& key:candidates) {
         const auto skip=[&](const char* reason) {plan.diagnostics.push_back("SKIP_COMBAT "+ToString(key)+" "+reason);};

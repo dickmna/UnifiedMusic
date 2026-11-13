@@ -234,7 +234,7 @@ bool PluginScan::DependsOn(const std::string& source,const std::string& dependen
     return false;
 }
 
-std::set<FormKey> PluginScan::ProtectedTracks(const FormKey& excludedType,const std::set<FormKey>& scriptBound) const {
+std::set<FormKey> PluginScan::ProtectedTracks(const FormKey& excludedType,const MergePlan& plan) const {
     auto protectedTracks=nestedTracks_;
     const auto target=music_.find(excludedType);
     const bool ambientTarget=target!=music_.end() && std::ranges::any_of(target->second,Ambient);
@@ -244,10 +244,15 @@ std::set<FormKey> PluginScan::ProtectedTracks(const FormKey& excludedType,const 
         const bool ordinaryAmbient=origin!=records.end() && Ambient(*origin);
         // Ordinary ambient lists can share tracks across biomes. A map binding
         // alone is not exclusive ownership, but must not leak into combat.
-        for(const auto& r:records) if(!ordinaryAmbient || scriptBound.contains(key) || (!ambientTarget && mappedTypes_.contains(key)) || r.oneShot) {
+        for(const auto& r:records) if(!ordinaryAmbient || plan.scriptBound.contains(key) || (!ambientTarget && mappedTypes_.contains(key)) || r.oneShot) {
             protectedTracks.insert(r.tracks.begin(),r.tracks.end());
         }
     }
+    // Configuration-only Boss/custom owners count just as plugin TNAM owners.
+    // For inferred condition edits, even sharing between ambient lists is
+    // protected: a restriction for one biome must not change another list.
+    for(const auto& [key,tracks]:plan.distributions) if(key!=excludedType)
+        protectedTracks.insert(tracks.begin(),tracks.end());
     for(const auto& [key,records]:tracks_) {
         if(std::ranges::any_of(records,[](const auto& r){return r.deleted || r.invalid;})) protectedTracks.insert(key);
     }
@@ -256,6 +261,7 @@ std::set<FormKey> PluginScan::ProtectedTracks(const FormKey& excludedType,const 
 
 MergePlan PluginScan::Plan() const {
     MergePlan plan;
+    if(!PlanDistribution(plan)) return plan;
     // Complete this set before checking tracks shared with any other type.
     for(const auto& [key,chain]:music_) if(ScriptReferences(key)) plan.scriptBound.insert(key);
     for(const auto& [key,chain]:music_) {
@@ -280,7 +286,7 @@ MergePlan PluginScan::Plan() const {
         }
         plan.allowed.insert(key);
         auto& additions=plan.additions[key];
-        const auto protectedTracks=ProtectedTracks(key,plan.scriptBound);
+        const auto protectedTracks=ProtectedTracks(key,plan);
         for(const auto& r:chain) {
             if(IsBase(r.source)) continue;
             for(const auto& track:r.tracks) {
