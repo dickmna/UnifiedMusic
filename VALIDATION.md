@@ -106,6 +106,14 @@ Runtime prepares one playlist batch at a time, validates typed conditions and sc
 
 A pre-commit failure removes scene-dependent automatic actions and retries the independent remainder. If preparation still fails, valid explicit instructions can retry alone through the same path. Exceptions do not retry. Earlier independent batches may remain. No audio cache is created. Application still runs once at DataLoaded. Explicit area assignments can proceed except where their target playlist failed; automatic area recovery is deferred after any music preparation failure. This fallback and native list/area mutations are reviewed and compiled, not executed by the offline test suite.
 
+## Modex reader review rerun
+
+On 2026-11-15 the unchanged implementation at `59c9d02` was rebuilt in Release (DLL, inspector and selector tests). All **315 Python tests**, **523 selector checks**, **one CTest target** and **28 read-only executable checks** passed again. Source review of Modex, Help Extender and the pinned TESFile wrappers is recorded in [AUDIT.md](AUDIT.md#modex-native-reader-assessment).
+
+The existing real-input verification was rerun with the same 111 enabled plugins and unchanged ECSS configuration, the previously verified loose resource overlay, optional HQ pack and private configuration/MRR overlays. All six complete inspector outputs are byte-identical to the pre-review 1.0.0 outputs. `tests/native-reader-review-results.json` records their SHA-256 values and the tested implementation commit. The plans still recover 195 missing memberships, retain the five authored Boss links, preserve all 54 ECSS/Bruma/SIRENROOT dedicated types, isolate the two shared ordinary uses, and match all 240 authored-condition cases. Explicit clears/area assignments and the 208 suppressed duplicate original uses are unchanged. No game plugin/profile was changed and no BSA was reopened for this rerun.
+
+No TESFile adapter was implemented or executed. These results validate the retained shared reader; they do **not** establish native-reader equivalence, startup performance, game playback or the safety of new engine file calls. No runtime source, version, published release asset or audio mapping changed as part of the review.
+
 ## Remaining boundaries
 
 - Native allocation/destruction, hook timing, optional-resource visibility, playback, condition evaluation, random selection, combat end, transitions and save/reload remain untested. Joint offline validation of the installed mods is not joint in-game validation.

@@ -1,0 +1,133 @@
+{
+  "date": "2026-11-15",
+  "review": "Modex TESFile reader feasibility; shared portable reader retained",
+  "tested_implementation_commit": "59c9d02d0ee5c39dec4109c479c5507d930dae4f",
+  "production_code_changed": false,
+  "release_build_targets": [
+    "UnifiedMusic",
+    "UnifiedMusicInspect",
+    "HarmoniaRuleTests"
+  ],
+  "python_test_methods_passed": 315,
+  "selector_checks_passed": 523,
+  "ctest_targets_passed": 1,
+  "read_only_executable_checks_passed": 28,
+  "native_layout": {
+    "executable_version": "1.7.104.0",
+    "executable_sha256": "846efccf0c1374d71f892907f46549560f2fcb0a75cb87a3eed438baa0f1402f",
+    "checks": {
+      "single_factory_create_entry": true,
+      "single_factory_destroy_entry": true,
+      "single_allocation_size_0x80": true,
+      "fresh_main_sound_handle": true,
+      "fresh_finale_sound_handle": true,
+      "fresh_loop_pointer": true,
+      "single_can_play_entry": true,
+      "conditions_are_pointer_at_0x10": true,
+      "condition_holder_allocation_size_8": true,
+      "condition_holder_pointer_store": true,
+      "music_type_play_entry": true,
+      "type_uses_track_interface_can_play": true,
+      "type_uses_track_interface_play": true,
+      "type_uses_track_interface_status": true,
+      "type_uses_track_interface_update": true,
+      "region_manager_sound_cast_entry": true,
+      "region_cast_checks_native_type_seven": true,
+      "region_sound_type_entry": true,
+      "region_sound_type_is_seven": true,
+      "region_sound_music_pointer_at_0x10": true,
+      "data_handler_region_manager_at_0xdb0": true,
+      "location_music_pointer_at_0x58": true,
+      "cme_entry_0_calls_default_object": true,
+      "cme_entry_1_calls_default_object": true,
+      "cme_entry_2_calls_default_object": true,
+      "cme_entry_3_calls_default_object": true,
+      "cme_entry_4_calls_default_object": true,
+      "cme_entry_5_calls_default_object": true
+    },
+    "native_execution": false,
+    "address_library_resolution_executed": false
+  },
+  "inspector_output_comparison": {
+    "current-record-plan.txt": {
+      "sha256": "27f8ec1fbd03877f18cd4fe0e66f0499778ed48137b14b558f4d8aee4e26bfc4",
+      "identical_to_before_review": true
+    },
+    "current-resource-plan.txt": {
+      "sha256": "6940da8451b3b69056d9bb6008a2582e84a40cb4bdc3083d198708eaeb91ab08",
+      "identical_to_before_review": true
+    },
+    "current-no-pack.txt": {
+      "sha256": "27f8ec1fbd03877f18cd4fe0e66f0499778ed48137b14b558f4d8aee4e26bfc4",
+      "identical_to_before_review": true
+    },
+    "current-plus-mrr-resource-plan.txt": {
+      "sha256": "7090bb154d376065299bf0fb0e93a29b709b915a242ce9448ff878ec53d4924a",
+      "identical_to_before_review": true
+    },
+    "explicit-area-and-town-clear.txt": {
+      "sha256": "c2c57b912c35868d31dd4d09b4d4e0f3143b3bbb2555169d1ad8eb58543bb7e2",
+      "identical_to_before_review": true
+    },
+    "explicit-empty-battle-clear.txt": {
+      "sha256": "baa69f735cf1bfa7d2dca0105be4bd948e217956055f2544bf18c04b89d0b77c",
+      "identical_to_before_review": true
+    }
+  },
+  "installed": {
+    "plugins": 111,
+    "restored_absent_memberships": 195,
+    "remaining_absent_memberships": 0,
+    "town_restored": 15,
+    "default_battle_restored": 11,
+    "boss_battle_restored": 5,
+    "ordinary_battle_guarded_tracks": 5,
+    "shared_ordinary_uses_isolated": 2,
+    "actual_authored_condition_cases": 240,
+    "all_conditions_match_authored_rules": true,
+    "independent_types_unchanged": {
+      "ECSS": 5,
+      "Bruma": 20,
+      "SIRENROOT": 29
+    },
+    "scene_resources_checked_tracks": 11,
+    "audio_coexist_use_proposals": 244,
+    "audio_coexist_unique_tracks": 60,
+    "without_pack_original_coexistence_disabled": true,
+    "original_and_replacement_same_scene_clauses": true,
+    "dragon_and_regional_boss_roles_preserved": true,
+    "plugins_and_profiles_unchanged": true,
+    "game_data_written": false,
+    "bsa_read_for_this_run": false
+  },
+  "configuration_priority": {
+    "plugins": 111,
+    "temporary_configuration_only": true,
+    "location_assignment_verified": true,
+    "region_assignment_verified": true,
+    "selected_region_sound_blocks": 1,
+    "explicit_town_clear_has_only_configured_member": true,
+    "clear_blocks_automatic_original_audio": true,
+    "explicit_empty_battle_clear_verified": true,
+    "independent_boss_memberships_retained": true,
+    "original_ecss_and_documented_ecss_select_identically": true,
+    "dedicated_playlist_contents_unchanged": true,
+    "game_inputs_unchanged": true,
+    "native_game_execution": false,
+    "note": "Inspector proposals plus independent expected outcomes; native Region slots and playback are not executed."
+  },
+  "mrr_deduplication": {
+    "plugins": 112,
+    "mrr_not_installed_in_game": true,
+    "known_original_copies_suppress_additional_uses": 208,
+    "remaining_optional_audio_uses": 36,
+    "scene_resource_failures": 0,
+    "config_missing_references": 32,
+    "game_data_written": false
+  },
+  "tesfile_adapter_implemented": false,
+  "tesfile_api_execution": false,
+  "native_game_execution": false,
+  "native_reader_equivalence_established": false,
+  "note": "Checks rerun the unchanged shared reader. No native reader or performance comparison was executed."
+}

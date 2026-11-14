@@ -96,6 +96,8 @@ The shared typed CTDA schema includes functions 18, 56, 58, 59, 74, 67, 310, 359
 
 At DataLoaded, the planner reads enabled plugins and configurations. Each playlist batch prepares additions, local conditions and normalized audio together, reserves capacity, validates witnesses/resources, then commits. Automatic work must match the winning plugin snapshot; pure explicit MTD operations use the loaded list. Both recheck their actual list before committing. Scene-dependent failure retries independent work; if automatic preparation still fails, valid explicit instructions can run through the same prepare/commit path without inference. A failed original-audio candidate alone can be omitted without blocking valid guarded contributions. Exceptions do not retry.
 
+The DLL and offline inspector share one bounded ESP/ESM/ESL reader. The Modex-style native `TESFile` alternative was reviewed: it also reopens plugin files, and would replace file traversal rather than history, condition or ownership analysis. Keeping the same real-plugin offline checks would require a second transport. The current shared implementation is retained; see the [native-reader assessment](AUDIT.md#modex-native-reader-assessment). This is separate from audio access: Harmonia has no BSA parser or audio cache.
+
 Explicit area assignments follow, except those whose target playlist failed. Automatic area recovery requires all music batches to succeed; explicit selectors install last. This is not a transaction over every external runtime actor.
 
 If standalone `MusicTypeDistributor.dll`/the MTD plugin identity or `CombatMusic.dll` is loaded, Harmonia pauses its writes. Keep one execution owner. Renamed forks and later external mutations are not controlled.
