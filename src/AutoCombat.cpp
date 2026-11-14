@@ -32,7 +32,8 @@ std::optional<RE::FormType> ParameterType(std::uint32_t function)
     case 67: return RE::FormType::Cell;
     case 310: return RE::FormType::WorldSpace;
     case 359: return RE::FormType::Location;
-    case 707: return RE::FormType::Keyword;
+    case 117: return RE::FormType::Region;
+    case 562: case 707: return RE::FormType::Keyword;
     default: return {};
     }
 }
@@ -47,7 +48,7 @@ bool Matches(const Node* node,const ConditionTerm& expected,RE::TESDataHandler* 
     if (!node || expected.opcode>5) return false;
     const auto& actual=node->data;
     const auto type=ParameterType(expected.function);
-    if ((!type && expected.function!=18) || (expected.function!=59 && expected.parameter2)) return false;
+    if ((!type && expected.function!=18 && expected.function!=520) || (expected.function!=59 && expected.parameter2)) return false;
     auto* parameter=type?data->LookupForm<RE::TESForm>(expected.parameter.id,expected.parameter.plugin):nullptr;
     if (type && (!parameter || parameter->GetFormType()!=*type)) return false;
     if (actual.flags.isOR!=expected.isOR || actual.flags.usesAliases || actual.flags.global ||

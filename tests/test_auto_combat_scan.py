@@ -210,8 +210,12 @@ class AutoCombatScanTests(unittest.TestCase):
     def test_missing_default_origin_does_not_infer(self):
         self.assert_no_auto(self.land())
 
-    def test_music_type_setting_change_blocks_inference(self):
-        self.assert_no_auto(self.base(), self.land(priority=1))
+    def test_music_type_priority_is_retained_without_blocking_membership(self):
+        base,land=self.base(),self.land(priority=1)
+        before=land.read_bytes()
+        _,rules,_=self.scan(base,land)
+        self.assertEqual(rules,[(('1:'+self.REGION,),(self.TRACK,))])
+        self.assertEqual(land.read_bytes(),before)
 
     def test_base_track_removal_blocks_inference(self):
         self.assert_no_auto(self.base(), self.land(tracks=(0x01000800,)))
@@ -264,7 +268,10 @@ class AutoCombatScanTests(unittest.TestCase):
         base = self.base()
         base.write_bytes(base.read_bytes() + group(music(0x400, (0x200,), name='MUSCombatBoss', priority=2)))
         extra = music(0x400, (0x200, 0x01000800), name='MUSCombatBoss', priority=2)
-        self.assert_public_membership_restored(base, self.land(extra=extra))
+        _,rules,result=self.scan(base,self.land(extra=extra))
+        self.assertEqual(rules,[(('1:'+self.REGION,),(self.TRACK,))])
+        self.assertIn('APPEND skyrim.esm:1024 <- land.esp:2048',result.stdout)
+        self.assertNotIn('USE_RULES ',result.stdout)
 
     def test_added_track_shared_with_one_shot_type_retains_authored_ordinary_membership(self):
         extra = music(0x01000A00, (0x01000800,), name='SpecialMusic', priority=2)
@@ -311,7 +318,7 @@ class AutoCombatScanTests(unittest.TestCase):
                 _, rules, _ = self.scan(base, land, other, patch)
                 self.assertEqual(rules, [(('1:' + self.REGION,), (self.TRACK,))])
 
-    def test_non_geographic_form_parameter_changes_are_protected(self):
+    def test_dependent_parameter_update_supplies_the_effective_authored_conditions(self):
         for function in [56, 58, 59, 74]:
             with self.subTest(function=function):
                 signature = 'GLOB' if function == 74 else 'QUST'
@@ -322,7 +329,11 @@ class AutoCombatScanTests(unittest.TestCase):
                 patch = self.write('Patch.esp', header(('Skyrim.esm', 'Land.esp'))
                                    + single_track(0x01000800, (condition(),
                                                              condition(function, 0x01000B01))))
-                self.assert_no_auto(base, land, patch)
+                before=patch.read_bytes()
+                _,rules,out=self.scan(base,land,patch)
+                self.assertEqual(rules,[(('1:'+self.REGION,),(self.TRACK,))])
+                self.assertNotIn('USE_RULES ',out.stdout)
+                self.assertEqual(patch.read_bytes(),before)
 
     def test_geographic_form_must_exist(self):
         self.assert_no_auto(self.base(), self.land(include_area=False))

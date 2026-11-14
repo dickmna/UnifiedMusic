@@ -134,16 +134,7 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
     const auto related=[&](const std::string& a,const std::string& b) {
         return a==b || DependsOn(a,b) || DependsOn(b,a);
     };
-    const auto validParameter=[&](const ConditionTerm& term) {
-        if(term.function==18 || term.function==707) return true;
-        const auto expected=term.function==67?"CELL":term.function==310?"WRLD":term.function==359?"LCTN":term.function==74?"GLOB":"QUST";
-        bool exists=false;
-        for(const auto& d:definitions_) if(d.key==term.parameter) {
-            if(d.deleted || d.type!=expected) return false;
-            if(d.source==d.key.plugin) exists=true;
-        }
-        return exists;
-    };
+    const auto validParameter=[&](const ConditionTerm& term) {return ValidParameter(term);};
     struct Scene {
         FormKey replacement;
         Clauses clauses;
@@ -153,10 +144,8 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
     bool unresolvedOrdinaryScene=false;
     for(const auto& key:available) {
         if(originalTracks.contains(key) || ScriptReferences(key)) continue;
-        const auto found=tracks_.find(key);if(found==tracks_.end()) continue;
-        const auto& records=found->second;
-        const auto origin=std::ranges::find_if(records,[&](const auto& r){return r.source==key.plugin;});
-        if(origin==records.end()) continue;
+        const auto records=EffectiveTracks(key);if(records.empty()) continue;
+        const auto* origin=records.front();
         const auto terms=DecodeConditions(*origin,true);
         std::vector<ConditionTerm> identifiable;
         if(terms) identifiable=*terms;
@@ -167,23 +156,25 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
         }
         if(!std::ranges::any_of(identifiable,[](const auto& t){return ConditionArea(t,true).has_value();})) continue;
         // A known dragon-only cue is a different role, even inside MUSCombat.
-        if(std::ranges::any_of(identifiable,[](auto t){
-            t.isOR=false;return t.function==707 && !OrdinaryConditions(std::span(&t,1),true);
+        if(std::ranges::any_of(identifiable,[](const auto& t){
+            return t.function==707 && t.parameter==FormKey{"skyrim.esm",0x35d59} &&
+                ((t.opcode==0 && t.comparison==0x3f800000) || (t.opcode==1 && t.comparison==0));
         })) continue;
         const auto linked=[&](const Clauses& clauses) {
             for(const auto& clause:clauses) for(const auto& negative:clause)
                 if(const auto area=ConditionArea(negative,false))
                     for(const auto& positive:identifiable)
-                        if(ConditionArea(positive,true)==area && positive.onPlayerReference==negative.onPlayerReference) return true;
+                        if(const auto inside=ConditionArea(positive,true); inside && Within(*inside,*area) &&
+                           positive.onPlayerReference==negative.onPlayerReference) return true;
             return false;
         };
         ConditionWitness musicWitness{key,{},type};
         bool ready=terms.has_value();
-        for(const auto& record:records) {
-            const auto other=DecodeConditions(record,true);
-            if(record.metadata!=origin->metadata || !other || !terms || *other!=*terms ||
+        for(const auto* record:records) {
+            const auto other=DecodeConditions(*record,true);
+            if(record->metadata!=origin->metadata || !other || !terms || *other!=*terms ||
                !std::ranges::all_of(*other,validParameter)) {ready=false;break;}
-            musicWitness.versions.push_back({record.source,*other});
+            musicWitness.versions.push_back({record->source,*other});
         }
 
         // Group by the authoring source, not a magic number of songs. Compare

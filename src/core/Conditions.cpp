@@ -30,11 +30,12 @@ std::optional<std::vector<ConditionTerm>> DecodeConditions(const TrackRecord& re
         ConditionTerm t;
         t.opcode=b[0]>>5;t.isOR=(b[0]&1)!=0;t.function=Word(b,8);t.comparison=Word(b,4);t.parameter2=Word(b,16);
         if(!std::isfinite(std::bit_cast<float>(t.comparison))) return {};
-        if(t.function==18) {
+        if(t.function==18 || (readOnly && t.function==520)) {
             if(Word(b,12) || t.parameter2) return {};
         } else {
             if(t.function!=56 && t.function!=58 && t.function!=59 && t.function!=74 &&
-               t.function!=67 && t.function!=310 && t.function!=359 && t.function!=707) return {};
+               t.function!=67 && t.function!=310 && t.function!=359 && t.function!=707 &&
+               !(readOnly && (t.function==117 || t.function==562))) return {};
             const auto parameter=resolve(Word(b,12));
             if(!parameter || (t.function!=59 && t.parameter2)) return {};
             t.parameter=*parameter;

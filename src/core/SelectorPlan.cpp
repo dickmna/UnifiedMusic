@@ -70,11 +70,11 @@ bool PluginScan::PlanSelectors(MergePlan& plan) const {
             explicitKey=FormKey{name,value};
         }
         std::set<FormKey> matches;
-        for(const auto& d:definitions_) if(d.type==type && (explicitKey?d.key==*explicitKey:d.editorID==token)) matches.insert(d.key);
+        for(const auto& d:definitions_) if(d.type==type && (explicitKey?d.key==*explicitKey:Lower(d.editorID)==Lower(token))) matches.insert(d.key);
         if(matches.size()!=1) return {};
         const auto& key=*matches.begin();bool origin=false;
         for(const auto& d:definitions_) if(d.key==key) {
-            if(d.deleted || d.type!=type || (!explicitKey && d.editorID!=token)) return {};
+            if(d.deleted || d.type!=type || (!explicitKey && Lower(d.editorID)!=Lower(token))) return {};
             origin|=d.source==key.plugin;
         }
         return origin?std::optional<FormKey>(key):std::nullopt;

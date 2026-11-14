@@ -222,11 +222,11 @@ class GuardTests(Fixture):
                            + single_track(0x01000800, path='Data\\Music\\Other.wav'))
         self.assertEqual(self.guards(*paths, patch), [])
 
-    def test_changed_replacement_audio_is_not_policy_evidence(self):
+    def test_dependent_audio_completion_keeps_the_authored_scene_policy(self):
         paths = self.fixture()
         patch = self.write('Patch.esp', header(('Skyrim.esm', 'Land.esp'))
                            + single_track(0x01000800, (condition(),), path='Data\\Music\\Other.wav'))
-        self.assertEqual(self.guards(*paths, patch), [])
+        self.assertEqual(self.guards(*paths, patch), ['CONDITION_GUARD pack.esp:2048 <- 1:land.esp:2304'])
 
     def test_deliberate_policy_removal_is_respected(self):
         paths = self.fixture()

@@ -124,6 +124,10 @@ public:
     const auto& Records() const { return music_; }
     const auto& Tracks() const { return tracks_; }
 private:
+    bool Ambient(const MusicRecord& record) const;
+    std::vector<const TrackRecord*> EffectiveTracks(const FormKey& key) const;
+    bool ValidParameter(const ConditionTerm& term) const;
+    bool Within(const Area& child, const Area& parent) const;
     bool ScriptReferences(const FormKey& key, bool modsOnly = false) const;
     bool DependsOn(const std::string& source, const std::string& dependency) const;
     std::set<FormKey> ProtectedTracks(const FormKey& excludedType, const MergePlan& plan) const;
@@ -138,6 +142,7 @@ private:
     std::map<FormKey, std::vector<TrackRecord>> tracks_;
     std::map<FormKey, AreaKind> areaForms_;
     std::map<FormKey, std::vector<MappingRecord>> mappings_;
+    std::map<FormKey,std::set<std::optional<FormKey>>> locationParents_;
     std::set<FormKey> deletedAreas_, mappedTypes_, nestedTracks_;
     std::vector<ScriptProperties> scripts_;
     std::map<std::string, std::vector<std::string>> dependencies_;

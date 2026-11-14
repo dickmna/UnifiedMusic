@@ -182,10 +182,16 @@ class DistributionTests(unittest.TestCase):
         base, pack, config = self.simple(extra=music(0x101, (), name='MUSExploreForest'))
         self.assertIn('CONFIG_HANDOFF', self.scan(base, pack, configs=(config,)))
 
-    def test_wrong_editor_id_case_does_not_create_a_new_type(self):
+    def test_editor_id_case_resolves_to_the_existing_type(self):
         base, pack, config = self.simple()
         config.write_text('[General]\nmusexploreforest=800~Pack.esl', encoding='utf-8')
-        self.assertIn('CONFIG_HANDOFF', self.scan(base, pack, configs=(config,)))
+        out=self.scan(base,pack,configs=(config,))
+        self.assertIn('DISTRIBUTE skyrim.esm:256 <- pack.esl:2048',out)
+        self.assertNotIn('CONFIG_HANDOFF',out)
+
+    def test_case_folded_target_collision_remains_ambiguous(self):
+        base,pack,config=self.simple(extra=music(0x101,(),name='musexploreforest'))
+        self.assertIn('CONFIG_HANDOFF',self.scan(base,pack,configs=(config,)))
 
     def test_empty_comment_only_config_is_noop(self):
         base, pack, config = self.simple()

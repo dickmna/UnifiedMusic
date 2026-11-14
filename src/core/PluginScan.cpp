@@ -51,16 +51,22 @@ bool IsBase(const std::string& name) {
     static const std::set<std::string> names{"skyrim.esm","update.esm","dawnguard.esm","hearthfires.esm","dragonborn.esm"};
     return names.contains(name);
 }
-bool Ambient(const MusicRecord& r) {
+bool Contains(const std::vector<FormKey>& v,const FormKey& key) { return std::find(v.begin(),v.end(),key)!=v.end(); }
+}
+
+bool PluginScan::Ambient(const MusicRecord& r) const {
     if(!IsBase(r.key.plugin) || r.oneShot || r.source!=r.key.plugin) return false;
     auto name=Lower(r.editorID);
-    for (auto term : {"combat","battle","boss","silent","silence","blank","test","reveal","discov","stinger","finale","event","reward"})
+    for (auto term : {"combat","battle","boss","silent","silence","blank","reveal","discov","stinger","finale","event","reward"})
         if(name.find(term)!=std::string::npos) return false;
+    if(name.find("test")!=std::string::npos && !std::ranges::any_of(mappings_,[&](const auto& entry) {
+        return std::ranges::any_of(entry.second,[&](const auto& m) {
+            return IsBase(m.source) && m.source==m.area.form.plugin && !m.deleted && !m.invalid && m.music==r.key;
+        });
+    })) return false;
     for (auto term : {"explore","town","dungeon","tavern"})
         if(name.find(term)!=std::string::npos) return true;
     return false;
-}
-bool Contains(const std::vector<FormKey>& v,const FormKey& key) { return std::find(v.begin(),v.end(),key)!=v.end(); }
 }
 
 std::string ToString(const FormKey& key) { return key.plugin + ":" + std::to_string(key.id); }
@@ -81,6 +87,7 @@ void PluginScan::Read(const std::filesystem::path& path) {
     std::vector<TrackRecord> trackPending;
     std::vector<MappingRecord> mappingPending;
     std::map<FormKey, AreaKind> areaPending;
+    std::map<FormKey,std::set<std::optional<FormKey>>> parentsPending;
     std::set<FormKey> deletedAreaPending, mappedPending, nestedPending;
     std::vector<ScriptProperties> scriptPending;
     std::vector<Definition> definitionPending;
@@ -116,7 +123,7 @@ void PluginScan::Read(const std::filesystem::path& path) {
                     masters.push_back(master);
                 }
             } else if (!(flags&(0x4000|0x1000))) {
-                if(sig=="MUSC" || sig=="WRLD" || sig=="CELL" || sig=="LCTN" || sig=="KYWD" || sig=="NPC_" || sig=="QUST" || sig=="GLOB") {
+                if(sig=="MUSC" || sig=="WRLD" || sig=="CELL" || sig=="LCTN" || sig=="REGN" || sig=="KYWD" || sig=="NPC_" || sig=="QUST" || sig=="GLOB") {
                     Definition definition{Resolve(id,masters,own),own,{},sig,(flags&0x20)!=0};
                     for(const auto& [s,v]:subs) if(s=="EDID") definition.editorID=String(v);
                     definitionPending.push_back(std::move(definition));
@@ -152,7 +159,12 @@ void PluginScan::Read(const std::filesystem::path& path) {
                             record.metadata+=s;
                             const auto size=static_cast<std::uint32_t>(v.size());
                             record.metadata.append(reinterpret_cast<const char*>(&size),4);
-                            record.metadata.append(reinterpret_cast<const char*>(v.data()),v.size());
+                            auto value=std::string(reinterpret_cast<const char*>(v.data()),v.size());
+                            if(s=="ANAM" || s=="BNAM") {
+                                value=Lower(std::move(value));
+                                std::ranges::replace(value,'/','\\');
+                            }
+                            record.metadata+=value;
                         }
                         if(s=="CTDA") {
                             record.conditions.emplace_back(v.begin(),v.end());
@@ -194,6 +206,15 @@ void PluginScan::Read(const std::filesystem::path& path) {
                     // REGN sound entries have additional ordering/override rules.
                     // Keep their ownership protection, but never flatten them.
                     if(kind!=AreaKind::Region) mappingPending.push_back(std::move(mapping));
+                    if(sig=="LCTN") {
+                        std::optional<FormKey> parent;
+                        unsigned count=0;
+                        for(const auto& [s,v]:subs) if(s=="PNAM") {
+                            if(++count>1 || v.size()!=4) throw std::runtime_error("invalid location parent");
+                            if(U32(v,0)) parent=Resolve(U32(v,0),masters,own);
+                        }
+                        parentsPending[key].insert(parent);
+                    }
                 }
                 for(auto& [s,v]:subs) if(s=="VMAD" && !(flags&0x20)) {
                     ScriptProperties script{own,masters,{v.begin(),v.end()}};
@@ -211,6 +232,7 @@ void PluginScan::Read(const std::filesystem::path& path) {
     for(auto& r:trackPending) tracks_[r.key].push_back(std::move(r));
     for(auto& r:mappingPending) mappings_[r.area.form].push_back(std::move(r));
     areaForms_.insert(areaPending.begin(),areaPending.end());
+    for(const auto& [key,parents]:parentsPending) locationParents_[key].insert(parents.begin(),parents.end());
     deletedAreas_.insert(deletedAreaPending.begin(),deletedAreaPending.end());
     mappedTypes_.insert(mappedPending.begin(),mappedPending.end());
     nestedTracks_.insert(nestedPending.begin(),nestedPending.end());
@@ -249,7 +271,7 @@ bool PluginScan::DependsOn(const std::string& source,const std::string& dependen
 std::set<FormKey> PluginScan::ProtectedTracks(const FormKey& excludedType,const MergePlan& plan) const {
     auto protectedTracks=nestedTracks_;
     const auto target=music_.find(excludedType);
-    const bool ambientTarget=target!=music_.end() && std::ranges::any_of(target->second,Ambient);
+    const bool ambientTarget=target!=music_.end() && std::ranges::any_of(target->second,[&](const auto& r){return Ambient(r);});
     for(const auto& [key,records]:music_) {
         if(key==excludedType) continue;
         const auto origin=std::find_if(records.begin(),records.end(),[&](const auto& r){return r.source==key.plugin;});
@@ -269,6 +291,45 @@ std::set<FormKey> PluginScan::ProtectedTracks(const FormKey& excludedType,const 
         if(std::ranges::any_of(records,[](const auto& r){return r.deleted || r.invalid;})) protectedTracks.insert(key);
     }
     return protectedTracks;
+}
+
+std::vector<const TrackRecord*> PluginScan::EffectiveTracks(const FormKey& key) const {
+    const auto found=tracks_.find(key);
+    if(found==tracks_.end() || !std::ranges::any_of(found->second,[&](const auto& r){return r.source==key.plugin;}) ||
+       std::ranges::any_of(found->second,[](const auto& r){return r.deleted || r.invalid;})) return {};
+    std::vector<const TrackRecord*> result;
+    for(const auto& record:found->second)
+        if(!std::ranges::any_of(found->second,[&](const auto& later){return DependsOn(later.source,record.source);})) result.push_back(&record);
+    std::ranges::sort(result,{},[](const auto* r){return r->source;});
+    return result;
+}
+
+bool PluginScan::ValidParameter(const ConditionTerm& term) const {
+    if(term.function==18 || term.function==520 ||
+       (term.function==707 && term.parameter==FormKey{"skyrim.esm",0x35d59})) return true;
+    const auto expected=term.function==67?"CELL":term.function==310?"WRLD":term.function==359?"LCTN":
+        term.function==74?"GLOB":term.function==117?"REGN":(term.function==562 || term.function==707)?"KYWD":"QUST";
+    bool exists=false;
+    for(const auto& d:definitions_) if(d.key==term.parameter) {
+        if(d.deleted || d.type!=expected) return false;
+        if(d.source==d.key.plugin) exists=true;
+    }
+    return exists;
+}
+
+bool PluginScan::Within(const Area& child,const Area& parent) const {
+    if(child.kind!=parent.kind) return false;
+    auto current=child.form;
+    std::set<FormKey> seen;
+    for(unsigned depth=0;depth<64;++depth) {
+        if(!seen.insert(current).second || deletedAreas_.contains(current)) return false;
+        if(current==parent.form) return true;
+        if(child.kind!=AreaKind::Location) return false;
+        const auto it=locationParents_.find(current);
+        if(it==locationParents_.end() || it->second.size()!=1 || !*it->second.begin()) return false;
+        current=**it->second.begin();
+    }
+    return false;
 }
 
 MergePlan PluginScan::Plan() const {
@@ -305,7 +366,7 @@ MergePlan PluginScan::Plan() const {
         for(const auto& r:chain) {
             if(IsBase(r.source)) continue;
             for(const auto& track:r.tracks) {
-                if(IsBase(track.plugin) || Contains(base.tracks,track) || Contains(additions,track)) continue;
+                if(Contains(base.tracks,track) || Contains(additions,track)) continue;
                 const auto found=tracks_.find(track);
                 const bool invalid=found!=tracks_.end() && std::ranges::any_of(found->second,[](const auto& r){return r.deleted || r.invalid;});
                 if(invalid || ScriptReferences(track)) {

@@ -96,7 +96,7 @@ bool PluginScan::PlanDistribution(MergePlan& plan) const {
     plan.diagnostics.insert(plan.diagnostics.end(),configErrors_.begin(),configErrors_.end());
     std::map<std::string,std::set<FormKey>> targets;
     for(const auto& [key,versions]:music_) for(const auto& record:versions)
-        if(!record.editorID.empty()) targets[record.editorID].insert(key);
+        if(!record.editorID.empty()) targets[Lower(record.editorID)].insert(key);
     bool valid=configErrors_.empty();
     std::map<FormKey,std::set<FormKey>> pending;
     for(const auto& entry:distributionEntries_) {
@@ -104,12 +104,12 @@ bool PluginScan::PlanDistribution(MergePlan& plan) const {
             valid=false;
             plan.diagnostics.push_back("CONFIG_UNSUPPORTED "+entry.source+" "+reason);
         };
-        const auto target=targets.find(entry.target);
+        const auto target=targets.find(Lower(entry.target));
         if(target==targets.end() || target->second.size()!=1) {fail("missing/ambiguous existing MusicType "+entry.target);continue;}
         const auto& key=*target->second.begin();
         const auto& versions=music_.at(key);
         if(!std::ranges::any_of(versions,[&](const auto& r){return r.source==key.plugin;}) ||
-           std::ranges::any_of(versions,[&](const auto& r){return r.deleted || r.editorID!=entry.target;})) {
+           std::ranges::any_of(versions,[&](const auto& r){return r.deleted || Lower(r.editorID)!=Lower(entry.target);})) {
             fail("deleted or renamed MusicType "+entry.target);continue;
         }
         const std::set<FormKey> unique(entry.tracks.begin(),entry.tracks.end());

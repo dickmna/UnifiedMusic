@@ -294,8 +294,8 @@ class ConditionRepairTests(unittest.TestCase):
                          sub('CNAM', struct.pack('<I', 0x23F678C3)) + sub('SNAM', struct.pack('<I', 0x200)))
         self.assert_no_repair(self.base(), self.addon('A.esp', extra=group(palette, b'MUST')), self.addon('B.esp'))
 
-    def test_changed_or_removed_default_battle_list_is_preserved(self):
-        for body in [music(0x100, (0x200,), name='MUSCombat', priority=10),
+    def test_removed_or_one_shot_default_battle_list_is_preserved(self):
+        for body in [music(0x100, (0x200,), name='MUSCombat', music_flags=5),
                      music(0x100, (), name='MUSCombat', priority=2)]:
             with self.subTest(body=body):
                 self.assert_no_repair(self.base(), self.addon('A.esp', extra=group(body)), self.addon('B.esp'))

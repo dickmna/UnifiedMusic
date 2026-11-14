@@ -48,6 +48,20 @@ class SelectorTests(unittest.TestCase):
         self.rule['worldspaces']['forms'] = ['Land.esp|0x900']
         self.assertIn('SELECTOR battle -> land.esp:2048', self.scan())
 
+    def test_editor_ids_match_case_insensitively_without_changing_configuration(self):
+        self.rule['newMusic']='landbattle'
+        self.rule['worldspaces']['forms']=['LANDWORLD']
+        self.rule['cells']={'AND':False,'forms':['landcell']}
+        self.assertIn('SELECTOR battle -> land.esp:2048',self.scan())
+
+    def test_case_fold_collision_is_ambiguous_even_when_one_spelling_is_exact(self):
+        other=self.write('Other.esp',header(('Skyrim.esm',))+record('WRLD',0x01000900,sub('EDID',b'LANDWORLD\0')))
+        self.assertIn('CONFIG_HANDOFF',self.scan(extra=[other]))
+
+    def test_case_only_editor_id_override_is_not_a_rename(self):
+        patch=self.write('Patch.esp',header(('Skyrim.esm','Land.esp'))+record('WRLD',0x01000900,sub('EDID',b'landworld\0')))
+        self.assertIn('SELECTOR battle -> land.esp:2048',self.scan(extra=[patch]))
+
     def test_all_six_filter_types_resolve(self):
         for kind, name in [('cells', 'LandCell'), ('locations', 'LandLocation'), ('locationKeywords', 'LandKeyword'),
                            ('combatTarget', 'LandBoss'), ('combatTargetKeywords', 'LandKeyword')]:
