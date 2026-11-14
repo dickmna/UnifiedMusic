@@ -142,11 +142,7 @@ static bool ApplyMusicBatch(const MergePlan& plan,const std::map<FormKey,std::ve
     auto* data=RE::TESDataHandler::GetSingleton();
     if(!data) return fail("data handler unavailable");
     if(!audio.SceneResourcesMatch(plan)) return fail("scene resources unavailable; keeping the entire affected use unchanged");
-    const bool battleWork=!plan.combatRules.empty() || std::ranges::any_of(plan.audioCandidates,[&](const auto& candidate) {
-        return plan.battleType && candidate.musicType==*plan.battleType;
-    }) || std::ranges::any_of(plan.conditionRepairs,[&](const auto& repair) {
-        return plan.battleType && repair.musicType==*plan.battleType;
-    });
+    const bool battleWork=plan.battleType && contributions.contains(*plan.battleType);
     if(battleWork) {
         auto* objects=RE::BGSDefaultObjectManager::GetSingleton();
         if(!objects || !plan.battleType || !plan.battleMergeSafe) return fail("unavailable or protected default battle list");
@@ -329,7 +325,19 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
         for(const auto& r:plan.conditionWitnesses) if(r.musicType==type) batch.conditionWitnesses.push_back(r);
         for(const auto& r:plan.sceneResources) if(r.musicType==type) batch.sceneResources.push_back(r);
         for(const auto& r:plan.audioCandidates) if(r.musicType==type) batch.audioCandidates.push_back(r);
-        try {if(!ApplyMusicBatch(batch,records,audio)) complete=false;}
+        if(const auto it=plan.sceneUses.find(type);it!=plan.sceneUses.end()) batch.sceneUses.emplace(*it);
+        try {
+            if(!ApplyMusicBatch(batch,records,audio)) {
+                complete=false;
+                // Explicit failure returns before commit. Retry only actions
+                // independent of the scene, such as dragon/Boss distributions.
+                if(batch.sceneUses.contains(type)) {
+                    DropSceneUses(batch,type);
+                    REX::INFO("Scene preparation failed in {}; retaining independent uses",ToString(type));
+                    ApplyMusicBatch(batch,records,audio);
+                }
+            }
+        }
         catch(const std::exception& e) {REX::WARN("Music use batch {} skipped: {}",ToString(type),e.what());complete=false;}
     }
     return complete;

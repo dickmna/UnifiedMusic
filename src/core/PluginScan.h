@@ -107,9 +107,12 @@ struct MergePlan {
     std::vector<MappingRepair> mappingRepairs;
     std::vector<AudioCandidate> audioCandidates;
     std::vector<SceneResource> sceneResources;
+    std::map<FormKey,std::set<FormKey>> sceneUses; // Only these uses depend on scene preparation.
     std::vector<SelectorRule> selectors;
     std::vector<std::string> diagnostics;
 };
+// Drop only scene-dependent actions; dedicated/dragon contributions can survive.
+void DropSceneUses(MergePlan& plan, const FormKey& type);
 class PluginScan {
 public:
     void Read(const std::filesystem::path& path);

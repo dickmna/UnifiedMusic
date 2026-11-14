@@ -190,13 +190,14 @@ class GuardTests(Fixture):
         terms = (condition(), condition(58, 0x01000A00, comparison=40))
         self.assertEqual(self.guards(*self.fixture(replacement_conditions=terms)), [])
 
-    def test_mixed_area_replacement_does_not_cover_whole_world(self):
+    def test_authored_world_exclusion_is_not_replaced_by_narrower_cue_gates(self):
         terms = (condition(), condition(67, 0x01000901))
         self.assertEqual(self.guards(*self.fixture(replacement_conditions=terms,
-                         land_extra=area('CELL', 0x01000901))), ['CONDITION_GUARD pack.esp:2048 <- '])
+                         land_extra=area('CELL', 0x01000901))), ['CONDITION_GUARD pack.esp:2048 <- 1:land.esp:2304'])
 
-    def test_or_replacement_is_not_used_as_evidence(self):
-        self.assertEqual(self.guards(*self.fixture(replacement_conditions=(condition(flags=1),))), [])
+    def test_read_only_cue_or_does_not_prevent_inheriting_authored_exclusion(self):
+        self.assertEqual(self.guards(*self.fixture(replacement_conditions=(condition(flags=1),))),
+                         ['CONDITION_GUARD pack.esp:2048 <- 1:land.esp:2304'])
 
     def test_shared_boss_or_scripted_generic_track_is_unchanged(self):
         for extra in (music(0x01000101, (0x01000800,), name='Boss'),

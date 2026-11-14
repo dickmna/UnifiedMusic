@@ -1,38 +1,45 @@
-# Validation — Harmonia 0.8.0-alpha, 2026-11-14
+# Validation — Harmonia 0.9.0-alpha, 2026-11-14
 
 Release x64 DLL, inspector and selector test executable built with VS 2022 / MSVC 19.44, CMake 4.3.3 and pinned dependencies. Python 3.14 executed the integration fixtures. **Steam 1.7.104 is the only enabled runtime.** No Skyrim process was launched.
 
 ## Automated checks
 
-**270 Python test methods passed**, including parameterized subcases (`tests/latest-results.txt`). **523 selector logic checks passed**, with CTest reporting one passing test target (`tests/latest-selector-results.txt`). These totals count checks differently and are not added into a single engine-test number.
+**282 Python test methods passed**, including parameterized subcases (`tests/latest-results.txt`). **523 selector logic checks passed**, with CTest reporting one passing test target (`tests/latest-selector-results.txt`). These totals count checks differently and are not added into a single engine-test number.
 
 Coverage includes bounded plugin/BSA parsing, compressed records, master remapping, independent contributions, deliberate dependent removal, explicit configuration, protected roles, field-only mapping repair, audio cache verification and:
 
-- Partial original exclusion plus a related scoped song establishes takeover; a lone exclusion or unrelated source does not establish it. Removing the only valid evidence stops inference. Removing a ban on one song preserves that exception without erasing other evidence.
-- Independent truth tables evaluate generated clauses for world AND quest stage >= 40 AND stage < 50, world AND cell, and world AND time >= 20. Ordinary music remains eligible outside the exact supported scope. Self and explicit-player contexts stay distinct.
-- Reordered original baseline conditions with extra quest restrictions can still supply source evidence; a negative term inside an OR group cannot become an unconditional exclusion. Unsupported scene expressions pause the related list while another ordinary list still restores contributions.
-- Original and final-winning replacement hashes are distinct; normalized audio and a standalone addition receive identical inferred clauses. A repeated run yields the same plan and exact cache bytes. Main/finale loss pauses the guarded plan together.
+- A related scoped song and one matching ordinary donor can establish a scene policy without a count threshold. Two excluded songs without a corresponding cue, or an unrelated source using the same area, do not establish it. Removing the only valid evidence stops inference. A dependent per-song removal retains that exception.
+- Independent truth tables evaluate complete authored exclusion clauses for world/quest intervals, world/cell and world/time scopes. Self and explicit-player contexts stay distinct. A cue's narrower quest gates do not replace an author's broader ordinary-track restriction.
+- Original baseline clauses can be reordered. Donor baseline day/night and dragon eligibility do not propagate; new standalone clock restrictions also remain song-specific. Only full clauses common to matching donors of one authoring source are inherited. Differently conditional OR exclusions cannot be flattened into an unconditional area ban.
+- A scene cue's terminal OR is retained as read-only evidence and never edited. Missing quest references, unknown cue functions or missing scene audio pause ordinary uses while independent dragon distributions remain. Another ordinary list can still restore contributions.
+- Original and final-winning replacement hashes are distinct; normalized audio and a standalone addition receive identical inferred clauses. A repeated run yields the same plan and exact cache bytes. Main/finale loss pauses the scene-dependent actions together.
 - Every inferred native condition edit is local to one playlist. Planner fixtures cover original/shared tracks, config-only Civil War/Boss owners, multiple ambient policies, palette ownership and explicit positive mixing. Scene songs shared with dedicated owners remain untouched.
 - Typed VMAD scalar/array object properties, both object formats and quest aliases protect actual references. Integer/float/string bytes matching a FormID do not establish ownership; removed properties are ignored. Unknown structures keep conservative fallback protection. Public list references retain their known ordinary role.
 - CME's six filters, combat/cleared channels, strict form resolution, priority, ambiguity, unavailable targets and all 512 three-filter required/optional/matched/actor combinations remain covered. Highest-ranked Boss failure does not fall through to generic regional music.
 
-Synthetic RIFF fixtures prove structural validation and byte handling, not codec decoding. The truth tables evaluate planner output independently of its condition-negation implementation, but do not execute Skyrim's evaluator. Source/ownership review and compilation do not substitute for native execution.
+Synthetic RIFF fixtures prove structural validation and byte handling, not codec decoding. The truth tables evaluate planner output independently; the old scene-negation implementation has been removed. These checks do not execute Skyrim's evaluator. Source/ownership review and compilation do not substitute for native execution.
 
 ## Actual installed plugins and configuration
 
-All **94 enabled plugins** were inspected without changing them or the active profile. Actual Music Replacer Reverter v1 ESP/INI were supplied from a private workspace outside Data. Aggregate results are in `tests/real-input-results.json`; proprietary records and audio are excluded from the repository.
+All **94 enabled plugins** were inspected without changing them or the active profile: five official base plugins, 75 `Skyrim.ccc` entries and 14 enabled `plugins.txt` entries; their union matches the load order. Actual Music Replacer Reverter v1 ESP/INI were supplied from a private workspace outside Data. Aggregate results are in `tests/real-input-results.json`; proprietary records and audio are excluded from the repository.
 
 | Input | Result |
 | --- | --- |
-| Current 94 plugins | Zero playlist/condition/mapping/distribution commits proposed; about 3 seconds; complex Orsinium takeover pauses default-battle expansion |
-| Current 94 + actual MRR | 303 valid unique config pairs; 295 remain executable, 8 default-battle pairs paused by the scene boundary; no new regional guards |
+| Current 94 plugins | Zero playlist/condition/mapping/distribution commits proposed; existing authored ordinary restrictions already present |
+| Current 94 + actual MRR | All 303 valid unique config pairs produce executable proposals across 56 types/121 tracks; three ordinary guards and two isolated ordinary uses; no default-battle pairs paused |
 | Five official plugins + actual MRR + synthetic supported land | 303 distributions, one regional contribution group, three ordinary-copy guards, two isolated ordinary uses |
 
-An independent Python record/config comparison checks every expected valid pair and the exact eight paused pairs. MRR's INI references 133 distinct IDs; 12 are absent and affect 32 unique destination/track pairs: `083D, 084F, 0850, 0853, 0854, 0855, 0856, 0857, 0858, 0859, 085A, 085B`. They are diagnosed/skipped rather than reconstructed.
+An independent Python record/config comparison checks every expected valid pair. MRR's INI references 133 distinct IDs; 12 are absent and affect 32 unique destination/track pairs: `083D, 084F, 0850, 0853, 0854, 0855, 0856, 0857, 0858, 0859, 085A, 085B`. They are diagnosed/skipped rather than reconstructed.
 
-The current Orsinium scene combines geographic and quest conditions with OR grouping, including a trailing OR, and reorders/extends ordinary originals' conditions. A known public MUSCombat reference no longer blocks the planner globally. The planner now identifies the paired source relationship and refuses to broaden its unsupported scene expression. It pauses all eight MRR additions to MUSCombat, including its dragon candidates, while leaving other destination types and the existing dedicated music intact. **This is controlled preservation, not a complete Orsinium compatibility patch.** An explicit verified patch/configuration is still needed to expand that list safely.
+The current Orsinium cue combines geographic and quest conditions with OR grouping, including a trailing OR. The planner retains this cue unchanged and inherits the three added ordinary-track clauses: `GetInCell(legacyorsinium.esm|06E9CC) != 1` on the explicit Player reference, `GetStage(legacyorsinium.esm|014C29) != 40` on Self, and `GetInWorldspace(legacyorsinium.esm|085C50) == 0` on Self. The existing negative-dragon predicate remains each ordinary track's own eligibility; it is not an inherited scene clause. Read-only donor evidence permits irrelevant audio metadata differences, while target mutation still requires stable metadata.
 
-The synthetic land adds ordinary exclusions and a supported positive-area song. Actual MRR IDs `080E, 081F, 0820` receive guards; `081D, 081E` receive private ordinary-battle uses while Civil War keeps the original wrappers. Dragon/Boss IDs `0821, 0822, 08FA` keep their conditions. The synthetic geography is not Bruma/ECSS execution.
+MRR IDs `080E, 081D, 081E, 081F, 0820` receive these clauses. `081D, 081E` use private ordinary-battle instances while their Civil War uses retain the original wrappers. Dragon IDs `0821, 0822, 08FA` retain their conditions and receive no scene guards. All eight previously paused pairs now produce proposals without a mod-name exception or rewriting the cue's OR expression.
+
+An independent evaluator compared the actual authored ordinary conditions against baseline eligibility plus generated clauses in **120 ordinary cases**, and checked the three unchanged dragon roles in **72 cases**: 192 cases passed. Cases vary room, world, quest stages 39/40/41 and dragon target status; some combinations are deliberately hypothetical. This verifies the planner's inheritance, not the cue's Boolean interpretation, quest execution or the game's condition evaluator.
+
+The actual Orsinium main (1,568,654 bytes) and finale (196,758 bytes) were read from its local BSA into a private overlay. Resource-aware inspection produced the same guarded/distribution plan with no scene-resource skips. The archive hash remained unchanged. This checks structural resources and plan preparation; it does not decode/play the music or validate MRR audio playback.
+
+The synthetic land independently yields the same ordinary/shared/dragon split with its own simple geographic restriction. The synthetic geography is not Bruma/ECSS execution.
 
 All 14 previously audited Creation plugin hashes match prior evidence; profile `plugins.txt` and `loadorder.txt` hashes are unchanged. One unsupported VMAD block retains conservative reference fallback. No parser fallback is presented as proof of script behavior.
 
@@ -50,14 +57,14 @@ This uses real original resources and a simulated replacement shape. **It is not
 
 The SDK's inline-looking conditions field is accessed as the executable's TESCondition pointer at offset 0x10. Checks cover the separate 8-byte holder, 0x80 native single factory, fresh sound handles/loop pointer, MusicType virtual dispatch and six CME call sites. Address Library resolution, factory calls and condition evaluation are not executed offline.
 
-The runtime prepares one playlist batch at a time. It validates the winning list, typed conditions, scene witnesses and main/finale resources; creates private condition instances; prepares original-audio versions from the same effective instances; reserves capacity and rechecks before committing. Other owners retain original objects. Failure leaves that batch unchanged, though validated cache files may remain and earlier independent batches may already be committed. There is one DataLoaded application per process. Area recovery is deferred if any runtime music batch fails.
+The runtime prepares one playlist batch at a time. It validates the winning list, typed conditions, scene witnesses and main/finale resources; creates private condition instances; prepares original-audio versions from the same effective instances; reserves capacity and rechecks before committing. Other owners retain original objects. An explicit pre-commit failure leaves those scene-dependent uses unchanged, removes their planned actions and retries the independent remainder, such as dragon distributions. Exceptions do not trigger a retry. Validated cache files may remain and earlier independent batches may already be committed. There is one DataLoaded application per process. Area recovery is deferred if any runtime music batch fails. The offline inspector exercises the shared scene-removal planner, not native allocation failure recovery.
 
 ## Remaining boundaries
 
 - Native allocation/destruction, hook timing, playback, condition evaluation, random selection, combat end, transitions and save/reload remain untested.
 - Full Bruma, Extended Cut, Lorkhan, Chapter II and all Nexus 89099 variants were not installed/jointly tested.
-- Complex OR/dangling conditions, unknown functions, direct script mutation, independent custom combat libraries and unsupported MTD operations can need explicit rules, original-framework setups or authored patches. Harmonia pauses when standalone MTD/CME is loaded; they are not co-executed.
+- Unknown functions, unresolved/alias conditions, incomplete editable clauses, direct script mutation, independent custom combat libraries and unsupported MTD operations can need explicit rules, original-framework setups or authored patches. Complete supported OR clauses and read-only terminal-OR cues are handled as described above. Harmonia pauses when standalone MTD/CME is loaded; they are not co-executed.
 - Supported audio normalization includes the original and final visible winner, not every losing replacer. Changed record audio metadata, palette restructuring, compressed/unsupported original audio and invalid resources are not reconstructed. Re-encodings and MRR copies are not composition-deduplicated; extra candidates alter playback probabilities.
 - Inferred takeover is a deliberate default. It cannot establish universal author intent or universal community compatibility. Explicit exceptions take priority; unreadable/unsupported cases are diagnosed.
 
-Historical 0.7 results remain in their tag and are not counted as current native playback validation.
+Historical 0.7/0.8 results remain in their tags and are not counted as current native playback validation.

@@ -1,8 +1,8 @@
 {
-  "version": "Harmonia 0.8.0-alpha",
+  "version": "Harmonia 0.9.0-alpha",
   "installed": {
     "plugins": 94,
-    "seconds": 3.223436300002504,
+    "seconds": 3.4050066000199877,
     "APPEND": 0,
     "AUTO_COMBAT": 0,
     "CONDITION_UNION": 0,
@@ -14,30 +14,21 @@
   },
   "installed_plus_mrr": {
     "plugins": 95,
-    "seconds": 3.243596999993315,
+    "seconds": 3.4184416999923997,
     "APPEND": 0,
     "AUTO_COMBAT": 0,
     "CONDITION_UNION": 0,
-    "CONDITION_GUARD": 0,
+    "CONDITION_GUARD": 3,
     "RESTORE_MAPPING": 0,
-    "DISTRIBUTE": 295,
+    "DISTRIBUTE": 303,
     "CONFIG_HANDOFF": 0,
-    "ISOLATE_GUARD": 0,
+    "ISOLATE_GUARD": 2,
     "valid_config_pairs": 303,
-    "paused_default_battle_pairs": [
-      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2062",
-      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2077",
-      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2078",
-      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2079",
-      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2080",
-      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2081",
-      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2082",
-      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2298"
-    ],
-    "executed_types": 55,
+    "paused_default_battle_pairs": [],
+    "executed_types": 56,
     "unique_types": 56,
-    "unique_tracks": 118,
-    "exact_config_pairs_after_scene_pause": true,
+    "unique_tracks": 121,
+    "exact_config_pairs": true,
     "missing_config_track_ids": [
       "0x83d",
       "0x84f",
@@ -56,7 +47,7 @@
   },
   "real_mrr_synthetic_land": {
     "plugins": 7,
-    "seconds": 2.4845573999918997,
+    "seconds": 2.5190066999930423,
     "APPEND": 0,
     "AUTO_COMBAT": 1,
     "CONDITION_UNION": 0,
@@ -105,7 +96,7 @@
   },
   "native_game_execution": false,
   "audio": {
-    "version": "Harmonia 0.8.0-alpha",
+    "version": "Harmonia 0.9.0-alpha",
     "official_plugins": 5,
     "original_archives": 1,
     "candidate_line": "AUDIO_CANDIDATES 243 (offline loose overlay; not engine BSA precedence)",
@@ -124,6 +115,42 @@
     "runtime_vfs_executed": false,
     "native_audio_playback": false,
     "fixture_note": "Actual original audio; a different stock track used only in a private test overlay. Not a Lorkhan installation."
+  },
+  "authored_scene": {
+    "version": "Harmonia 0.9.0-alpha",
+    "actual_record_truth_cases": 192,
+    "all_cases_match_authored_original_conditions": true,
+    "ordinary_guarded_tracks": [
+      "music_replacer_reverter.esp:2062",
+      "music_replacer_reverter.esp:2077",
+      "music_replacer_reverter.esp:2078",
+      "music_replacer_reverter.esp:2079",
+      "music_replacer_reverter.esp:2080"
+    ],
+    "dragon_tracks_without_new_guards": [
+      "music_replacer_reverter.esp:2081",
+      "music_replacer_reverter.esp:2082",
+      "music_replacer_reverter.esp:2298"
+    ],
+    "civil_war_shared_uses_isolated": [
+      "music_replacer_reverter.esp:2077",
+      "music_replacer_reverter.esp:2078"
+    ],
+    "scene_main_finale_validated": {
+      "music\\legacyorsinium\\lo_arena_combat_finale.xwm": {
+        "bytes": 196758,
+        "sha256": "1ff0b9ebb737978260e4b3036e7c96355651bcd781a5a1b6dc960b5f9f78a9b6"
+      },
+      "music\\legacyorsinium\\lo_arena_combat.xwm": {
+        "bytes": 1568654,
+        "sha256": "4a88ce6586c9d99a3c26f93473ca19cd1511b9f042e552e66017597dc082b700"
+      }
+    },
+    "archive_unchanged": true,
+    "resource_checked_plan_matches_record_plan": true,
+    "game_data_written": false,
+    "native_execution": false,
+    "mrr_audio_playback_validated": false
   },
   "loadorder_membership_verified": {
     "official_base_plugins": 5,

@@ -131,115 +131,123 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
             for(const auto& record:records) if(std::ranges::find(record.tracks,key)!=record.tracks.end()) return true;
         return false;
     };
-    struct Scene { FormKey replacement; std::vector<ConditionTerm> scope; ConditionWitness evidence, music; };
+    const auto related=[&](const std::string& a,const std::string& b) {
+        return a==b || DependsOn(a,b) || DependsOn(b,a);
+    };
+    const auto validParameter=[&](const ConditionTerm& term) {
+        if(term.function==18 || term.function==707) return true;
+        const auto expected=term.function==67?"CELL":term.function==310?"WRLD":term.function==359?"LCTN":term.function==74?"GLOB":"QUST";
+        bool exists=false;
+        for(const auto& d:definitions_) if(d.key==term.parameter) {
+            if(d.deleted || d.type!=expected) return false;
+            if(d.source==d.key.plugin) exists=true;
+        }
+        return exists;
+    };
+    struct Scene {
+        FormKey replacement;
+        Clauses clauses;
+        std::vector<ConditionWitness> witnesses;
+    };
     std::vector<Scene> scenes;
-    bool unsupportedScene=false;
+    bool unresolvedOrdinaryScene=false;
     for(const auto& key:available) {
-        // Shared ownership does not erase this authored use. The scene song
-        // itself is read-only; only ordinary uses receive local guard copies.
         if(originalTracks.contains(key) || ScriptReferences(key)) continue;
-        const auto found=tracks_.find(key);
-        if(found==tracks_.end()) continue;
+        const auto found=tracks_.find(key);if(found==tracks_.end()) continue;
         const auto& records=found->second;
         const auto origin=std::ranges::find_if(records,[&](const auto& r){return r.source==key.plugin;});
         if(origin==records.end()) continue;
-        const auto terms=Decode(*origin);
-        // Even an unsupported expression may contain an identifiable regional
-        // gate. Use that only to pause additions, never to invent a wider ban.
+        const auto terms=DecodeConditions(*origin,true);
         std::vector<ConditionTerm> identifiable;
         if(terms) identifiable=*terms;
         else for(auto bytes:origin->conditions) {
             if(bytes.empty()) continue;
-            bytes[0]&=~1u;
             auto one=*origin;one.conditions={std::move(bytes)};
-            if(const auto decoded=Decode(one)) identifiable.insert(identifiable.end(),decoded->begin(),decoded->end());
+            if(const auto decoded=DecodeConditions(one,true)) identifiable.insert(identifiable.end(),decoded->begin(),decoded->end());
         }
-        if(identifiable.empty()) continue;
-        std::vector<ConditionTerm> scope;
-        bool valid=terms.has_value(),geography=false;
-        for(const auto& term:identifiable) {
-            if(term.isOR) valid=false;
-            if(term.function==707) {
-                if(!OrdinaryConditions(std::span(&term,1),true)) valid=false;
-            }
-            else if(term.function==18) {}
-            else if(const auto area=ConditionArea(term,true)) {
-                const auto definition=areaForms_.find(area->form);
-                if(definition==areaForms_.end() || definition->second!=area->kind || deletedAreas_.contains(area->form)) valid=false;
-                geography=true;
-            } else if(term.function==67 || term.function==310 || term.function==359) valid=false;
-            else {
-                const auto expected=term.function==74?"GLOB":"QUST";
-                bool exists=false;
-                for(const auto& d:definitions_) if(d.key==term.parameter) {
-                    if(d.deleted || d.type!=expected) valid=false;
-                    if(d.source==d.key.plugin && d.type==expected) exists=true;
-                }
-                if(!exists) valid=false;
-            }
-            scope.push_back(term);
-        }
-        if(!geography) continue;
-        ConditionWitness witness{key,{}};
+        if(!std::ranges::any_of(identifiable,[](const auto& t){return ConditionArea(t,true).has_value();})) continue;
+        // A known dragon-only cue is a different role, even inside MUSCombat.
+        if(std::ranges::any_of(identifiable,[](auto t){
+            t.isOR=false;return t.function==707 && !OrdinaryConditions(std::span(&t,1),true);
+        })) continue;
+        const auto linked=[&](const Clauses& clauses) {
+            for(const auto& clause:clauses) for(const auto& negative:clause)
+                if(const auto area=ConditionArea(negative,false))
+                    for(const auto& positive:identifiable)
+                        if(ConditionArea(positive,true)==area && positive.onPlayerReference==negative.onPlayerReference) return true;
+            return false;
+        };
+        ConditionWitness musicWitness{key,{},type};
+        bool ready=terms.has_value();
         for(const auto& record:records) {
-            const auto other=Decode(record);
-            if(record.metadata!=origin->metadata || !other || !terms || *other!=*terms) {valid=false;break;}
-            witness.versions.push_back({record.source,*other});
+            const auto other=DecodeConditions(record,true);
+            if(record.metadata!=origin->metadata || !other || !terms || *other!=*terms ||
+               !std::ranges::all_of(*other,validParameter)) {ready=false;break;}
+            musicWitness.versions.push_back({record.source,*other});
         }
-        // A matching exclusion from the same source/dependency family is enough
-        // for our takeover default. A coincidental song in the same world is not.
-        std::optional<ConditionWitness> evidence;
+
+        // Group by the authoring source, not a magic number of songs. Compare
+        // complete added clauses: source day/night and role predicates stay out.
+        struct Group { Clauses common; std::vector<ConditionWitness> witnesses; };
+        std::map<std::string,Group> groups;
         for(const auto& original:originalTracks) {
-            const auto found=tracks_.find(original);if(found==tracks_.end()) continue;
-            const auto& versions=found->second;
+            const auto f=tracks_.find(original);if(f==tracks_.end()) continue;
+            const auto& versions=f->second;
             const auto base=std::ranges::find_if(versions,[&](const auto& r){return r.source==original.plugin;});
             const auto baseline=base==versions.end()?std::nullopt:Decode(*base);
             if(!baseline || !OrdinaryConditions(*baseline,battle)) continue;
-            ConditionWitness witness{original,{}};
+            ConditionWitness witness{original,{},type};
             bool readable=true;
             for(const auto& record:versions) {
-                const auto terms=Decode(record);
-                if(!terms || record.metadata!=base->metadata) {readable=false;break;}
-                witness.versions.push_back({record.source,*terms});
+                const auto conditions=Decode(record);
+                if(!conditions) {readable=false;break;}
+                witness.versions.push_back({record.source,*conditions});
             }
             if(!readable) continue;
             for(const auto& version:witness.versions) {
-                if(version.source==original.plugin ||
-                   !(version.source==key.plugin || DependsOn(version.source,key.plugin) || DependsOn(key.plugin,version.source))) continue;
-                for(const auto& term:version.conditions) {
-                    const auto area=Exclusion(term);if(!area) continue;
-                    // Standalone AND exclusion only. A reordered baseline or
-                    // an extra quest condition need not invalidate the source
-                    // relationship; neither may an OR term become a wider ban.
-                    if(!HasClause(version.conditions,std::span(&term,1))) continue;
-                    const bool revoked=std::ranges::any_of(witness.versions,[&](const auto& later) {
-                        return DependsOn(later.source,version.source) && !HasClause(later.conditions,std::span(&term,1));
-                    });
-                    if(revoked) continue;
-                    for(const auto& positive:scope) if(ConditionArea(positive,true)==area && positive.onPlayerReference==term.onPlayerReference)
-                        evidence=witness;
-                }
+                if(version.source==original.plugin || !related(version.source,key.plugin) || !ancestors(version.source)) continue;
+                auto added=AddedClauses(*baseline,version.conditions);
+                if(!added || !linked(*added)) continue;
+                bool supported=true;
+                std::erase_if(*added,[&](const auto& clause) {
+                    // A new standalone clock restriction is song eligibility.
+                    // Inside a regional/quest OR clause it must remain intact.
+                    const bool clockOnly=std::ranges::all_of(clause,[](const auto& t){return t.function==18;});
+                    if(clockOnly) return true;
+                    if(!std::ranges::all_of(clause,validParameter) ||
+                       std::ranges::any_of(clause,[](const auto& t){return t.function==707;}) ||
+                       (clause.size()==1 && ConditionArea(clause.front(),true))) supported=false;
+                    return false;
+                });
+                if(!supported || added->empty()) continue;
+                const bool revoked=std::ranges::any_of(witness.versions,[&](const auto& later) {
+                    return DependsOn(later.source,version.source) && std::ranges::any_of(*added,[&](const auto& clause){return !HasClause(later.conditions,clause);});
+                });
+                if(revoked) continue;
+                auto [g,first]=groups.try_emplace(version.source,Group{*added,{}});
+                if(!first) std::erase_if(g->second.common,[&](const auto& clause) {
+                    return !std::ranges::any_of(*added,[&](const auto& other){return HasClause(other,clause);});
+                });
+                g->second.witnesses.push_back(witness);
             }
-            if(evidence) break;
         }
-        if(evidence && !valid) {
-            unsupportedScene=true;
-            plan.diagnostics.push_back("SCENE_UNSUPPORTED "+ToString(type)+" <- "+ToString(key)+"; additions for this type paused");
-        } else if(evidence) {
-            scenes.push_back({key,std::move(scope),*evidence,std::move(witness)});
-            plan.sceneResources.push_back({type,key,origin->audioPath,origin->finalePath});
-            plan.diagnostics.push_back("SCENE_TAKEOVER "+ToString(type)+" <- "+ToString(key)+" (related exclusion; not a claim of unanimous author intent)");
+        for(auto& [source,group]:groups) {
+            if(group.common.empty() || !linked(group.common)) continue;
+            if(!ready) {
+                plan.sceneUses[type].insert(key);
+                unresolvedOrdinaryScene=true;
+                plan.diagnostics.push_back("SCENE_UNSUPPORTED "+ToString(type)+" <- "+ToString(key)+"; ordinary uses paused, other roles retained");
+                continue;
+            }
+            group.witnesses.push_back(musicWitness);
+            scenes.push_back({key,std::move(group.common),std::move(group.witnesses)});
+            if(std::ranges::none_of(plan.sceneResources,[&](const auto& r){return r.musicType==type && r.track==key;}))
+                plan.sceneResources.push_back({type,key,origin->audioPath,origin->finalePath});
+            plan.sceneUses[type].insert(key);
+            plan.diagnostics.push_back("SCENE_POLICY "+ToString(type)+" <- "+ToString(key)+" source="+source+"; inherit authored clauses");
         }
     }
-    if(unsupportedScene) {
-        plan.additions.erase(type);plan.distributions.erase(type);
-        if(battle) {plan.combatRules.clear();plan.battleMergeSafe=false;}
-        std::erase_if(plan.conditionRepairs,[&](const auto& r){return r.musicType==type;});
-        std::erase_if(plan.audioCandidates,[&](const auto& r){return r.musicType==type;});
-        std::erase_if(plan.sceneResources,[&](const auto& r){return r.musicType==type;});
-        return;
-    }
-    if(scenes.empty()) return;
+    if(scenes.empty() && !unresolvedOrdinaryScene) return;
     const auto blockAddition=[&](const FormKey& key) {
         if(auto it=plan.additions.find(type);it!=plan.additions.end()) std::erase(it->second,key);
         if(auto it=plan.distributions.find(type);it!=plan.distributions.end()) std::erase(it->second,key);
@@ -248,6 +256,7 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
             std::erase_if(plan.combatRules,[](const auto& rule){return rule.tracks.empty();});
         }
         std::erase_if(plan.audioCandidates,[&](const auto& c){return c.musicType==type && c.track==key;});
+        std::erase_if(plan.conditionRepairs,[&](const auto& r){return r.musicType==type && r.track==key;});
     };
     for(const auto& key:candidates) {
         const auto found=tracks_.find(key);if(found==tracks_.end()) continue;
@@ -255,67 +264,86 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
         const auto origin=std::ranges::find_if(records,[&](const auto& r){return r.source==key.plugin;});
         const auto baseline=origin==records.end()?std::nullopt:Decode(*origin);
         if(!baseline || !OrdinaryConditions(*baseline,battle)) {
-            // Do not turn a dedicated/unknown audio slot into generic additions.
             std::erase_if(plan.audioCandidates,[&](const auto& c){return c.musicType==type && c.track==key;});
             continue;
         }
-        if(ScriptReferences(key)) {blockAddition(key);plan.diagnostics.push_back("SKIP_GUARD "+ToString(key)+" direct script reference");continue;}
+        plan.sceneUses[type].insert(key);
+        if(unresolvedOrdinaryScene || ScriptReferences(key)) {blockAddition(key);continue;}
         ConditionRepair guard;
-        guard.track=key; guard.musicType=type; guard.genericGuard=true;
-        guard.isolate=protectedCandidate(key);
+        guard.track=key;guard.musicType=type;guard.genericGuard=true;guard.isolate=protectedCandidate(key);
         bool valid=true;
         for(const auto& record:records) {
-            const auto terms=Decode(record);
-            if(record.metadata!=origin->metadata || !terms || (!originalTracks.contains(key) && *terms!=*baseline)) {valid=false;break;}
-            guard.versions.push_back({record.source,*terms});
+            const auto conditions=Decode(record);
+            if(record.metadata!=origin->metadata || !conditions || (!originalTracks.contains(key) && *conditions!=*baseline)) {valid=false;break;}
+            guard.versions.push_back({record.source,*conditions});
         }
         if(!valid) {blockAddition(key);plan.diagnostics.push_back("SKIP_GUARD "+ToString(key)+" unsupported ordinary use; related additions paused");continue;}
         for(const auto& scene:scenes) {
-            const auto clause=NegateScope(scene.scope);
-            bool explicitException=false;
-            for(const auto& version:guard.versions) {
-                // Positive regional eligibility remains the author's own use.
-                for(const auto& term:version.conditions) if(ConditionArea(term,true)) explicitException=true;
-                // A dependent patch can deliberately remove an earlier ban.
-                for(const auto& prior:guard.versions) if(DependsOn(version.source,prior.source))
-                    for(const auto& term:prior.conditions) if(const auto area=Exclusion(term)) {
-                        if(!HasClause(prior.conditions,std::span(&term,1))) continue;
-                        const bool relevant=std::ranges::any_of(scene.scope,[&](const auto& t){return ConditionArea(t,true)==area;});
-                        if(relevant && !HasClause(version.conditions,std::span(&term,1))) explicitException=true;
-                    }
-            }
-            if(explicitException) continue;
-            const bool already=std::ranges::all_of(guard.versions,[&](const auto& version) {
-                // A master version cannot win over its own dependent override.
-                if(std::ranges::any_of(guard.versions,[&](const auto& other){return DependsOn(other.source,version.source);})) return true;
-                if(HasClause(version.conditions,clause)) return true;
-                return std::ranges::any_of(version.conditions,[&](const auto& term) {
-                    const auto area=Exclusion(term);if(!area) return false;
-                    if(!HasClause(version.conditions,std::span(&term,1))) return false;
-                    return std::ranges::any_of(scene.scope,[&](const auto& t){return ConditionArea(t,true)==area && t.onPlayerReference==term.onPlayerReference;});
+            // Preserve an explicit positive assignment as that song's own use.
+            if(std::ranges::any_of(guard.versions,[](const auto& v){
+                return std::ranges::any_of(v.conditions,[](const auto& t){return ConditionArea(t,true).has_value();});
+            })) continue;
+            for(const auto& clause:scene.clauses) {
+                bool revoked=false;
+                for(const auto& later:guard.versions) for(const auto& prior:guard.versions)
+                    if(DependsOn(later.source,prior.source) && HasClause(prior.conditions,clause) && !HasClause(later.conditions,clause)) revoked=true;
+                if(revoked) continue;
+                const bool already=std::ranges::all_of(guard.versions,[&](const auto& v) {
+                    if(std::ranges::any_of(guard.versions,[&](const auto& other){return DependsOn(other.source,v.source);})) return true;
+                    return HasClause(v.conditions,clause);
                 });
-            });
-            if(already) continue;
-            guard.clauses.push_back(clause);
-            if(clause.size()==1) if(const auto area=Exclusion(clause.front())) guard.exclusions.push_back(*area);
-            guard.requiredTracks.push_back(scene.replacement);
+                if(already || std::ranges::any_of(guard.clauses,[&](const auto& c){return HasClause(c,clause);})) continue;
+                guard.clauses.push_back(clause);
+                if(clause.size()==1) if(const auto a=Exclusion(clause.front())) guard.exclusions.push_back(*a);
+                guard.requiredTracks.push_back(scene.replacement);
+            }
         }
         if(guard.clauses.empty()) continue;
         const auto existing=std::ranges::find_if(plan.conditionRepairs,[&](const auto& r){return r.track==key && r.musicType==type;});
         if(existing==plan.conditionRepairs.end()) plan.conditionRepairs.push_back(std::move(guard));
         else {
-            // Legacy authored exclusions and inferred scene clauses share one
-            // local instance. Keep the former even if the new scope is narrower.
             for(const auto& clause:guard.clauses)
-                if(std::ranges::find(existing->clauses,clause)==existing->clauses.end()) existing->clauses.push_back(clause);
+                if(!std::ranges::any_of(existing->clauses,[&](const auto& c){return HasClause(c,clause);})) existing->clauses.push_back(clause);
             existing->requiredTracks.insert(existing->requiredTracks.end(),guard.requiredTracks.begin(),guard.requiredTracks.end());
             for(const auto& a:guard.exclusions) if(std::ranges::find(existing->exclusions,a)==existing->exclusions.end()) existing->exclusions.push_back(a);
         }
     }
-    for(const auto& scene:scenes) {
-        auto evidence=scene.evidence,musicWitness=scene.music;
-        evidence.musicType=type;musicWitness.musicType=type;
-        plan.conditionWitnesses.push_back(std::move(evidence));plan.conditionWitnesses.push_back(std::move(musicWitness));
+    if(unresolvedOrdinaryScene) {
+        // No inferred guard survives for this ordinary role; independent dragon
+        // or explicitly dedicated distributions remain available.
+        DropSceneUses(plan,type);
+        return;
     }
+    for(const auto& scene:scenes) {
+        for(const auto& witness:scene.witnesses)
+            if(std::ranges::none_of(plan.conditionWitnesses,[&](const auto& w){return w.musicType==type && w.track==witness.track;}))
+                plan.conditionWitnesses.push_back(witness);
+        const bool alwaysPresent=std::ranges::all_of(music,[&](const auto& r) {
+            if(std::ranges::any_of(music,[&](const auto& later){return DependsOn(later.source,r.source);})) return true;
+            return std::ranges::find(r.tracks,scene.replacement)!=r.tracks.end();
+        });
+        bool planned=false;
+        for(const auto* additions:{&plan.additions,&plan.distributions}) if(const auto it=additions->find(type);it!=additions->end())
+            planned|=std::ranges::find(it->second,scene.replacement)!=it->second.end();
+        if(battle) for(const auto& rule:plan.combatRules) planned|=std::ranges::find(rule.tracks,scene.replacement)!=rule.tracks.end();
+        // Re-add an authored scene song without rewriting its OR/quest logic.
+        if(!alwaysPresent && !planned) plan.additions[type].push_back(scene.replacement);
+    }
+}
+
+void DropSceneUses(MergePlan& plan,const FormKey& type) {
+    const auto found=plan.sceneUses.find(type);if(found==plan.sceneUses.end()) return;
+    const auto& uses=found->second;
+    for(auto* additions:{&plan.additions,&plan.distributions}) if(auto it=additions->find(type);it!=additions->end())
+        std::erase_if(it->second,[&](const auto& track){return uses.contains(track);});
+    if(plan.battleType && type==*plan.battleType) {
+        for(auto& rule:plan.combatRules) std::erase_if(rule.tracks,[&](const auto& key){return uses.contains(key);});
+        std::erase_if(plan.combatRules,[](const auto& rule){return rule.tracks.empty();});
+    }
+    std::erase_if(plan.conditionRepairs,[&](const auto& r){return r.musicType==type && uses.contains(r.track);});
+    std::erase_if(plan.audioCandidates,[&](const auto& r){return r.musicType==type && uses.contains(r.track);});
+    std::erase_if(plan.conditionWitnesses,[&](const auto& r){return r.musicType==type;});
+    std::erase_if(plan.sceneResources,[&](const auto& r){return r.musicType==type;});
+    plan.sceneUses.erase(found);
 }
 }

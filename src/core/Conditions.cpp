@@ -17,7 +17,7 @@ ConditionTerm Canonical(ConditionTerm t) {
     return t;
 }
 }
-std::optional<std::vector<ConditionTerm>> DecodeConditions(const TrackRecord& record) {
+std::optional<std::vector<ConditionTerm>> DecodeConditions(const TrackRecord& record,bool readOnly) {
     if(!record.singleAudio || record.deleted || record.invalid || record.conditions.size()>256) return {};
     const auto resolve=[&](std::uint32_t raw)->std::optional<FormKey> {
         const auto index=raw>>24;
@@ -48,7 +48,7 @@ std::optional<std::vector<ConditionTerm>> DecodeConditions(const TrackRecord& re
     }
     // An authored dangling OR has no successor. Appending without normalizing
     // it would change its meaning; keep that unsupported expression untouched.
-    if(!result.empty() && result.back().isOR) return {};
+    if(!readOnly && !result.empty() && result.back().isOR) return {};
     return result;
 }
 std::optional<Area> ConditionArea(const ConditionTerm& value,bool positive) {
@@ -69,14 +69,12 @@ bool OrdinaryConditions(std::span<const ConditionTerm> terms,bool battle) {
     // Time-of-day is a song's own eligibility, not a story/Boss ownership cue.
     return std::ranges::all_of(terms,[](const auto& t){return t.function==18;});
 }
-std::vector<ConditionTerm> NegateScope(std::span<const ConditionTerm> scope) {
-    static constexpr std::uint8_t inverse[]{1,0,5,4,3,2};
-    std::vector<ConditionTerm> result;
-    for(auto t:scope) {
-        if(t.opcode>5 || t.isOR) return {};
-        t.opcode=inverse[t.opcode];t.isOR=true;result.push_back(Canonical(t));
+Clauses SplitClauses(std::span<const ConditionTerm> conditions) {
+    Clauses result;
+    std::size_t start=0;
+    for(std::size_t i=0;i<conditions.size();++i) if(!conditions[i].isOR) {
+        result.emplace_back(conditions.begin()+start,conditions.begin()+i+1);start=i+1;
     }
-    if(!result.empty()) result.back().isOR=false;
     return result;
 }
 bool SamePredicate(ConditionTerm a,ConditionTerm b) {
@@ -90,6 +88,13 @@ bool HasClause(std::span<const ConditionTerm> conditions,std::span<const Conditi
         start=i+1;
     }
     return false;
+}
+std::optional<Clauses> AddedClauses(std::span<const ConditionTerm> baseline,std::span<const ConditionTerm> authored) {
+    if((!baseline.empty() && baseline.back().isOR) || (!authored.empty() && authored.back().isOR)) return {};
+    for(const auto& clause:SplitClauses(baseline)) if(!HasClause(authored,clause)) return {};
+    Clauses result;
+    for(const auto& clause:SplitClauses(authored)) if(!HasClause(baseline,clause)) result.push_back(clause);
+    return result;
 }
 std::vector<std::vector<ConditionTerm>> RepairClauses(const ConditionRepair& repair) {
     if(!repair.clauses.empty()) return repair.clauses;

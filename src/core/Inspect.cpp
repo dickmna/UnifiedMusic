@@ -62,10 +62,7 @@ int main(int argc,char**argv) {
             };
             for(const auto& [type,reason]:UnifiedMusic::CheckSceneResources(plan.sceneResources,reader)) {
                 plan.diagnostics.push_back("SCENE_RESOURCE_SKIP "+UnifiedMusic::ToString(type)+" "+reason);
-                plan.additions.erase(type);plan.distributions.erase(type);
-                if(plan.battleType && type==*plan.battleType) {plan.combatRules.clear();plan.battleMergeSafe=false;}
-                std::erase_if(plan.conditionRepairs,[&](const auto& r){return r.musicType==type;});
-                std::erase_if(plan.audioCandidates,[&](const auto& r){return r.musicType==type;});
+                UnifiedMusic::DropSceneUses(plan,type);
                 std::erase_if(plan.mappingRepairs,[&](const auto& r){return r.music==type;});
             }
         }

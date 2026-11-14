@@ -46,15 +46,17 @@ class SceneFixture(unittest.TestCase):
         return path
 
     def fixture(self, *, scope=None, extra=b'', base_extra=b'', pack_extra=b'',
-                ambient=False, role=(), exclude=True, player=False):
+                ambient=False, role=(), exclude=True, player=False, restriction=None):
         name = 'MUSExploreForest' if ambient else 'MUSCombat'
         base = self.write('Skyrim.esm', header() + music(0x100, (0x200, 0x201), name=name)
             + audio_track(terms=role) + single_track(0x201, role, path=r'Data\Music\Fixture\other.wav') + base_extra)
         gate = condition(run_on=2 if player else 0, reference=0x14 if player else 0)
         ban = condition(comparison=0, run_on=2 if player else 0, reference=0x14 if player else 0)
+        if restriction is None:
+            restriction = (ban,) if exclude else ()
         land = self.write('Land.esp', header(('Skyrim.esm',)) + area('WRLD', 0x01000900)
             + music(0x100, (0x200, 0x201, 0x01000800), name=name)
-            + audio_track(terms=role + ((ban,) if exclude else ()))
+            + audio_track(terms=role + restriction)
             + audio_track(0x01000800, path=r'Data\Music\Land\scene.wav',
                           terms=(gate,) if scope is None else scope) + extra)
         pack = self.write('Pack.esp', header(('Skyrim.esm',))
@@ -62,8 +64,10 @@ class SceneFixture(unittest.TestCase):
             + audio_track(0x01000800, path=r'Data\Music\Pack\added.wav', terms=role) + pack_extra)
         return base, land, pack
 
-    def scan(self, *paths, audio=False, cache=False):
+    def scan(self, *paths, audio=False, cache=False, configs=()):
         args = [str(self.exe), *map(str, paths)]
+        for config in configs:
+            args += ['--config', str(config)]
         if audio:
             args += ['--original-archive', str(self.root/'Original.bsa'), '--visible-dir', str(self.root/'visible')]
         if cache:
@@ -106,7 +110,10 @@ class SceneTests(SceneFixture):
     def test_quest_interval_keeps_full_de_morgan_scope(self):
         scope = (condition(), condition(58, 0x01000A00, flags=0x60, comparison=40),
                  condition(58, 0x01000A00, flags=0x80, comparison=50))
-        out = self.scan(*self.fixture(scope=scope, extra=area('QUST', 0x01000A00)))
+        restriction = (condition(comparison=0, flags=1),
+                       condition(58, 0x01000A00, flags=0x81, comparison=40),
+                       condition(58, 0x01000A00, flags=0x60, comparison=50))
+        out = self.scan(*self.fixture(scope=scope, restriction=restriction, extra=area('QUST', 0x01000A00)))
         clauses = self.pack_rule(out)['clauses']
         self.assertEqual(len(clauses), 1)
         self.assertEqual([t['or_next'] for t in clauses[0]], [True, True, False])
@@ -116,13 +123,15 @@ class SceneTests(SceneFixture):
                                  not (inside and 40 <= stage < 50))
 
     def test_multiple_geographic_gates_do_not_become_a_worldwide_ban(self):
-        out = self.scan(*self.fixture(scope=(condition(), condition(67, 0x01000901)), extra=area('CELL', 0x01000901)))
+        restriction=(condition(comparison=0, flags=1), condition(67, 0x01000901, comparison=0))
+        out = self.scan(*self.fixture(scope=(condition(), condition(67, 0x01000901)), restriction=restriction, extra=area('CELL', 0x01000901)))
         clauses = self.pack_rule(out)['clauses']
         for world, cell in itertools.product((0, 1), repeat=2):
             self.assertEqual(permits(clauses, {(310, 'land.esp:2304'): world, (67, 'land.esp:2305'): cell}), not(world and cell))
 
     def test_time_gate_is_retained_without_reinterpreting_it_as_a_whole_region(self):
-        out = self.scan(*self.fixture(scope=(condition(), condition(18, 0, flags=0x60, comparison=20)), ambient=True))
+        restriction=(condition(comparison=0, flags=1), condition(18, 0, flags=0x80, comparison=20))
+        out = self.scan(*self.fixture(scope=(condition(), condition(18, 0, flags=0x60, comparison=20)), restriction=restriction, ambient=True))
         clauses = self.pack_rule(out)['clauses']
         time_key = next(t['parameter'] for t in clauses[0] if t['function']==18)
         for inside, hour in itertools.product((0, 1), (0, 12, 19, 20, 23)):
@@ -156,24 +165,27 @@ class SceneTests(SceneFixture):
         out = self.scan(*paths)
         self.assertTrue(self.pack_rule(out)['clauses'])
 
-    def test_complex_scene_with_reordered_original_policy_pauses_additions(self):
+    def test_complex_scene_preserves_cue_or_and_inherits_reordered_original_policy(self):
         role = (condition(707, 0x35D59, comparison=0),)
         paths = self.fixture(role=role, scope=(condition(flags=1), condition(58, 0x01000A00)), extra=area('QUST',0x01000A00))
         old = audio_track(terms=role+(condition(comparison=0),))
         new = audio_track(terms=(condition(comparison=0), condition(58,0x01000A00,flags=0x20,comparison=40))+role)
         paths[1].write_bytes(paths[1].read_bytes().replace(old,new))
         out = self.scan(*paths)
-        self.assertIn('SCENE_UNSUPPORTED ', out)
-        self.assertNotIn('AUTO_COMBAT ', out)
+        self.assertNotIn('SCENE_UNSUPPORTED ', out)
+        self.assertEqual({t['function'] for c in self.pack_rule(out)['clauses'] for t in c}, {310,58})
+        self.assertIn('APPEND skyrim.esm:256 <- land.esp:2048', out)
+        self.assertNotIn('land.esp:2048', {r['track'] for r in rows(out,'USE_RULES')})
 
-    def test_negative_term_in_or_group_does_not_prove_exclusion(self):
+    def test_negative_term_in_or_group_is_inherited_as_a_complete_clause(self):
         paths = self.fixture()
         old = audio_track(terms=(condition(comparison=0),))
         new = audio_track(terms=(condition(58,0x01000A00,flags=1), condition(comparison=0)))
         paths[1].write_bytes(paths[1].read_bytes().replace(old,new)+area('QUST',0x01000A00))
         out = self.scan(*paths)
-        self.assertNotIn('SCENE_TAKEOVER ', out)
-        self.assertFalse(rows(out, 'USE_RULES'))
+        clauses=self.pack_rule(out)['clauses']
+        for inside,stage in itertools.product((0,1),(0,1,2)):
+            self.assertEqual(permits(clauses,{(310,'land.esp:2304'):inside,(58,'land.esp:2560'):stage}), stage==1 or not inside)
 
     def test_authored_exclusion_union_keeps_explicit_player_context(self):
         paths = self.fixture(player=True)
@@ -198,14 +210,14 @@ class SceneTests(SceneFixture):
         self.assertNotIn('pack.esp:2048', {r['track'] for r in rows(out, 'USE_RULES')})
         self.assertNotIn('AUTO_COMBAT * <- pack.esp:2048', out)
 
-    def test_unsupported_or_scene_pauses_only_related_type(self):
+    def test_read_only_scene_or_does_not_block_authored_exclusions(self):
         base_extra = music(0x101, (), name='MUSTavern')
         pack_extra = music(0x101, (0x01000801,), name='MUSTavern') + single_track(0x01000801)
         out = self.scan(*self.fixture(scope=(condition(flags=1), condition(58, 0x01000A00)),
             extra=area('QUST', 0x01000A00), base_extra=base_extra, pack_extra=pack_extra))
-        self.assertIn('SCENE_UNSUPPORTED skyrim.esm:256', out)
-        self.assertFalse(rows(out, 'USE_RULES'))
-        self.assertNotIn('AUTO_COMBAT ', out)
+        self.assertNotIn('SCENE_UNSUPPORTED ', out)
+        self.assertTrue(self.pack_rule(out)['clauses'])
+        self.assertIn('AUTO_COMBAT * <- pack.esp:2048', out)
         self.assertIn('APPEND skyrim.esm:257 <- pack.esp:2049', out)
 
     def test_missing_quest_definition_does_not_broaden_guard(self):
