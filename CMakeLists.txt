@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(UnifiedMusic VERSION 0.11.0 LANGUAGES C CXX)
+project(UnifiedMusic VERSION 0.12.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

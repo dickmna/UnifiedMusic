@@ -282,7 +282,12 @@ static bool ApplyMusicBatch(const MergePlan& plan,const std::map<FormKey,std::ve
         const RE::BGSMusicTrack* effective=wrapper->track;
         for(const auto& repair:repairs) if(repair.original==wrapper && repair.owner==playlists.at(candidate.musicType).target)
             effective=repair.track;
-        auto original=audio.Original(candidate,effective);
+        const auto& list=playlists.at(candidate.musicType);
+        std::vector<RE::BSIMusicTrack*> presentTracks;
+        if(!list.clear) presentTracks=list.snapshot;
+        for(auto* track:list.pending) presentTracks.push_back(track);
+        for(const auto& use:audioUses[candidate.musicType]) presentTracks.push_back(use.get());
+        auto original=audio.Original(candidate,effective,presentTracks);
         if(original) audioUses[candidate.musicType].push_back(std::move(original));
     }
     for(const auto& [key,list]:playlists) {
@@ -327,13 +332,13 @@ static bool ApplyMusicBatch(const MergePlan& plan,const std::map<FormKey,std::ve
     return true;
 }
 
-bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<MusicRecord>>& records,std::set<FormKey>& failed) {
+bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<MusicRecord>>& records,const std::map<FormKey,std::vector<TrackRecord>>& tracks,std::set<FormKey>& failed) {
+    AudioInputs audio(!plan.audioCandidates.empty(),tracks);
     std::set<FormKey> types=plan.clearedTypes;
     for(const auto* map:{&plan.additions,&plan.distributions}) for(const auto& [type,tracks]:*map) if(!tracks.empty()) types.insert(type);
     if(plan.battleType && !plan.combatRules.empty()) types.insert(*plan.battleType);
     for(const auto& repair:plan.conditionRepairs) types.insert(repair.musicType);
-    for(const auto& candidate:plan.audioCandidates) types.insert(candidate.musicType);
-    AudioInputs audio(!plan.audioCandidates.empty());
+    if(audio.Enabled()) for(const auto& candidate:plan.audioCandidates) types.insert(candidate.musicType);
     bool complete=true;
     for(const auto& type:types) {
         MergePlan batch;batch.battleType=plan.battleType;batch.battleMergeSafe=plan.battleMergeSafe;
@@ -344,7 +349,7 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
         for(const auto& r:plan.conditionRepairs) if(r.musicType==type) batch.conditionRepairs.push_back(r);
         for(const auto& r:plan.conditionWitnesses) if(r.musicType==type) batch.conditionWitnesses.push_back(r);
         for(const auto& r:plan.sceneResources) if(r.musicType==type) batch.sceneResources.push_back(r);
-        for(const auto& r:plan.audioCandidates) if(r.musicType==type) batch.audioCandidates.push_back(r);
+        if(audio.Enabled()) for(const auto& r:plan.audioCandidates) if(r.musicType==type) batch.audioCandidates.push_back(r);
         if(const auto it=plan.sceneUses.find(type);it!=plan.sceneUses.end()) batch.sceneUses.emplace(*it);
         try {
             if(!ApplyMusicBatch(batch,records,audio)) {

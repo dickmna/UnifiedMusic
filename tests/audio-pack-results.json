@@ -1,0 +1,1027 @@
+{
+  "source_archive_sha256": "7a4209dd4d9a4d58f832f8cafffd1a4b3fd1e39d45f8ea3ad9a810c1812c6420",
+  "source_entries": 263,
+  "mapped_track_records": 247,
+  "mapped_pairs": 231,
+  "assets": 239,
+  "unique_files": 239,
+  "bytes": 465750606,
+  "skipped": [
+    {
+      "track": "MUSDread01",
+      "reason": [
+        [
+          "ANAM",
+          "missing file",
+          "music/dread/dread 01 v2.xwm",
+          "music/dread/dread 01 v2_revert.xwm"
+        ]
+      ]
+    },
+    {
+      "track": "MUSDread03",
+      "reason": [
+        [
+          "ANAM",
+          "missing file",
+          "music/dread/dread 03 v2.xwm",
+          "music/dread/dread 03 v2_revert.xwm"
+        ]
+      ]
+    },
+    {
+      "track": "MUSDread04",
+      "reason": [
+        [
+          "ANAM",
+          "missing file",
+          "music/dread/dread 04 v2.xwm",
+          "music/dread/dread 04 v2_revert.xwm"
+        ]
+      ]
+    },
+    {
+      "track": "MUSDread01a",
+      "reason": [
+        [
+          "ANAM",
+          "missing file",
+          "music/dread/dread 01 v2.xwm",
+          "music/dread/dread 01 v2_revert.xwm"
+        ]
+      ]
+    }
+  ],
+  "duration_differences": [],
+  "format": "XWMA 48 kHz 192 kbit/s",
+  "records_with_finales": 19,
+  "cue_points_match": true,
+  "duration_tolerance_seconds": 0.25,
+  "mapping": {
+    "music/explore/mus_explore_day_09.xwm": {
+      "source": "music/explore/mus_explore_day_09_revert.xwm",
+      "sha256": "6ebd3ad361e1841518425cae1fdc5642db3b8e5f1053bab0378ae098dce09b6e"
+    },
+    "music/special/failure/mus_failure_04.xwm": {
+      "source": "music/special/failure/mus_failure_04_revert.xwm",
+      "sha256": "a2732c8f52d65ad6def7abecbd13102e2b2f220fb320ad31e4fd6407b1c48ceb"
+    },
+    "music/special/failure/mus_failure_05.xwm": {
+      "source": "music/special/failure/mus_failure_05_revert.xwm",
+      "sha256": "a98c071f1d8e0f1fbdcb9a40f617c6c74d6343dd23fc57bbf2198c13cfb2b9da"
+    },
+    "music/special/failure/mus_failure_06.xwm": {
+      "source": "music/special/failure/mus_failure_06_revert.xwm",
+      "sha256": "fd1d7209c494870dd97dd6234c82f5fab4b1af588b2ddff7a3bd289047191249"
+    },
+    "music/special/failure/mus_failure_07.xwm": {
+      "source": "music/special/failure/mus_failure_07_revert.xwm",
+      "sha256": "9ba54acb30bb42183a54cc5fbe7c3fea13cf3e3cfb291bdf24a108b3a62473b9"
+    },
+    "music/combat/mus_combat_04_cg.xwm": {
+      "source": "music/combat/mus_combat_04_cg_revert.xwm",
+      "sha256": "38abf3031e5110b0ace0c65253b874aa161e5b93803d395d3fe5eb6301b780bd"
+    },
+    "music/combat/mus_combat_04_finale.xwm": {
+      "source": "music/combat/mus_combat_04_finale_revert.xwm",
+      "sha256": "9ead02c490f66624809b439ec2caaf4e3f443d41ad27f8691910108b37d691d3"
+    },
+    "music/combat/mus_combat_boss_cg.xwm": {
+      "source": "music/combat/mus_combat_boss_cg_revert.xwm",
+      "sha256": "3027aaa575bec8aa76cf0d0a36b6297284172b01b67dbdfd4fd10a57d2239d82"
+    },
+    "music/combat/mus_combat_boss_03_finale.xwm": {
+      "source": "music/combat/mus_combat_boss_03_finale_revert.xwm",
+      "sha256": "14d243c360d0da28a632ee0a17ef2431387b09a22cddd1090f89031db6f75ecc"
+    },
+    "music/mus_levelup_01.xwm": {
+      "source": "music/mus_levelup_01_revert.xwm",
+      "sha256": "675401f7a5cf3c511629a890c89478ae6a2d7392a2879d05e1af37a50fac2980"
+    },
+    "music/tavern/mus_tavern_03.xwm": {
+      "source": "music/tavern/mus_tavern_03_revert.xwm",
+      "sha256": "ad56733994ed5431a9482fb42323cca52215c4399e5367e588cd41aa6b6cce7a"
+    },
+    "music/tavern/mus_tavern_04.xwm": {
+      "source": "music/tavern/mus_tavern_04_revert.xwm",
+      "sha256": "d0bc09d1822b125466e2e4a54bc28b23dcffa4cb44726e2d0f550215c740b250"
+    },
+    "music/tavern/mus_tavern_05.xwm": {
+      "source": "music/tavern/mus_tavern_05_revert.xwm",
+      "sha256": "c57867316efeede233d5156373a7cbcecf742a6b63afcfcc71ef3576aaebb270"
+    },
+    "music/combat/mus_combat_06.xwm": {
+      "source": "music/combat/mus_combat_06_revert.xwm",
+      "sha256": "cc40a5141da2aee008b13fb7cfe8abd0a5fd53c924b79baacaeaeffcc669adcc"
+    },
+    "music/combat/mus_combat_06_finale.xwm": {
+      "source": "music/combat/mus_combat_06_finale_revert.xwm",
+      "sha256": "d2b4de42d9606118f753b15949a694e7897c058e4867886f3b6702ba8fd7efec"
+    },
+    "music/mus_discover_highhrothgar.xwm": {
+      "source": "music/mus_discover_highhrothgar_revert.xwm",
+      "sha256": "746e880d399bd179917154b17adab9a301775a839a47b36985d5e0de1eaf8071"
+    },
+    "music/special/mus_special_wordofpower_01.xwm": {
+      "source": "music/special/mus_special_wordofpower_01_revert.xwm",
+      "sha256": "48a5f5af4a7452c3a045cd05e45673734270bb578b4b324c90ddaf9586b0c77d"
+    },
+    "music/special/mus_special_wordofpower_02.xwm": {
+      "source": "music/special/mus_special_wordofpower_02_revert.xwm",
+      "sha256": "3701ba580e08be19ccf824e74ca2856a6eeb619b864b22533e2f9f17dd68fcca"
+    },
+    "music/special/mus_special_wordofpower_03.xwm": {
+      "source": "music/special/mus_special_wordofpower_03_revert.xwm",
+      "sha256": "b251ae997864917385686c3079bb542ee11781099be1346944ea1486d52cff7c"
+    },
+    "music/town/mus_village_02.xwm": {
+      "source": "music/town/mus_village_02_revert.xwm",
+      "sha256": "43b20464d89ee8e823f89945db6ba89a5bb24edeb38745c569e85476db7a6862"
+    },
+    "music/reward/mus_reward_01.xwm": {
+      "source": "music/reward/mus_reward_01_revert.xwm",
+      "sha256": "21eabb7c3708f92b8eb17a2a6a3a86d7b0f460e7211e19985e0be4e95772d62d"
+    },
+    "music/explore/mus_explore_night_03.xwm": {
+      "source": "music/explore/mus_explore_night_03_revert.xwm",
+      "sha256": "24c9ce4223d488277f6f74b8058b565b5b3e718ab78486270e8e5f3aa236e94f"
+    },
+    "music/town/mus_town_day_01.xwm": {
+      "source": "music/town/mus_town_day_01_revert.xwm",
+      "sha256": "0cf7d3a5f88ee8fd203ba5d1c8f6faaf636535d7e9edbb15ddd4427a55cc1bb9"
+    },
+    "music/town/mus_town_day_02.xwm": {
+      "source": "music/town/mus_town_day_02_revert.xwm",
+      "sha256": "8b9fc891fd9891adc10b5b1a26e6d1379f6ce8ee975326c2b31c107d18ce4d3e"
+    },
+    "music/town/mus_town_day_03.xwm": {
+      "source": "music/town/mus_town_day_03_revert.xwm",
+      "sha256": "1e5cdf0c469f84bcd47117f8369b8bfd8297ac5a77fb7b9aa30e461e5830ade1"
+    },
+    "music/dungeon/mus_dungeon_01.xwm": {
+      "source": "music/dungeon/mus_dungeon_01_revert.xwm",
+      "sha256": "e2502b74476d2cce7aa15e8e35dfcd5f0dd94d8655409cbeb4592d891e783e6f"
+    },
+    "music/dungeon/mus_dungeon_02.xwm": {
+      "source": "music/dungeon/mus_dungeon_02_revert.xwm",
+      "sha256": "11829c28854429791a9ec318f6d1a0fcc7708305ee696779ad5a9867e653db97"
+    },
+    "music/combat/mus_combat_01.xwm": {
+      "source": "music/combat/mus_combat_01_revert.xwm",
+      "sha256": "eda0391d62eea0b893364d51af10b0db7c8ba97901ddeb9060e10d328e4723c5"
+    },
+    "music/combat/mus_combat_01_finale.xwm": {
+      "source": "music/combat/mus_combat_01_finale_revert.xwm",
+      "sha256": "46a6c93bbd9b02bdb61eccfdba9abacd92425e77f13e8e7fbdd090d8912bdc21"
+    },
+    "music/combat/mus_combat_02.xwm": {
+      "source": "music/combat/mus_combat_02_revert.xwm",
+      "sha256": "77f3752cc169589d670c1980c9acef9f583287d3108dab4ef3366802302299f1"
+    },
+    "music/combat/mus_combat_02_finale.xwm": {
+      "source": "music/combat/mus_combat_02_finale_revert.xwm",
+      "sha256": "7491a734b6d432b7b270e79598abaff4941ce6c784d71641ac9ee6ca8ed204cc"
+    },
+    "music/combat/mus_combat_03.xwm": {
+      "source": "music/combat/mus_combat_03_revert.xwm",
+      "sha256": "283bfc5799a6bad6fa7fe24d920dbee249d6354242d8b7ddaa3eaac50cbd35cc"
+    },
+    "music/combat/mus_combat_03_finale.xwm": {
+      "source": "music/combat/mus_combat_03_finale_revert.xwm",
+      "sha256": "5578765d403250e087ef151368ce269ed23d778bd7de9400aa3090b1e6628864"
+    },
+    "music/combat/mus_combat_04.xwm": {
+      "source": "music/combat/mus_combat_04_revert.xwm",
+      "sha256": "294ce83a16a1739293edc49cee2aa584e84bf4e7740e818708123a65dafb153e"
+    },
+    "music/combat/mus_combat_boss_03.xwm": {
+      "source": "music/combat/mus_combat_boss_03_revert.xwm",
+      "sha256": "50ca6e8941a47b633d8f33ab156ec6e36db590dd6e03cb04e67aa3dc0db10842"
+    },
+    "music/combat/mus_combat_boss.xwm": {
+      "source": "music/combat/mus_combat_boss_revert.xwm",
+      "sha256": "339eefc1653ef152d195c7494bc39e3feaea8b07f91593c458b4f80519372d41"
+    },
+    "music/combat/mus_combat_boss_finale.xwm": {
+      "source": "music/combat/mus_combat_boss_finale_revert.xwm",
+      "sha256": "511530061c23e3853348b2a37c8eff6a1bcd9483295bb41639e6038f7526b82b"
+    },
+    "music/town/mus_village_01.xwm": {
+      "source": "music/town/mus_village_01_revert.xwm",
+      "sha256": "a1f4e12f63bdc6b6bc5b05588ead9e3a9a39a4e9c10bfbd3176bb16932ddd8af"
+    },
+    "music/reveal/mus_reveal_02.xwm": {
+      "source": "music/reveal/mus_reveal_02_revert.xwm",
+      "sha256": "bf1e01f4d0c6fd9d78457cb40de3f064c4e711aebe283e53451b1715398bde74"
+    },
+    "music/reveal/mus_reveal_03.xwm": {
+      "source": "music/reveal/mus_reveal_03_revert.xwm",
+      "sha256": "48f5cf9e9a2508f8b1b70d936f8c2c171859a477ad116c5905118e0717cdca44"
+    },
+    "music/dungeon/ice/mus_dungeon_ice_01.xwm": {
+      "source": "music/dungeon/ice/mus_dungeon_ice_01_revert.xwm",
+      "sha256": "898383335d534875927e2445241a860ce1c53180ab141e497263c661ea39d404"
+    },
+    "music/dungeon/fort/mus_dungeon_fort_01.xwm": {
+      "source": "music/dungeon/fort/mus_dungeon_fort_01_revert.xwm",
+      "sha256": "462d3496825107825a9b43b5d839dde32280b30b8e5d6b8dff106a5cc94a7e94"
+    },
+    "music/tavern/mus_tavern_01.xwm": {
+      "source": "music/tavern/mus_tavern_01_revert.xwm",
+      "sha256": "68fda8e3ff513c2a5f667a1cd8ffe92fdb5e406c7677ec782a3b4b43ece97668"
+    },
+    "music/mus_castle_imperial_01.xwm": {
+      "source": "music/mus_castle_imperial_01_revert.xwm",
+      "sha256": "8946029e45742457fdd0de45ebafd976051b43b3cdd3eb4e5f047111dd7efaa6"
+    },
+    "music/explore/mus_explore_morning_01.xwm": {
+      "source": "music/explore/mus_explore_morning_01_revert.xwm",
+      "sha256": "3fe1616cc69f808bc889d33ff3985ac472f3b4c9cc1317e99867ee57e73e758e"
+    },
+    "music/explore/mus_explore_day_01.xwm": {
+      "source": "music/explore/mus_explore_day_01_revert.xwm",
+      "sha256": "a78acf2df8e24275421a5a2e8c16196f143ad5ba75d7c238e71a5547b9bea460"
+    },
+    "music/explore/mus_explore_night_01.xwm": {
+      "source": "music/explore/mus_explore_night_01_revert.xwm",
+      "sha256": "8306b00c89613edad70a30731001ae1a93b724633cdbb24ef38c8184a394ef04"
+    },
+    "music/reward/mus_reward_02.xwm": {
+      "source": "music/reward/mus_reward_02_revert.xwm",
+      "sha256": "aaf9f9b4f09d3e516538475c6c5adf12394379b597ddef3241ff1d319812e3c8"
+    },
+    "music/reward/mus_reward_04.xwm": {
+      "source": "music/reward/mus_reward_04_revert.xwm",
+      "sha256": "a0c4a6662e2db8292f03498bba0ff510ad0cfb2babe4054e9a3fe880585bae8a"
+    },
+    "music/reward/mus_reward_03.xwm": {
+      "source": "music/reward/mus_reward_03_revert.xwm",
+      "sha256": "357b1b4da9ad54f4c990874c2ca7982bd259a7e1a2100e6bafd25fc66082e4b2"
+    },
+    "music/reveal/mus_reveal_01.xwm": {
+      "source": "music/reveal/mus_reveal_01_revert.xwm",
+      "sha256": "3d8fffc73c76df989623be6224d092e95e7f45b7f229a0f9f967cb55b3941813"
+    },
+    "music/explore/mus_explore_dusk_02.xwm": {
+      "source": "music/explore/mus_explore_dusk_02_revert.xwm",
+      "sha256": "52c09a39c8fa65e22ce58805ffe626197be90bb71d22609844b8512366022d7d"
+    },
+    "music/explore/mus_explore_day_03.xwm": {
+      "source": "music/explore/mus_explore_day_03_revert.xwm",
+      "sha256": "a9f7551d8e8fd4a347042c7c2d10d41a21bd0871c4939842e767968ce1ad271f"
+    },
+    "music/explore/mus_explore_night_02.xwm": {
+      "source": "music/explore/mus_explore_night_02_revert.xwm",
+      "sha256": "21496bf56d1ba67420653bd803ac9662abaa232907463bca6d095279a9b2c457"
+    },
+    "music/dread/mus_dread_02.xwm": {
+      "source": "music/dread/mus_dread_02_revert.xwm",
+      "sha256": "bd23e2477eda89c3bee4cb25c59a527c8b6566d46b5f9146635605386c3e57b9"
+    },
+    "music/special/failure/mus_failure_01.xwm": {
+      "source": "music/special/failure/mus_failure_01_revert.xwm",
+      "sha256": "4e7adc94a4a3f8f162037f09edfeeed4355d19a283c390f8fd8c7ec70e63cd07"
+    },
+    "music/special/failure/mus_failure_02.xwm": {
+      "source": "music/special/failure/mus_failure_02_revert.xwm",
+      "sha256": "42891851bc1992ad28cb32baab929d22f3dfde9a161d704a4d333f31aef7c7d9"
+    },
+    "music/special/failure/mus_failure_03.xwm": {
+      "source": "music/special/failure/mus_failure_03_revert.xwm",
+      "sha256": "8a5bb2720b02fd45c83d3ba8f148c8696f6c61bb9377a0fe5ecf09e8ae709609"
+    },
+    "music/special/mus_intro.xwm": {
+      "source": "music/special/mus_intro_revert.xwm",
+      "sha256": "3856383e0211b1880cf8806fe298111f777c58a6cbf15916f5f2cd65c5c1a955"
+    },
+    "music/stinger/mus_stinger_02.xwm": {
+      "source": "music/stinger/mus_stinger_02_revert.xwm",
+      "sha256": "d23f822a7e3d8364e42f1d8d70722cf579adbe900b1627072592915d0b14a0e5"
+    },
+    "music/stinger/mus_stinger_03.xwm": {
+      "source": "music/stinger/mus_stinger_03_revert.xwm",
+      "sha256": "1f4df1aaefb75ee8bcea9bcbdefd92802263a7ed009b62b82842aa41248a8f02"
+    },
+    "music/stinger/mus_stinger_04.xwm": {
+      "source": "music/stinger/mus_stinger_04_revert.xwm",
+      "sha256": "4574a527c9dee05d061673b5936c67132f8d3fa0f0e76ee74b83ec16a732940f"
+    },
+    "music/mus_castle_stormcloaks.xwm": {
+      "source": "music/mus_castle_stormcloaks_revert.xwm",
+      "sha256": "b3e028b515dcd570f827c9ed91576fe0a1b5ef78f8c0d864d065696d6a43609e"
+    },
+    "music/reveal/mus_reveal_04.xwm": {
+      "source": "music/reveal/mus_reveal_04_revert.xwm",
+      "sha256": "00126d99ba55702a26a6aaca614c39364acdb016428082d8aec0354bf6947bf3"
+    },
+    "music/explore/mus_explore_day_02.xwm": {
+      "source": "music/explore/mus_explore_day_02_revert.xwm",
+      "sha256": "d0f6b706f910be8628d1d8797637c66ee4189797f2077f173550b14565e6850d"
+    },
+    "music/dungeon/mus_dungeon_03.xwm": {
+      "source": "music/dungeon/mus_dungeon_03_revert.xwm",
+      "sha256": "5fe8407be4801a5afffc103ea9afeecfaa755e0690cf5dcf42790340c26500a9"
+    },
+    "music/dungeon/fort/mus_dungeon_fort_02.xwm": {
+      "source": "music/dungeon/fort/mus_dungeon_fort_02_revert.xwm",
+      "sha256": "0dc14001f4b345b391cc2c4f14fc9459b04f62a573e3ebf7cb62c2ff8c89d3c4"
+    },
+    "music/dungeon/cave/mus_dungeon_cave_01.xwm": {
+      "source": "music/dungeon/cave/mus_dungeon_cave_01_revert.xwm",
+      "sha256": "fce9bf2c8731f1ae1a2ce57946670ff5198ca9c27f588b3ff65593dc960fa0b2"
+    },
+    "music/dungeon/cave/mus_dungeon_cave_02.xwm": {
+      "source": "music/dungeon/cave/mus_dungeon_cave_02_revert.xwm",
+      "sha256": "65b9f6b5905e17a9f9debf4a925e827ac715cc81917198afca6433abb9507366"
+    },
+    "music/dungeon/cave/mus_dungeon_cave_03.xwm": {
+      "source": "music/dungeon/cave/mus_dungeon_cave_03_revert.xwm",
+      "sha256": "f2807484bbd6efd92f550a09d47cae876eff422bcc5242c60acf9246b4c4f7c7"
+    },
+    "music/stinger/mus_stinger_01.xwm": {
+      "source": "music/stinger/mus_stinger_01_revert.xwm",
+      "sha256": "2e3f120eca6e91bde4d8ae66a8576a4905339cf9b9155ca47a66c259ccb5da45"
+    },
+    "music/explore/mus_explore_dusk_03.xwm": {
+      "source": "music/explore/mus_explore_dusk_03_revert.xwm",
+      "sha256": "3dd5c2de8474bfdc9306b4167417c32148968b630b1e61f7fceee984ea622d1f"
+    },
+    "music/town/mus_village_03.xwm": {
+      "source": "music/town/mus_village_03_revert.xwm",
+      "sha256": "f05818e66a3a7d68acfb52732795801bb54513191ae9c7da0fb6f96d702f1d5c"
+    },
+    "music/mus_discover_genericlocation_01.xwm": {
+      "source": "music/mus_discover_genericlocation_01_revert.xwm",
+      "sha256": "624cd6aac6c75d79f9e8ac3a9aa3c1ef4d7b5b72b8957735b85e57f4e566b6d8"
+    },
+    "music/mus_discover_genericlocation_02.xwm": {
+      "source": "music/mus_discover_genericlocation_02_revert.xwm",
+      "sha256": "f9e05f7b9614fbee7a841b1197f6308678cd176294e02a68c8085aba3dfdf189"
+    },
+    "music/mus_discover_genericlocation_03.xwm": {
+      "source": "music/mus_discover_genericlocation_03_revert.xwm",
+      "sha256": "4a3ea9146311652b5d6210fe166717e171b463a7e15e25784183f4934be18f1e"
+    },
+    "music/dread/mus_discover_dread_01.xwm": {
+      "source": "music/dread/mus_discover_dread_01_revert.xwm",
+      "sha256": "3372ae60479107cbca396f5d475d644131bdd3c147841bd293a0b856f32b3167"
+    },
+    "music/dread/mus_discover_dread_02.xwm": {
+      "source": "music/dread/mus_discover_dread_02_revert.xwm",
+      "sha256": "026c79322f2e681241cc65feec14f854a1e061bcb11966ec7e10e7fbc2804728"
+    },
+    "music/dread/mus_discover_dread_03.xwm": {
+      "source": "music/dread/mus_discover_dread_03_revert.xwm",
+      "sha256": "7ba9795df7321abe403080116c88802a7ced274cace19cbe36af1407de39f553"
+    },
+    "music/dread/mus_discover_dread_04.xwm": {
+      "source": "music/dread/mus_discover_dread_04_revert.xwm",
+      "sha256": "76aaaad53569c2113fe9db9d6cb42a14c66aa73b2fa23a165141995404b845b2"
+    },
+    "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_01.xwm": {
+      "source": "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_01_revert.xwm",
+      "sha256": "2ab7a08b76e54f32d297df7be7277b5bebe361f03b33aa89f9b2e3729136f36a"
+    },
+    "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_02.xwm": {
+      "source": "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_02_revert.xwm",
+      "sha256": "4000d6dbfddfb2969f864ac58047e8ed3c690c5722218f304705664c7abef614"
+    },
+    "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_03.xwm": {
+      "source": "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_03_revert.xwm",
+      "sha256": "f08452808e15e913520b8525e75601e42988f6acc6e969dd38095412b475e3f9"
+    },
+    "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_04.xwm": {
+      "source": "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_04_revert.xwm",
+      "sha256": "b636e56b6a711aef2f9eed4bb88960b700cd94f68e115aff958765a147c2ccc1"
+    },
+    "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_05.xwm": {
+      "source": "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_05_revert.xwm",
+      "sha256": "90117b854b7ea3960d3d29658b3bcd8bf2bbfaf8e8843f73d08d64a0c369ced3"
+    },
+    "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_06.xwm": {
+      "source": "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_06_revert.xwm",
+      "sha256": "bd0d2ea55c6d745344d049e71377a7d188fbfc9ab4d75fdcff8fe7d2e39e1b20"
+    },
+    "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_07.xwm": {
+      "source": "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_07_revert.xwm",
+      "sha256": "14adf5cd4ff83f3731505ec60e75b16eb21e3f622e8e41bd42ad48906550bcf4"
+    },
+    "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_08.xwm": {
+      "source": "music/explore/forestpine/palette/day/a/mus_palette_forestpine_day_a_08_revert.xwm",
+      "sha256": "e2a8aaabcc91bc49f0cde820decd7b546b051977245dbd083be991ba023d0be9"
+    },
+    "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_01.xwm": {
+      "source": "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_01_revert.xwm",
+      "sha256": "acb9dcdbf5579976ce0588b46d26a33cd69724c206ad41167d200ccbcdb5c50b"
+    },
+    "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_02.xwm": {
+      "source": "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_02_revert.xwm",
+      "sha256": "09287fa3a9d8b969244e56c37e575a16316e3537142eb720bbc89aa257e7bff3"
+    },
+    "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_03.xwm": {
+      "source": "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_03_revert.xwm",
+      "sha256": "e3d53c1e3a3968e48e683d8ed4ebfec7160cdbcead73188aa4c0a85d50e4a90f"
+    },
+    "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_04.xwm": {
+      "source": "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_04_revert.xwm",
+      "sha256": "2d734ef8abd47b597fbdd18dcd05bd4fceb7bb2b4b073956d15ca540f4a69564"
+    },
+    "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_05.xwm": {
+      "source": "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_05_revert.xwm",
+      "sha256": "acfbcd450cfeb2e3432d2eaf1fe5fe216a163a9a35965b9187c19941ff5d8417"
+    },
+    "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_06.xwm": {
+      "source": "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_06_revert.xwm",
+      "sha256": "ca5d4e946731c453ceef09f042ec8a088f1c2e2a88365d4b2e9690d2bd1945f8"
+    },
+    "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_07.xwm": {
+      "source": "music/explore/forestpine/palette/day/b/mus_palette_forestpine_day_b_07_revert.xwm",
+      "sha256": "070e82e17eb1c4ec305251ee1b619869fc0ce968b34f0c650f8336c2a8c92fab"
+    },
+    "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_02.xwm": {
+      "source": "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_02_revert.xwm",
+      "sha256": "50dfa0dbcad2e30110f3d7a1ab2bf55746f9c2119f8ddb9818e86a763d16d46f"
+    },
+    "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_03.xwm": {
+      "source": "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_03_revert.xwm",
+      "sha256": "ca6bcab3604638cc95afaa32958f035ded5a03577d8d2961babdde2a1c93d560"
+    },
+    "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_04.xwm": {
+      "source": "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_04_revert.xwm",
+      "sha256": "978e5f4df84234f4e35da350e0281d35b71e663cdfd698a6cda96a7898999b37"
+    },
+    "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_05.xwm": {
+      "source": "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_05_revert.xwm",
+      "sha256": "e40d5483c371e60bd38ad2d76799f662419dc8d010a9546b3b17f81198da1b60"
+    },
+    "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_06.xwm": {
+      "source": "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_06_revert.xwm",
+      "sha256": "7425e3a01ae60e5c3af23df37a0c10d267b440eb734ca060c61211553a4dd0fe"
+    },
+    "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_07.xwm": {
+      "source": "music/explore/forestfall/palette/day/a/mus_palette_forestfall_day_a_07_revert.xwm",
+      "sha256": "de7a75b60355ab7eec4e6254e7b1e3ee54f0eac797a03ca51220418a051372fc"
+    },
+    "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_01.xwm": {
+      "source": "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_01_revert.xwm",
+      "sha256": "b731cf675ffef94812973e5796eddd6fd8b6b858dd5825faaf02c142e459574b"
+    },
+    "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_02.xwm": {
+      "source": "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_02_revert.xwm",
+      "sha256": "5c3bfc57fd2f9a1eefc09077f6274b9cff54c601c3df18fab7f5fdd821e33225"
+    },
+    "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_03.xwm": {
+      "source": "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_03_revert.xwm",
+      "sha256": "7a6334033f05270e5a4b7b83af40a1005cb034e66b0f43adb60700c82895fb4f"
+    },
+    "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_04.xwm": {
+      "source": "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_04_revert.xwm",
+      "sha256": "bd7518eb15bfa57143aae54726f991e6e3072a5e3987eb7d0343abad5abcb42f"
+    },
+    "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_05.xwm": {
+      "source": "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_05_revert.xwm",
+      "sha256": "a08c7bd65d4a04006be778309227da4cf99cb3eab5cb9ca9e0f418505d99da28"
+    },
+    "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_06.xwm": {
+      "source": "music/explore/forestfall/palette/day/b/mus_palette_forestfall_day_b_06_revert.xwm",
+      "sha256": "ea0ed1c3349162e1929978e7f16bdc9216900a15601edd0797ad379b03cdbef5"
+    },
+    "music/explore/forestpine/palette/night/a/mus_palette_forest_night_a_01.xwm": {
+      "source": "music/explore/forestpine/palette/night/a/mus_palette_forest_night_a_01_revert.xwm",
+      "sha256": "29e2bf5dab0a644e7ad136b8c015cd6ce9c6eaf03d1a2cd2ef360ea4e044e59a"
+    },
+    "music/explore/forestpine/palette/night/a/mus_palette_forest_night_a_02.xwm": {
+      "source": "music/explore/forestpine/palette/night/a/mus_palette_forest_night_a_02_revert.xwm",
+      "sha256": "847772a47d2e44affd985f5fd2b246cba8a12ff67fa506daac7eb122c4a3d1a1"
+    },
+    "music/explore/forestpine/palette/night/a/mus_palette_forest_night_a_03.xwm": {
+      "source": "music/explore/forestpine/palette/night/a/mus_palette_forest_night_a_03_revert.xwm",
+      "sha256": "ae155744e106e72e489b218910536a3e0659611fa2ac68148959081150882e19"
+    },
+    "music/explore/forestpine/palette/night/a/mus_palette_forest_night_a_04.xwm": {
+      "source": "music/explore/forestpine/palette/night/a/mus_palette_forest_night_a_04_revert.xwm",
+      "sha256": "526aa15c0cb59d481e613b3c3b0c0475cb4337c32cf496aa175496e05ec6fa1d"
+    },
+    "music/explore/forestpine/palette/night/a/mus_palette_forest_night_a_05.xwm": {
+      "source": "music/explore/forestpine/palette/night/a/mus_palette_forest_night_a_05_revert.xwm",
+      "sha256": "67242e89fcddbc75869b966ade6ac42864a3810b31444acd016986f74f51a2ca"
+    },
+    "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_01.xwm": {
+      "source": "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_01_revert.xwm",
+      "sha256": "837e4fbfdc7b91d095906b2fa8224e64e8848dbd9105f8527bdf963559f0d1cb"
+    },
+    "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_02.xwm": {
+      "source": "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_02_revert.xwm",
+      "sha256": "a76194f660cdcf87d3348a1890e9cc66f220e8596587a31ef9f72c2089f1cd41"
+    },
+    "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_03.xwm": {
+      "source": "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_03_revert.xwm",
+      "sha256": "a98faffb810332c6135771e24ca180892a21210164d3d463566f1cd436b695b0"
+    },
+    "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_04.xwm": {
+      "source": "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_04_revert.xwm",
+      "sha256": "a3aad10a5a85ff3d50a952b3bf10a1c381bda8c7f096d43e806fc37eba9fa1c0"
+    },
+    "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_05.xwm": {
+      "source": "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_05_revert.xwm",
+      "sha256": "3eaf9a32c94ad53110e3b6f7c33c34d8e51d8ef2c173468af1f0ecd964083069"
+    },
+    "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_06.xwm": {
+      "source": "music/explore/forestpine/palette/night/b/mus_palette_forest_night_b_06_revert.xwm",
+      "sha256": "840d7423d716a99a67debbcb957ea80775e16d2034b8228d4b9480f48ad4bd93"
+    },
+    "music/explore/mountain/palette/day/a/mus_palette_mountain_day_a_01.xwm": {
+      "source": "music/explore/mountain/palette/day/a/mus_palette_mountain_day_a_01_revert.xwm",
+      "sha256": "c96ed8d055412fad2d6b84edb6186bc75cca6179081d64a5ab3a80feb973fd22"
+    },
+    "music/explore/mountain/palette/day/a/mus_palette_mountain_day_a_02.xwm": {
+      "source": "music/explore/mountain/palette/day/a/mus_palette_mountain_day_a_02_revert.xwm",
+      "sha256": "76a82724938acd6e326ba8baba858b3f9cbf2084dfbd8356680a21af2ab721e7"
+    },
+    "music/explore/mountain/palette/day/a/mus_palette_mountain_day_a_03.xwm": {
+      "source": "music/explore/mountain/palette/day/a/mus_palette_mountain_day_a_03_revert.xwm",
+      "sha256": "40ff9ca8ac410af617abd97bdfc5f6ad484990f534470519694fac8d929cdad1"
+    },
+    "music/explore/mountain/palette/day/a/mus_palette_mountain_day_a_04.xwm": {
+      "source": "music/explore/mountain/palette/day/a/mus_palette_mountain_day_a_04_revert.xwm",
+      "sha256": "b59b9c6bd4d06453a39eccc53e8aed5ff7ec435b91c0d72482262856f41a7ff4"
+    },
+    "music/explore/mountain/palette/day/a/mus_palette_mountain_day_a_05.xwm": {
+      "source": "music/explore/mountain/palette/day/a/mus_palette_mountain_day_a_05_revert.xwm",
+      "sha256": "9015ca79ad50108cc1d8ac19813a9e131ddf47d816007828690cc379d7046703"
+    },
+    "music/explore/mountain/palette/day/b/mus_palette_mountain_day_b_01.xwm": {
+      "source": "music/explore/mountain/palette/day/b/mus_palette_mountain_day_b_01_revert.xwm",
+      "sha256": "e5ec0cf1647b1b68c1d952f675b530cede88140df618c6dd5a4ed4dc06569d52"
+    },
+    "music/explore/mountain/palette/day/b/mus_palette_mountain_day_b_02.xwm": {
+      "source": "music/explore/mountain/palette/day/b/mus_palette_mountain_day_b_02_revert.xwm",
+      "sha256": "bc253d064233e700b6709ae0dd8283968f5404ad3b2d88b6dddb57f04d9e8e73"
+    },
+    "music/explore/mountain/palette/day/b/mus_palette_mountain_day_b_03.xwm": {
+      "source": "music/explore/mountain/palette/day/b/mus_palette_mountain_day_b_03_revert.xwm",
+      "sha256": "371f5b65be5f8d7005f0f60969a74cd825848e57d2cbe6079c90a04a00c0195e"
+    },
+    "music/explore/mountain/palette/day/b/mus_palette_mountain_day_b_04.xwm": {
+      "source": "music/explore/mountain/palette/day/b/mus_palette_mountain_day_b_04_revert.xwm",
+      "sha256": "8a3926ee88c612d81058b490dea7c4132d7bda36b3aa73c46fa4fb14abdc1db5"
+    },
+    "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_01.xwm": {
+      "source": "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_01_revert.xwm",
+      "sha256": "c7c9f1c543f8172b5b0a8d0cd442474d00f13afd17c16ae5b067dd4af20878ca"
+    },
+    "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_02.xwm": {
+      "source": "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_02_revert.xwm",
+      "sha256": "69267b0e89abc68cf2c1e2631a29c787734fddc8f04f8f714a9d19a0ca95d01a"
+    },
+    "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_03.xwm": {
+      "source": "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_03_revert.xwm",
+      "sha256": "cbedda60f524f33035cc32dce2e7a7296bfb1a4a6c334c41e3799f90c01052f4"
+    },
+    "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_04.xwm": {
+      "source": "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_04_revert.xwm",
+      "sha256": "500664f595926fafdff45d52b073b3c7c8015142aa1192af0c1f8d2b199c1902"
+    },
+    "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_05.xwm": {
+      "source": "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_05_revert.xwm",
+      "sha256": "cbdfb0fdc13a57238cb9eb8641d33d58b385468f4399d9140cdc6c1ca3d224f3"
+    },
+    "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_06.xwm": {
+      "source": "music/explore/mountain/palette/night/a/mus_palette_mountain_night_a_06_revert.xwm",
+      "sha256": "d9faa3069e339df2b5571ea4e279b2cef05b8c1f7bfdcf0b30f6e204de44666d"
+    },
+    "music/explore/mountain/palette/night/b/mus_palette_mountain_night_b_01.xwm": {
+      "source": "music/explore/mountain/palette/night/b/mus_palette_mountain_night_b_01_revert.xwm",
+      "sha256": "601b7eb7a7c78a64d2bfbc4fa990c86c43d17d23c284dee7aee3d24756e4ab68"
+    },
+    "music/explore/mountain/palette/night/b/mus_palette_mountain_night_b_02.xwm": {
+      "source": "music/explore/mountain/palette/night/b/mus_palette_mountain_night_b_02_revert.xwm",
+      "sha256": "9fd661931ce450b2d90a1b66cc7d7b437b658fcc4fdebf4ad8e3571fdaefeead"
+    },
+    "music/explore/mountain/palette/night/b/mus_palette_mountain_night_b_03.xwm": {
+      "source": "music/explore/mountain/palette/night/b/mus_palette_mountain_night_b_03_revert.xwm",
+      "sha256": "90e420c86cae75f2380fca5cf0fe48cdd15ee221d1bb35e0ae9a38e1698d8653"
+    },
+    "music/explore/mountain/palette/night/b/mus_palette_mountain_night_b_04.xwm": {
+      "source": "music/explore/mountain/palette/night/b/mus_palette_mountain_night_b_04_revert.xwm",
+      "sha256": "6c7948aeaa2e91b040931ba853047da65298abd42ab37a73afa0895e52dfb611"
+    },
+    "music/explore/mountain/palette/night/b/mus_palette_mountain_night_b_05.xwm": {
+      "source": "music/explore/mountain/palette/night/b/mus_palette_mountain_night_b_05_revert.xwm",
+      "sha256": "d9e162d3411e64e44370484e880b17058f10a98ec073158da8358324345c6f86"
+    },
+    "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_01.xwm": {
+      "source": "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_01_revert.xwm",
+      "sha256": "e523fbe4bb8b76c61aee0da93ef37fd10d90c49b4876ecff930ad7352d188c88"
+    },
+    "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_02.xwm": {
+      "source": "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_02_revert.xwm",
+      "sha256": "176058535682c082c4b8e1021f36b3e11ea9af32f08ede626b1957e4326b5e40"
+    },
+    "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_03.xwm": {
+      "source": "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_03_revert.xwm",
+      "sha256": "8f8c25d2877043cdef070bd98ed9f6250ee7d802a09dc38cbc487f07deb8b352"
+    },
+    "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_04.xwm": {
+      "source": "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_04_revert.xwm",
+      "sha256": "bf89e08c1b8a98a06d0358b209ded3959cfa9711cf8d4bd5242d549f79afb75c"
+    },
+    "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_05.xwm": {
+      "source": "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_05_revert.xwm",
+      "sha256": "d0b990c44da30d094552a4bb4eb340557bf71fd0cf43aa3057980b0135aadf80"
+    },
+    "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_06.xwm": {
+      "source": "music/explore/mountain/palette/night/c/mus_palette_mountain_night_c_06_revert.xwm",
+      "sha256": "d59ba0877bb182ef78585e4dd285a5d31d092ec8d8e2d464c551faaf40781acc"
+    },
+    "music/explore/reach/palette/day/a/mus_palette_reach_day_a_01.xwm": {
+      "source": "music/explore/reach/palette/day/a/mus_palette_reach_day_a_01_revert.xwm",
+      "sha256": "f52668c264d238241773ac3620e8de9a59be75fa1f50581346fc86b89d903f1d"
+    },
+    "music/explore/reach/palette/day/a/mus_palette_reach_day_a_02.xwm": {
+      "source": "music/explore/reach/palette/day/a/mus_palette_reach_day_a_02_revert.xwm",
+      "sha256": "0e7ca4c5719c218b01755337de3f14b2d229633ed6219ea3b20a2699a3f6a6cc"
+    },
+    "music/explore/reach/palette/day/a/mus_palette_reach_day_a_03.xwm": {
+      "source": "music/explore/reach/palette/day/a/mus_palette_reach_day_a_03_revert.xwm",
+      "sha256": "455054bb8c6a04478f8835a93155b201a11940120dd07aca110bb88cc60779c3"
+    },
+    "music/explore/reach/palette/day/a/mus_palette_reach_day_a_04.xwm": {
+      "source": "music/explore/reach/palette/day/a/mus_palette_reach_day_a_04_revert.xwm",
+      "sha256": "dd0777c57fe4c8c81ac6d40ae07dffaa38aa8c515ea709b85490722721365a70"
+    },
+    "music/explore/reach/palette/day/a/mus_palette_reach_day_a_05.xwm": {
+      "source": "music/explore/reach/palette/day/a/mus_palette_reach_day_a_05_revert.xwm",
+      "sha256": "fbb1f7fff8705303c5d042fcad873c64fb70bfb096a3f760c6e7192d7c60b1a5"
+    },
+    "music/explore/reach/palette/day/b/mus_palette_reach_day_b_01.xwm": {
+      "source": "music/explore/reach/palette/day/b/mus_palette_reach_day_b_01_revert.xwm",
+      "sha256": "f7621c5717f603da82141ed450daf1e974dd1f9e733ea9ceae6a0bef447ebb37"
+    },
+    "music/explore/reach/palette/day/b/mus_palette_reach_day_b_02.xwm": {
+      "source": "music/explore/reach/palette/day/b/mus_palette_reach_day_b_02_revert.xwm",
+      "sha256": "858b794473b613e57e0a2088852f66fc4a1e44c189df1db479f7f2caf865d9fc"
+    },
+    "music/explore/reach/palette/day/b/mus_palette_reach_day_b_03.xwm": {
+      "source": "music/explore/reach/palette/day/b/mus_palette_reach_day_b_03_revert.xwm",
+      "sha256": "4e952a26667bfbb54f3b2a96ac8d1d1775d175c0e51a46f890cee64a43d41ef8"
+    },
+    "music/explore/reach/palette/day/b/mus_palette_reach_day_b_04.xwm": {
+      "source": "music/explore/reach/palette/day/b/mus_palette_reach_day_b_04_revert.xwm",
+      "sha256": "d4319844988600609397fcbe1e3b012d6d48ac5375d6f7fcdd859553099c7de1"
+    },
+    "music/explore/reach/palette/night/a/mus_palette_reach_night_a_01.xwm": {
+      "source": "music/explore/reach/palette/night/a/mus_palette_reach_night_a_01_revert.xwm",
+      "sha256": "7ffb11f1559539c5036aefc1896686ed6c4a91c7a086f425b0350d0bb985e224"
+    },
+    "music/explore/reach/palette/night/a/mus_palette_reach_night_a_02.xwm": {
+      "source": "music/explore/reach/palette/night/a/mus_palette_reach_night_a_02_revert.xwm",
+      "sha256": "32fd9209d3d9f5cebd7b658dd7502c6c3192232d6892866d984ec81c564a2f98"
+    },
+    "music/explore/reach/palette/night/a/mus_palette_reach_night_a_03.xwm": {
+      "source": "music/explore/reach/palette/night/a/mus_palette_reach_night_a_03_revert.xwm",
+      "sha256": "602ad4fd19cf08b434b3448b433ae22c927f1681be8998580ad35512c5fbba0a"
+    },
+    "music/explore/reach/palette/night/a/mus_palette_reach_night_a_04.xwm": {
+      "source": "music/explore/reach/palette/night/a/mus_palette_reach_night_a_04_revert.xwm",
+      "sha256": "1a1c5a3872d1e6113f773cfd61982f17d53a1ec515560c0e6af89eef31e0864f"
+    },
+    "music/explore/reach/palette/night/a/mus_palette_reach_night_a_05.xwm": {
+      "source": "music/explore/reach/palette/night/a/mus_palette_reach_night_a_05_revert.xwm",
+      "sha256": "ab2f3ce3438f0b25018a473d1a1957a220c9073992f3c0ec391e755297f1ea1f"
+    },
+    "music/explore/reach/palette/night/b/mus_palette_reach_night_b_01.xwm": {
+      "source": "music/explore/reach/palette/night/b/mus_palette_reach_night_b_01_revert.xwm",
+      "sha256": "5ac591baa76e112f91a7d984a72d67eb908410161fb2be5ebb04e77a4d958be3"
+    },
+    "music/explore/reach/palette/night/b/mus_palette_reach_night_b_02.xwm": {
+      "source": "music/explore/reach/palette/night/b/mus_palette_reach_night_b_02_revert.xwm",
+      "sha256": "11248769cc4cb2d000a578215b815328ff1e97c40550ef953958c087a7c06f28"
+    },
+    "music/explore/reach/palette/night/b/mus_palette_reach_night_b_04.xwm": {
+      "source": "music/explore/reach/palette/night/b/mus_palette_reach_night_b_04_revert.xwm",
+      "sha256": "67adb12c31703de63fb293cb19e49d6b458b14585a22df6d39ad3358a9366494"
+    },
+    "music/explore/reach/palette/night/b/mus_palette_reach_night_b_03.xwm": {
+      "source": "music/explore/reach/palette/night/b/mus_palette_reach_night_b_03_revert.xwm",
+      "sha256": "e929fb0198f7e1eeb31e05ccc5dcd80a4201d8ed7e683b8f5ee6c779dde5758a"
+    },
+    "music/explore/reach/palette/night/c/mus_palette_reach_night_c_01.xwm": {
+      "source": "music/explore/reach/palette/night/c/mus_palette_reach_night_c_01_revert.xwm",
+      "sha256": "6da46b4696bd64049e4bbb0597f276cba98de9d1717935ee6f11b51f8c944daf"
+    },
+    "music/explore/reach/palette/night/c/mus_palette_reach_night_c_02.xwm": {
+      "source": "music/explore/reach/palette/night/c/mus_palette_reach_night_c_02_revert.xwm",
+      "sha256": "8b61f22d64d7c8ecd059ed1c8cd24e89cdf5772bc30a51b1bfc2a3ac0afee0ef"
+    },
+    "music/explore/reach/palette/night/c/mus_palette_reach_night_c_03.xwm": {
+      "source": "music/explore/reach/palette/night/c/mus_palette_reach_night_c_03_revert.xwm",
+      "sha256": "30d8c9599249ac70673b7bf81bea79217dc532bc06be486a15bd0e0a8570b338"
+    },
+    "music/explore/reach/palette/night/c/mus_palette_reach_night_c_04.xwm": {
+      "source": "music/explore/reach/palette/night/c/mus_palette_reach_night_c_04_revert.xwm",
+      "sha256": "2b6fd756d593160012b18c710a96394f0636757fbeef1b45825aed3e30cd56d4"
+    },
+    "music/explore/reach/palette/night/c/mus_palette_reach_night_c_05.xwm": {
+      "source": "music/explore/reach/palette/night/c/mus_palette_reach_night_c_05_revert.xwm",
+      "sha256": "1cce3fc8a0b33d4b0177ba0b0a80ab7d3d32697c9db3de91d9951e2a7fe3cb90"
+    },
+    "music/explore/snow/palette/day/a/mus_palette_snowy_day_a_01.xwm": {
+      "source": "music/explore/snow/palette/day/a/mus_palette_snowy_day_a_01_revert.xwm",
+      "sha256": "37b306619c8ebb902e891d50bc1488303d32f325c9294bc33c3a6814ebbbbb9b"
+    },
+    "music/explore/snow/palette/day/a/mus_palette_snowy_day_a_02.xwm": {
+      "source": "music/explore/snow/palette/day/a/mus_palette_snowy_day_a_02_revert.xwm",
+      "sha256": "b4088744f1b2bba9d4d9b691c2edf8d9dbe9f76c25ebba581424dbc17ccba7ea"
+    },
+    "music/explore/snow/palette/day/a/mus_palette_snowy_day_a_03.xwm": {
+      "source": "music/explore/snow/palette/day/a/mus_palette_snowy_day_a_03_revert.xwm",
+      "sha256": "3323304c76f1182ddf9cc01927fcb1320973ab86a088f1d86a7b257b9b8bd4a2"
+    },
+    "music/explore/snow/palette/day/a/mus_palette_snowy_day_a_04.xwm": {
+      "source": "music/explore/snow/palette/day/a/mus_palette_snowy_day_a_04_revert.xwm",
+      "sha256": "075eab71265f796f225bcfc27d0ec93528a710b53330b221481ea48bd57b4604"
+    },
+    "music/explore/snow/palette/day/b/mus_palette_snowy_day_b_01.xwm": {
+      "source": "music/explore/snow/palette/day/b/mus_palette_snowy_day_b_01_revert.xwm",
+      "sha256": "2cdbdd7e1815c0e19c82132a5d45de81ddd68ffb3e316daae84290627ac4c84a"
+    },
+    "music/explore/snow/palette/day/b/mus_palette_snowy_day_b_02.xwm": {
+      "source": "music/explore/snow/palette/day/b/mus_palette_snowy_day_b_02_revert.xwm",
+      "sha256": "38f8789fb75f2d0f7959ec7e01a788414bbf0ab3b0d09b2775042ea67ed5bb9a"
+    },
+    "music/explore/snow/palette/day/b/mus_palette_snowy_day_b_03.xwm": {
+      "source": "music/explore/snow/palette/day/b/mus_palette_snowy_day_b_03_revert.xwm",
+      "sha256": "d6ca1ddac81cbd6b1fc26d03197e2452351c39cfc8664c6d6a7325c05aea5ecd"
+    },
+    "music/explore/snow/palette/day/b/mus_palette_snowy_day_b_04.xwm": {
+      "source": "music/explore/snow/palette/day/b/mus_palette_snowy_day_b_04_revert.xwm",
+      "sha256": "02ac8f76635b8c721f5fb4993be3981af54ac355a63db4e165117eae0ef4b39a"
+    },
+    "music/explore/snow/palette/day/c/mus_palette_snowy_day_c_01.xwm": {
+      "source": "music/explore/snow/palette/day/c/mus_palette_snowy_day_c_01_revert.xwm",
+      "sha256": "145e8fb5595eb45416a0134748780252bbe041b15d3f0930832b6d795d4ec5cc"
+    },
+    "music/explore/snow/palette/day/c/mus_palette_snowy_day_c_02.xwm": {
+      "source": "music/explore/snow/palette/day/c/mus_palette_snowy_day_c_02_revert.xwm",
+      "sha256": "4d5e2a27a77d23cc228a2a614137884260cce23f314a40f44bce1d766630aa54"
+    },
+    "music/explore/snow/palette/day/c/mus_palette_snowy_day_c_03.xwm": {
+      "source": "music/explore/snow/palette/day/c/mus_palette_snowy_day_c_03_revert.xwm",
+      "sha256": "b12dcf947236175bf4e3d585cee8bd99ad5701aa0f30339d054b4f8a1cb29b7b"
+    },
+    "music/explore/snow/palette/day/c/mus_palette_snowy_day_c_04.xwm": {
+      "source": "music/explore/snow/palette/day/c/mus_palette_snowy_day_c_04_revert.xwm",
+      "sha256": "4a41892393b7c72874651ce5b675890f8a999f0760f05b3d0b73507090c7c769"
+    },
+    "music/explore/snow/palette/night/a/mus_palette_snowy_night_a_01.xwm": {
+      "source": "music/explore/snow/palette/night/a/mus_palette_snowy_night_a_01_revert.xwm",
+      "sha256": "e079765dc2bb5c4458774e3adc92b7564a02ad7b1d97284f7ae17b77d6f4e773"
+    },
+    "music/explore/snow/palette/night/a/mus_palette_snowy_night_a_03.xwm": {
+      "source": "music/explore/snow/palette/night/a/mus_palette_snowy_night_a_03_revert.xwm",
+      "sha256": "b027f4138ed06e64a7b0844d4a25bce524f5a4ee1fe47b9efb9933ef15b6445c"
+    },
+    "music/explore/snow/palette/night/a/mus_palette_snowy_night_a_02.xwm": {
+      "source": "music/explore/snow/palette/night/a/mus_palette_snowy_night_a_02_revert.xwm",
+      "sha256": "b9d49532b4af94da3c1d4cd965f7ab759b3806b15d933438298bffd42058d57c"
+    },
+    "music/explore/snow/palette/night/a/mus_palette_snowy_night_a_05.xwm": {
+      "source": "music/explore/snow/palette/night/a/mus_palette_snowy_night_a_05_revert.xwm",
+      "sha256": "ac668bf2b3cde4214d6a3378adc96a0b11b4f1481ef4e487d3196afee939a010"
+    },
+    "music/explore/snow/palette/night/a/mus_palette_snowy_night_a_04.xwm": {
+      "source": "music/explore/snow/palette/night/a/mus_palette_snowy_night_a_04_revert.xwm",
+      "sha256": "6a4e6e9bc65ad46f9f49eed0a1c39d855b957c4b193e324ade43a0d5207c7e85"
+    },
+    "music/explore/snow/palette/night/b/mus_palette_snowy_night_b_02.xwm": {
+      "source": "music/explore/snow/palette/night/b/mus_palette_snowy_night_b_02_revert.xwm",
+      "sha256": "8d65e6ae00e61d695f12cb3cc00408929bb51626d07f889ae78c4bc7a86f9caf"
+    },
+    "music/explore/snow/palette/night/b/mus_palette_snowy_night_b_03.xwm": {
+      "source": "music/explore/snow/palette/night/b/mus_palette_snowy_night_b_03_revert.xwm",
+      "sha256": "47eddea99ae729b464e03a1c9262d055f3764956506bcfa81d3406ca39a23236"
+    },
+    "music/explore/snow/palette/night/b/mus_palette_snowy_night_b_04.xwm": {
+      "source": "music/explore/snow/palette/night/b/mus_palette_snowy_night_b_04_revert.xwm",
+      "sha256": "e94803d893352564a2f2015784c0d88dd1682272b0d9e0d243cdce8e23ab354c"
+    },
+    "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_01.xwm": {
+      "source": "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_01_revert.xwm",
+      "sha256": "4abe1ed92fdaeb8f8991e942ac09101afd69ea88366e1d1d9bdcc52f025fea7f"
+    },
+    "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_02.xwm": {
+      "source": "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_02_revert.xwm",
+      "sha256": "110d37278d9beef8166ab8bebbee0889fe70197d11a94c65f22995cc56516644"
+    },
+    "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_03.xwm": {
+      "source": "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_03_revert.xwm",
+      "sha256": "dfd44a531dcec97bb0f5b141b289b81e9cf57d25e99e6d56d5a7efe3d3073a50"
+    },
+    "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_04.xwm": {
+      "source": "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_04_revert.xwm",
+      "sha256": "242b856e25d91ff66bf057af8d1e6f70b9c180b27e9ad889dfcf470e82e7e2d5"
+    },
+    "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_05.xwm": {
+      "source": "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_05_revert.xwm",
+      "sha256": "c1c09856939ca68c431bc03ac797ea7bc16b2e14d6eb5c6081403597d8e32112"
+    },
+    "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_06.xwm": {
+      "source": "music/explore/tundra/palette/day/a/mus_palette_tundra_day_a_06_revert.xwm",
+      "sha256": "e32777dfa8aadd2f53952e70a77708f6d4b059d7b39517d4c41005b3e679c5a7"
+    },
+    "music/explore/tundra/palette/day/b/mus_palette_tundra_day_b_01.xwm": {
+      "source": "music/explore/tundra/palette/day/b/mus_palette_tundra_day_b_01_revert.xwm",
+      "sha256": "27d6bc2c6b49a38b7689f5bb7b799267d205cd3848adfd0a7d2ee86e3681c924"
+    },
+    "music/explore/tundra/palette/day/b/mus_palette_tundra_day_b_02.xwm": {
+      "source": "music/explore/tundra/palette/day/b/mus_palette_tundra_day_b_02_revert.xwm",
+      "sha256": "54de9b6bbf4a961223148c9e7e435c39400437a0e69f632b6771ffba5f6908f3"
+    },
+    "music/explore/tundra/palette/day/b/mus_palette_tundra_day_b_03.xwm": {
+      "source": "music/explore/tundra/palette/day/b/mus_palette_tundra_day_b_03_revert.xwm",
+      "sha256": "56265064ee8f2578ae90d2d4744fb080b332cbb135266c5cf7ee8922b1e38fbd"
+    },
+    "music/explore/tundra/palette/day/b/mus_palette_tundra_day_b_04.xwm": {
+      "source": "music/explore/tundra/palette/day/b/mus_palette_tundra_day_b_04_revert.xwm",
+      "sha256": "7152e5ee02bcd0275eb893b770538f830768874f4397517a029beb6352384264"
+    },
+    "music/explore/tundra/palette/day/c/mus_palette_tundra_day_c_01.xwm": {
+      "source": "music/explore/tundra/palette/day/c/mus_palette_tundra_day_c_01_revert.xwm",
+      "sha256": "6e6f0c694394c494b771d3905bd8b31ea265f6610308ee1964ef339da0b88899"
+    },
+    "music/explore/tundra/palette/day/c/mus_palette_tundra_day_c_02.xwm": {
+      "source": "music/explore/tundra/palette/day/c/mus_palette_tundra_day_c_02_revert.xwm",
+      "sha256": "a5d34a1a56f4d30b3f61e953dc55c7d4d00116a1c6222cc867aebb04c0a5bdac"
+    },
+    "music/explore/tundra/palette/day/c/mus_palette_tundra_day_c_03.xwm": {
+      "source": "music/explore/tundra/palette/day/c/mus_palette_tundra_day_c_03_revert.xwm",
+      "sha256": "67da648d8abac47ad3ec1199bde02431058291290103a1cdb73f86c95c6d6ae3"
+    },
+    "music/tavern/mus_tavern_02.xwm": {
+      "source": "music/tavern/mus_tavern_02_revert.xwm",
+      "sha256": "dc314c85bbe3483ebe253856b1a86ba31ec7f2e0129a523ff94c6475f427c60f"
+    },
+    "music/explore/mus_explore_dusk_01.xwm": {
+      "source": "music/explore/mus_explore_dusk_01_revert.xwm",
+      "sha256": "3b3fa18e717802a87f7a83e4ac3880a9bebb6aee1e791dab49330b60820a515d"
+    },
+    "music/explore/mus_explore_night_04.xwm": {
+      "source": "music/explore/mus_explore_night_04_revert.xwm",
+      "sha256": "1d4dad0b19e377554ecdd35ef5810c2a38347b8b0ffd04b0a675d4dbf1f4fffd"
+    },
+    "music/explore/mus_explore_night_05.xwm": {
+      "source": "music/explore/mus_explore_night_05_revert.xwm",
+      "sha256": "25da4721a18fcb15d40ab8702f3b48d60145db4d3a4f1275c98763486772bef1"
+    },
+    "music/explore/mus_explore_day_04.xwm": {
+      "source": "music/explore/mus_explore_day_04_revert.xwm",
+      "sha256": "dc2329fa1cfd8ac2397f675da230263dc86edc326bc01a0ca70669a7f8f6789e"
+    },
+    "music/explore/mus_explore_night_06.xwm": {
+      "source": "music/explore/mus_explore_night_06_revert.xwm",
+      "sha256": "351e2030e0899082644c87bfa98b4966dee0f9b11da9b213082ea3f15b5ecfcd"
+    },
+    "music/dread/mus_dread_01.xwm": {
+      "source": "music/dread/mus_dread_01_revert.xwm",
+      "sha256": "8ca4247e8066c3b3881c7e014b2d468dea8bb234674d7b97bc1a33674b7a75ac"
+    },
+    "music/dread/mus_dread_04.xwm": {
+      "source": "music/dread/mus_dread_04_revert.xwm",
+      "sha256": "231c871a2673433b5b99a1694effac32379582eddbd55aeed877f79c682b999c"
+    },
+    "music/explore/mus_explore_morning_02.xwm": {
+      "source": "music/explore/mus_explore_morning_02_revert.xwm",
+      "sha256": "3347a55a8ee25f2d7876bbd56c11bd056d1fda8d65aae39c4c01966d5894bec4"
+    },
+    "music/special/mus_special_cartintro_01.xwm": {
+      "source": "music/special/mus_special_cartintro_01_revert.xwm",
+      "sha256": "b472df2f3d4bdf2085ea566b055c8bcc876e0f65d37ce6cd519ae682f919c841"
+    },
+    "music/explore/mus_explore_day_05.xwm": {
+      "source": "music/explore/mus_explore_day_05_revert.xwm",
+      "sha256": "c7ad99367ca67f1fef1599f49655a70addff5e13b914ccd0a7103b02e50cbdf2"
+    },
+    "music/combat/mus_combat_boss_02.xwm": {
+      "source": "music/combat/mus_combat_boss_02_revert.xwm",
+      "sha256": "5948e4d8b6bad313153aae37a0b42ab985a24f21c953f6185ab32123686c82ba"
+    },
+    "music/combat/mus_combat_boss_02_finale.xwm": {
+      "source": "music/combat/mus_combat_boss_02_finale_revert.xwm",
+      "sha256": "549c45e72c477f732716be8bc7a78e60873620d16263568d1113b146f6afd222"
+    },
+    "music/explore/mus_explore_day_06.xwm": {
+      "source": "music/explore/mus_explore_day_06_revert.xwm",
+      "sha256": "5e23105214fec4cfba513854f32c5d86d5cd395b89f9939a3e2b89e6d434f937"
+    },
+    "music/explore/mus_explore_day_07.xwm": {
+      "source": "music/explore/mus_explore_day_07_revert.xwm",
+      "sha256": "047fd9d85e0d4ee522c71edee69aae7c926e725bf21c408737daee8fad988e0f"
+    },
+    "music/town/mus_town_day_04.xwm": {
+      "source": "music/town/mus_town_day_04_revert.xwm",
+      "sha256": "9cda9c3043be08443a7588a777cffe598c295b77fc308ba4d618ca772215cb2e"
+    },
+    "music/dungeon/ice/mus_dungeon_ice_02.xwm": {
+      "source": "music/dungeon/ice/mus_dungeon_ice_02_revert.xwm",
+      "sha256": "11b81aafc2e38341e940983c575e4246c1d59822908d4d0943d7ae2e18a69569"
+    },
+    "music/mus_levelup_02.xwm": {
+      "source": "music/mus_levelup_02_revert.xwm",
+      "sha256": "f600b97b00685a237c0ee6e35d24c79b5b4bb892cff988bc9863a15b8fccbcd4"
+    },
+    "music/mus_levelup_03.xwm": {
+      "source": "music/mus_levelup_03_revert.xwm",
+      "sha256": "fe8b12a6a6d7e8f181494cd49de36ed5f89fa66d38adef32de975e18fa6a5be6"
+    },
+    "music/explore/mus_explore_day_08.xwm": {
+      "source": "music/explore/mus_explore_day_08_revert.xwm",
+      "sha256": "6c173e4fe46ecbc0c2abcc1bde85f1be9bbaa857ce2a89770b43ef4d71669c2d"
+    },
+    "music/mus_explore_dlc2solstheim_11.xwm": {
+      "source": "music/mus_explore_dlc2solstheim_11_revert.xwm",
+      "sha256": "e07ee377f889dda31b147b21b1c39230f2f700b352ec55917a7833c37cdd3bc8"
+    },
+    "music/mus_explore_dlc2solstheim_10.xwm": {
+      "source": "music/mus_explore_dlc2solstheim_10_revert.xwm",
+      "sha256": "f407061008d757623d29c97ff2d728b92cd5e790c907e8677ac7a179fb903dca"
+    },
+    "music/mus_explore_dlc2solstheim_09.xwm": {
+      "source": "music/mus_explore_dlc2solstheim_09_revert.xwm",
+      "sha256": "f95530f0824103f471782e298181273f36aec1ff549afe8f0b6770dc12cf2fa1"
+    },
+    "music/mus_explore_dlc2solstheim_08.xwm": {
+      "source": "music/mus_explore_dlc2solstheim_08_revert.xwm",
+      "sha256": "132458b68397dd8da63e03b8ac56a425b0983067a40be89603ebbe6cd94a45cd"
+    },
+    "music/mus_explore_dlc2solstheim_07.xwm": {
+      "source": "music/mus_explore_dlc2solstheim_07_revert.xwm",
+      "sha256": "f65b47885df29f49a6f71a68e45488826d8900c488acb8507fd58469508b6529"
+    },
+    "music/mus_explore_dlc2solstheim_06.xwm": {
+      "source": "music/mus_explore_dlc2solstheim_06_revert.xwm",
+      "sha256": "b0f134b5e7b2a6a4a579bc10ae3833dafc455100b21bcbe80258515ae6a8756a"
+    },
+    "music/mus_explore_dlc2solstheim_05.xwm": {
+      "source": "music/mus_explore_dlc2solstheim_05_revert.xwm",
+      "sha256": "bc7362b8286f1d7394c966183d2d4897c6d98acc9c860970fbac164f73d9d02b"
+    },
+    "music/mus_dlc2boatarrival_01.xwm": {
+      "source": "music/mus_dlc2boatarrival_01_revert.xwm",
+      "sha256": "e897f0db04fe4ef30eefd627cf36c4e45c100c3a86d5bd8a32e5dfa8a46779ac"
+    },
+    "music/mus_dungeon_dlc2apocrypha_02.xwm": {
+      "source": "music/mus_dungeon_dlc2apocrypha_02_revert.xwm",
+      "sha256": "fff3c4d6f2a995d8529ccc58fa950c8193907fe71b03903be6cd22773f2409da"
+    },
+    "music/mus_dungeon_dlc2apocrypha_01.xwm": {
+      "source": "music/mus_dungeon_dlc2apocrypha_01_revert.xwm",
+      "sha256": "11e53d04f1a56a7b3629664470461181454757f28c136a683396c28d5e3c79c4"
+    },
+    "music/mus_explore_dlc2solstheim_04.xwm": {
+      "source": "music/mus_explore_dlc2solstheim_04_revert.xwm",
+      "sha256": "90b928ce75682ef9975fa40bf41f2e1fe3fb969e05e9aa49600804b5ec056319"
+    },
+    "music/mus_explore_dlc2solstheim_02.xwm": {
+      "source": "music/mus_explore_dlc2solstheim_02_revert.xwm",
+      "sha256": "d19e6e84eb7c0bf76500f58a594a54de91b903a4cda14cb37e0b3d73d93cdd5c"
+    },
+    "music/mus_explore_dlc2solstheim_03.xwm": {
+      "source": "music/mus_explore_dlc2solstheim_03_revert.xwm",
+      "sha256": "debc5f970d8582f725b1d79d18f990c33b2fd2ff3fb14b860064796e11c0b6f6"
+    },
+    "music/mus_explore_dlc2solstheim_01.xwm": {
+      "source": "music/mus_explore_dlc2solstheim_01_revert.xwm",
+      "sha256": "3b57744306f9e742994d6fda9ef7d858d389ebd3f3736c117446dd2e58b14243"
+    },
+    "music/dlc01/mus_eclipse_01.xwm": {
+      "source": "music/dlc01/mus_eclipse_01_revert.xwm",
+      "sha256": "e13f57e8de41992e9139f6b28c48a41c406deba5b63518416a79114e41dd6c5c"
+    },
+    "music/dlc01/explore/falmervalley/mus_explore_dlc_falmervalley_01.xwm": {
+      "source": "music/dlc01/explore/falmervalley/mus_explore_dlc_falmervalley_01_revert.xwm",
+      "sha256": "fa06ec1e2aa0383cbc729176f29da63e2d0dde8a75564f9e9d3829730923fe14"
+    },
+    "music/dlc01/dungeon/mus_dungeon_dlc_soulcairn_01.xwm": {
+      "source": "music/dlc01/dungeon/mus_dungeon_dlc_soulcairn_01_revert.xwm",
+      "sha256": "cddb97adaefda59e7df192a4f2abc40be5bd6258350f0329191950193776263a"
+    },
+    "music/dlc01/dungeon/mus_dungeon_dlc_vampirecastle_02.xwm": {
+      "source": "music/dlc01/dungeon/mus_dungeon_dlc_vampirecastle_02_revert.xwm",
+      "sha256": "5fa08b14e35a6b6edeaefab4d36b7cc7e1a377f4e21225b592fef66d1fd8aeef"
+    },
+    "music/dlc01/dungeon/mus_dungeon_dlc_vampirecastle_01.xwm": {
+      "source": "music/dlc01/dungeon/mus_dungeon_dlc_vampirecastle_01_revert.xwm",
+      "sha256": "35aaf6c9ee40fbb8271991d55b1624362ea7782cca6a92f0e02906f007d1c0df"
+    }
+  },
+  "decode_verification": {
+    "files": 239,
+    "all_decode_without_errors": true,
+    "decoder": "ffmpeg-win-x86_64-v9.0.2.exe",
+    "decoder_sha256": "3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec",
+    "elapsed_seconds": 5.075517099990975,
+    "failures": [],
+    "game_playback_executed": false
+  }
+}

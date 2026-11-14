@@ -27,18 +27,30 @@ bool PathMatches(const RE::BSResource::ID& id,const std::string& path) {
     return std::memcmp(&id,&expected,sizeof(id))==0;
 }
 }
-AudioInputs::AudioInputs(bool needed) {
+AudioInputs::AudioInputs(bool needed,const std::map<FormKey,std::vector<TrackRecord>>& tracks) {
     if(!needed) return;
     try {
-        for(const auto* name:{"Skyrim - Sounds.bsa","Dawnguard.bsa","HearthFires.bsa","Dragonborn.bsa"}) {
-            const auto path=std::filesystem::path("Data")/name;
-            if(std::filesystem::exists(path)) original_.AddArchive(path);
+        pack_.Read(std::filesystem::path("Data")/AudioManifest);
+        if(pack_.Empty()) {REX::INFO("Optional original audio pack absent; coexistence disabled");return;}
+        auto* data=RE::TESDataHandler::GetSingleton();if(!data) return;
+        for(const auto& [key,versions]:tracks) {
+            auto* wrapper=data->LookupForm<RE::BGSMusicTrackFormWrapper>(key.id,key.plugin);
+            if(!wrapper || !wrapper->track || !wrapper->GetFile() || wrapper->GetType()!=RE::BSIMusicTrack::TrackType::kSingleTrack) continue;
+            std::string source(wrapper->GetFile()->GetFilename());
+            for(auto& c:source) if(c>='A'&&c<='Z') c+=32;
+            const TrackRecord* match=nullptr;
+            for(const auto& version:versions) if(version.source==source) {
+                if(match) {match=nullptr;break;}match=&version;
+            }
+            if(!match || match->invalid || match->deleted || !match->singleAudio) continue;
+            const auto* single=static_cast<const RE::BGSMusicSingleTrack*>(wrapper->track);
+            if(PathMatches(single->trackID,match->audioPath) && PathMatches(single->finaleID,match->finalePath))
+                paths_.emplace(wrapper,AudioPaths{match->audioPath,match->finalePath});
         }
-        ready_=true;
-    } catch(const std::exception& e) {REX::WARN("Original audio input unavailable: {}",e.what());}
+    } catch(const std::exception& e) {pack_=OriginalAudioPack{};paths_.clear();REX::WARN("Optional audio pack unavailable: {}",e.what());}
 }
-PrivateSingle AudioInputs::Original(const AudioCandidate& candidate,const RE::BGSMusicTrack* effectiveUse) {
-    if(!ready_) return {};
+PrivateSingle AudioInputs::Original(const AudioCandidate& candidate,const RE::BGSMusicTrack* effectiveUse,const std::vector<RE::BSIMusicTrack*>& present) {
+    if(pack_.Empty()) return {};
     try {
         if(!effectiveUse || effectiveUse->GetType()!=RE::BSIMusicTrack::TrackType::kSingleTrack) return {};
         const auto* single=static_cast<const RE::BGSMusicSingleTrack*>(effectiveUse);
@@ -46,17 +58,17 @@ PrivateSingle AudioInputs::Original(const AudioCandidate& candidate,const RE::BG
             REX::WARN("AUDIO_SKIP {} runtime audio path differs",ToString(candidate.track));return {};
         }
         std::string reason;
-        const auto pair=CompareAudio(original_,WinningAudio,candidate.audioPath,candidate.finalePath,reason);
+        std::vector<AudioPaths> existing;
+        for(auto* track:present) if(auto it=paths_.find(track);it!=paths_.end()) existing.push_back(it->second);
+        const auto pair=pack_.Resolve({candidate.audioPath,candidate.finalePath},existing,WinningAudio,reason);
         if(!pair) {
-            if(reason!="unchanged audio") REX::INFO("AUDIO_SKIP {} {}",ToString(candidate.track),reason);
+            if(reason!="original already present") REX::INFO("AUDIO_SKIP {} {}",ToString(candidate.track),reason);
             return {};
         }
         // Both versions inherit the effective use before its single commit.
         auto copy=CloneSingle(single);if(!copy) return {};
-        auto main=CacheAudio("Data",pair->track);
-        auto finale=pair->finale.empty()?std::string{}:CacheAudio("Data",pair->finale);
-        if(Resource(main)!=std::optional<AudioBytes>(pair->track) ||
-           (!finale.empty() && Resource(finale)!=std::optional<AudioBytes>(pair->finale))) return {};
+        auto main=pair->track,finale=pair->finale;
+        paths_.insert_or_assign(copy.get(),AudioPaths{main,finale});
         std::replace(main.begin(),main.end(),'/','\\');std::replace(finale.begin(),finale.end(),'/','\\');
         copy->trackID.GenerateFromPath(main.c_str());
         if(!finale.empty()) copy->finaleID.GenerateFromPath(finale.c_str());

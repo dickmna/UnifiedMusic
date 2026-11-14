@@ -16,22 +16,24 @@ std::optional<std::string> MusicPath(std::string path);
 bool ValidMusic(std::span<const std::uint8_t> bytes);
 std::string AudioHash(std::span<const std::uint8_t> bytes);
 std::optional<AudioBytes> ReadAudioFile(const std::filesystem::path& path);
-// Original archive access is deliberately separate from the winning-resource
-// reader. The game reader supplies deployed/VFS/BSA precedence at runtime.
-class OriginalAudio {
-public:
-    void AddArchive(const std::filesystem::path& path);
-    std::optional<AudioBytes> Read(const std::string& path) const;
-private:
-    struct Entry { std::filesystem::path archive; std::uint32_t offset{},size{}; bool compressed{},embedded{}; };
-    std::map<std::string,Entry> entries_;
-    std::vector<std::string> ambiguous_;
-};
 using AudioReader=std::function<std::optional<AudioBytes>(const std::string&)>;
-struct AudioPair { AudioBytes track,finale; std::string trackHash,finaleHash,replacementHash,replacementFinaleHash; };
-// No writes. Returns only complete, valid, byte-distinct original/replacer pairs.
-std::optional<AudioPair> CompareAudio(const OriginalAudio& original,const AudioReader& visible,
-    const std::string& track,const std::string& finale,std::string& reason);
-std::string CacheAudio(const std::filesystem::path& dataRoot,const AudioBytes& bytes);
+using AudioPaths=std::pair<std::string,std::string>;
+struct AudioPair { std::string track,finale,trackHash,finaleHash,replacementHash,replacementFinaleHash; };
+inline constexpr auto AudioManifest="SKSE/Plugins/HarmoniaOriginalAudio.json";
+// Optional, independently installed resources. No archive parser or disk writes.
+class OriginalAudioPack {
+public:
+    void Read(const std::filesystem::path& manifest);
+    bool Empty() const { return assets_.empty(); }
+    std::optional<AudioPair> Resolve(const AudioPaths& source,const std::vector<AudioPaths>& present,
+        const AudioReader& reader,std::string& reason);
+private:
+    struct Asset { std::string file,hash; std::set<std::string> equivalent; };
+    std::map<std::string,Asset> assets_;
+    std::set<AudioPaths> pairs_;
+    // Startup-only fingerprints: audio bytes are released immediately.
+    std::map<std::string,std::string> fingerprints_;
+    std::string Fingerprint(const std::string& path,const AudioReader& reader);
+};
 std::map<FormKey,std::string> CheckSceneResources(const std::vector<SceneResource>& resources,const AudioReader& reader);
 }

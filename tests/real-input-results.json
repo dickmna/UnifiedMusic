@@ -1,11 +1,11 @@
 {
-  "version": "Harmonia 0.11.0-alpha",
+  "version": "Harmonia 0.12.0-alpha",
   "installed": {
-    "version": "Harmonia 0.11.0-alpha",
+    "version": "Harmonia 0.12.0-alpha",
     "plugins": 111,
     "original_configuration_used": true,
-    "record_scan_seconds": 5.330826299963519,
-    "resource_scan_seconds": 6.528290499991272,
+    "record_scan_seconds": 4.733973500027787,
+    "resource_scan_seconds": 5.693138599977829,
     "plan_counts": {
       "VMAD_FALLBACK": 1,
       "RESTORE_AUTHORED": 12,
@@ -18,7 +18,8 @@
       "CONDITION_GUARD": 3,
       "USE_RULES": 5,
       "ISOLATE_GUARD": 2,
-      "SELECTOR": 1
+      "SELECTOR": 1,
+      "AUDIO_DISABLED": 1
     },
     "previously_absent_memberships": 195,
     "restored_absent_memberships": 195,
@@ -38,21 +39,62 @@
     },
     "scene_resources_checked_tracks": 11,
     "resource_checked_plan_matches_record_plan": true,
-    "audio_coexist_use_proposals": 249,
-    "audio_coexist_unique_tracks": 65,
+    "unmapped_optional_audio_uses": [
+      "AUDIO_SKIP update.esm:12366 no verified main/finale mapping",
+      "AUDIO_SKIP update.esm:12367 no verified main/finale mapping",
+      "AUDIO_SKIP update.esm:12368 no verified main/finale mapping",
+      "AUDIO_SKIP update.esm:12369 no verified main/finale mapping",
+      "AUDIO_SKIP update.esm:12370 no verified main/finale mapping"
+    ],
+    "audio_coexist_use_proposals": 244,
+    "audio_coexist_unique_tracks": 60,
+    "without_pack_original_coexistence_disabled": true,
+    "with_and_without_pack_same_record_scene_plan": true,
     "original_and_replacement_same_scene_clauses": true,
     "dragon_and_regional_boss_roles_preserved": true,
     "existing_missing_current_resource_paths": [
       {
         "requested": "music/dread/dread 01 v2.wav",
-        "current_sources": [
-          "cronemod.esm"
+        "references": [
+          {
+            "track": "skyrim.esm|0E8ED7",
+            "edid": "MUSDread01a",
+            "source": "skyrim.esm",
+            "part": "ANAM",
+            "current_owners": []
+          },
+          {
+            "track": "skyrim.esm|089A94",
+            "edid": "MUSDread01",
+            "source": "skyrim.esm",
+            "part": "ANAM",
+            "current_owners": []
+          },
+          {
+            "track": "cronemod.esm|003DFB",
+            "edid": "MUSCroneHagAmbience01",
+            "source": "cronemod.esm",
+            "part": "ANAM",
+            "current_owners": [
+              "cronemod.esm|003DFA"
+            ]
+          }
         ]
       },
       {
         "requested": "music/forestfall/mus_palette_forestfall_day_b_17.xwm",
-        "current_sources": [
-          "chapter ii - soundtrack mod by dreyma music.esp"
+        "references": [
+          {
+            "track": "chapter ii - soundtrack mod by dreyma music.esp|00085B",
+            "edid": "MUSExploreForestFallDayPaletteB17",
+            "source": "chapter ii - soundtrack mod by dreyma music.esp",
+            "part": "ANAM",
+            "current_owners": [
+              "skyrim.esm|06D544",
+              "skyrim.esm|06D546",
+              "skyrim.esm|089A9C"
+            ]
+          }
         ]
       }
     ],
@@ -60,15 +102,16 @@
     "game_data_written": false,
     "native_game_execution": false,
     "codec_playback_validated": false,
-    "note": "Offline resource overlay uses verified deployed loose audio and uniquely resolved relevant BSA members; not engine VFS execution.",
-    "load_order": {
-      "official": 5,
-      "skyrim_ccc": 75,
-      "enabled_plugins_txt": 31,
-      "union_matches_load_order": true,
-      "missing_masters": [],
-      "invalid_master_order": []
-    }
+    "note": "Offline resource overlay uses verified deployed loose audio and uniquely resolved relevant BSA members; not engine VFS execution."
+  },
+  "mrr_deduplication": {
+    "plugins": 112,
+    "mrr_not_installed_in_game": true,
+    "known_original_copies_suppress_additional_uses": 208,
+    "remaining_optional_audio_uses": 36,
+    "scene_resource_failures": 0,
+    "config_missing_references": 32,
+    "game_data_written": false
   },
   "configuration_priority": {
     "plugins": 111,
@@ -85,26 +128,5 @@
     "game_inputs_unchanged": true,
     "native_game_execution": false,
     "note": "Inspector proposals plus independent expected outcomes; native Region slots and playback are not executed."
-  },
-  "controlled_original_audio_regression": {
-    "version": "Harmonia 0.11.0-alpha",
-    "official_plugins": 5,
-    "original_archives": 1,
-    "candidate_line": "AUDIO_CANDIDATES 252 (offline loose overlay; not engine BSA precedence)",
-    "unchanged_candidates": 252,
-    "baseline_skipped_candidates": 0,
-    "baseline_additions": 0,
-    "synthetic_replacement_additions": 1,
-    "local_original_cache_bytes": 643446,
-    "main_and_finale_cache_files": 2,
-    "local_original_cache_sha256": "aef56f5c35575bcc1b25779432888632989acdd577c0690eb3fa0005f6a0c608",
-    "cache_exact_original": true,
-    "repeat_content_stable": true,
-    "official_archives_unchanged": true,
-    "replacement_overlay_unchanged": true,
-    "game_data_written": false,
-    "runtime_vfs_executed": false,
-    "native_audio_playback": false,
-    "fixture_note": "Actual original audio; a different stock track used only in a private test overlay. Not a Lorkhan installation."
   }
 }

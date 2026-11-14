@@ -1,4 +1,4 @@
-# Validation — Harmonia 0.11.0-alpha, 2026-11-15
+# Validation — Harmonia 0.12.0-alpha, 2026-11-15
 
 Release x64 DLL, inspector and selector test executable built with VS 2022 / MSVC 19.44, CMake 4.3.3 and pinned dependencies. Python 3.14 executed the integration fixtures. **Steam 1.7.104 is the only enabled runtime.** No Skyrim process was launched.
 
@@ -6,7 +6,7 @@ Release x64 DLL, inspector and selector test executable built with VS 2022 / MSV
 
 **310 Python test methods passed**, including parameterized subcases (`tests/latest-results.txt`). **523 selector logic checks passed**, with CTest reporting one passing test target (`tests/latest-selector-results.txt`). These count different kinds of checks and are not combined into an engine-test total.
 
-Coverage includes bounded plugin/BSA parsing, compressed records, master remapping, independent contributions, dependent removals, explicit configuration, protected roles, field-only mapping repair, audio cache verification and:
+Coverage includes bounded plugin/manifest parsing, compressed records, master remapping, independent contributions, dependent removals, explicit configuration, protected roles, field-only mapping repair, optional resource integrity, absent-pack behavior, exact known-encoding deduplication and:
 
 - Case-insensitive unique CME/MTD EditorIDs; case collisions still fail even when one spelling matches exactly. Actual renames, deleted forms and unresolved references remain rejected.
 - Explicit Location/Region assignments, alphabetical-file last-assignment precedence, repeated keys and priority over automatic area repair. Wrong-kind, missing and ambiguous references do not leak partial assignments.
@@ -59,7 +59,7 @@ An independent evaluator compared actual ordinary donor conditions with baseline
 
 Relevant deployed loose resources and uniquely resolved BSA members were copied into a private verified overlay. Resource-aware inspection checked the **11 distinct scene tracks**, including their referenced main/finale resources, with no scene-resource skips; its membership/guard/selector plan matched record-only inspection. The overlay models the verified local resources, not the engine's full VFS or archive precedence.
 
-Actual installed **Lorkhan plus original audio** produced coexistence proposals for **65 distinct original tracks across 249 playlist uses**. Original and replacement hashes differ. Both audio versions of the five guarded ordinary battle uses have identical inferred clauses. No game cache was created during this combined inspection.
+Actual installed **Lorkhan plus original audio** produced coexistence proposals for **60 distinct original tracks across 244 playlist uses with the optional HQ pack**. Original and replacement hashes differ. Both audio versions of the five guarded ordinary battle uses have identical inferred clauses. The other five candidate uses are Update.esm Creation Club dungeon tracks without verified HQ source resources; they are skipped. Without the optional pack, no audio coexistence is proposed and the record/scene plan is identical.
 
 Two resources referenced by current playlists are absent from the local resource inventory:
 
@@ -82,11 +82,15 @@ A separate private configuration overlay used the same 111 plugins and verified 
 
 Aggregate results are recorded as `configuration_priority` in `tests/real-input-results.json`. These are inspector proposals checked against independent expectations, not a native playback trace.
 
-## Original-audio regression with a simulated replacer
+## Optional HQ source and duplicate regression
 
-A separate check reads local `Skyrim - Sounds.bsa` with the five official plugins. **252 eligible original track/list pairs** are unchanged with an empty overlay; no coexistence instances are proposed. A different valid stock combat track placed at Combat 01's path in a private overlay produces exactly one coexistence proposal.
+The existing MRR v1 archive's SHA-256 matches the prior download. The separate optional package contains **239 XWMA files, all 48 kHz / 192 kbit/s**, in **231 verified main/finale pairs** covering **247 original MUST records**. The 19 records with finales retain their exact native cue-point arrays. Original/HQ encoded durations agree within 0.25 seconds. All 239 packaged files also passed full FFmpeg decoding with no errors; this does not execute Skyrim playback. Every main/finale mapping agrees both by record identity and complete source path after removing MRR's rename suffix. Files are copied unchanged into an independent namespace; MRR's ESP, INI and unreferenced audio are omitted. See `tests/audio-pack-results.json` for source hashes and file mapping.
 
-Original Combat 01 (643,446 bytes) and its finale (76,010 bytes) are cached separately and verified by exact bytes and SHA-256. Repeating the rehearsal yields the same proposal and two cache files. Official archive hashes and the replacement overlay remain unchanged. This controlled regression is separate from the real Lorkhan inspection above. It does not decode audio or run the engine resource resolver. All writes are in a private workspace, never game Data.
+Four MRR records reference absent audio (`MUSDread01`, `MUSDread03`, `MUSDread04`, `MUSDread01a`); no substitute is guessed. Five newer Creation Club dungeon tracks also have no licensed corresponding audio in the source. These omissions affect optional original coexistence, not the installed cue's existing playback.
+
+Adding the real MRR ESP/INI to a private 112-plugin inspection, with its actual archive audio represented in the verified overlay, suppresses **208 additional original uses** and leaves **36 optional uses**. No scene-resource failure occurs. MRR's existing 32 invalid configuration references (12 distinct IDs) are diagnosed separately; no copied config is shipped. Deduplication preserves an existing original/HQ use's conditions, including deliberately narrow eligibility, instead of deleting or broadening that use. It does not consolidate explicit duplicates already present in the input.
+
+Synthetic integration tests cover missing/corrupt packs, known stock versus HQ encodings, explicit copies, repeated source wrappers, different or missing finales, unverified pair mappings, invalid manifest paths/hashes and rejection of retired archive/cache options. A missing optional asset does not suppress independent pairs. Repeating inspection changes no input file. Runtime source contains no BSA parser, archive-open path or audio disk write. Private source preparation and verification use development-only archive extraction outside the shipped DLL/inspector.
 
 ## Native implementation and executable inspection
 
@@ -96,14 +100,14 @@ The SDK's inline-looking conditions field is accessed as the executable's TESCon
 
 Runtime prepares one playlist batch at a time, validates typed conditions and scene resources, prepares local conditions and original-audio instances, reserves capacity and rechecks before committing. Automatic work additionally checks the winning plugin snapshot; pure explicit MTD operations use the actual loaded list. Clear removes references from only that list, then appends configured members. Other owners retain their original objects.
 
-A pre-commit failure removes scene-dependent automatic actions and retries the independent remainder. If preparation still fails, valid explicit instructions can retry alone through the same path. Exceptions do not retry. Earlier independent batches and validated cache files may remain. Application still runs once at DataLoaded. Explicit area assignments can proceed except where their target playlist failed; automatic area recovery is deferred after any music preparation failure. This fallback and native list/area mutations are reviewed and compiled, not executed by the offline test suite.
+A pre-commit failure removes scene-dependent automatic actions and retries the independent remainder. If preparation still fails, valid explicit instructions can retry alone through the same path. Exceptions do not retry. Earlier independent batches may remain. No audio cache is created. Application still runs once at DataLoaded. Explicit area assignments can proceed except where their target playlist failed; automatic area recovery is deferred after any music preparation failure. This fallback and native list/area mutations are reviewed and compiled, not executed by the offline test suite.
 
 ## Remaining boundaries
 
-- Native allocation/destruction, hook timing, cache visibility, playback, condition evaluation, random selection, combat end, transitions and save/reload remain untested. Joint offline validation of the installed mods is not joint in-game validation.
+- Native allocation/destruction, hook timing, optional-resource visibility, playback, condition evaluation, random selection, combat end, transitions and save/reload remain untested. Joint offline validation of the installed mods is not joint in-game validation.
 - Unknown functions, unresolved/alias conditions, incomplete editable clauses, direct script mutation, independent custom combat libraries and runtime-created MusicTypes can need authored rules, original-framework setups or patches. CME's optional polling fix is not included. Harmonia pauses if standalone MTD/CME is loaded; they are not co-executed.
 - Keeping explicit membership during an inference failure preserves MTD-style behavior under the authored conditions; it does not prove automatic protection for an unreadable script/scene. Explicit configuration is authoritative, including deliberate changes to dedicated lists.
-- Audio normalization covers the original plus final visible winner, not every losing replacer. Changed record audio metadata, palette restructuring, compressed/unsupported original audio and invalid resources are not reconstructed. Re-encodings and MRR copies are not composition-deduplicated; extra candidates alter probabilities.
+- Audio normalization covers the original plus final visible winner, not every losing replacer. Changed record audio metadata, palette restructuring, unsupported audio and invalid resources are not reconstructed. Known stock/HQ bytes, including verified MRR copies, are deduplicated; arbitrary re-encodings and palette-contained copies are not perceptually identified. Adding distinct candidates changes probabilities.
 - Inferred scene takeover remains a deliberate default. Other pack versions and every Music Patch for New Lands variant were not checked. Unsupported evidence is diagnosed, not proof of universal author intent or compatibility.
 
 Historical results remain in their tags and are not counted as current native playback validation.

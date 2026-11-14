@@ -5,7 +5,7 @@ import struct
 from test_scene_takeover import SceneFixture, rows, permits
 from test_plugin_scan import header, music, record, sub
 from test_auto_combat_scan import condition, single_track
-from test_audio_coexist import xwm, bsa
+from test_audio_coexist import xwm
 
 
 def location(key,parent=0):
@@ -79,7 +79,6 @@ class AuthoringRecoveryTests(SceneFixture):
 
     def test_missing_scene_resource_keeps_independent_dragon_memberships(self):
         paths=self.layered()
-        self.write('Original.bsa',bsa([('music/fixture/battle.xwm',xwm(b'original'))]))
         (self.root/'visible').mkdir()
         out=self.scan(*paths,audio=True)
         self.assertIn('SCENE_RESOURCE_SKIP ',out)

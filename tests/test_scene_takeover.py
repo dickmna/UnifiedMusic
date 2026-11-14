@@ -15,7 +15,7 @@ import unittest
 
 from test_plugin_scan import header, music, record, script_reference, sub
 from test_auto_combat_scan import area, condition, single_track
-from test_audio_coexist import audio_track, bsa, xwm
+from test_audio_coexist import audio_track, audio_pack, xwm
 
 
 def rows(output, name):
@@ -64,22 +64,19 @@ class SceneFixture(unittest.TestCase):
             + audio_track(0x01000800, path=r'Data\Music\Pack\added.wav', terms=role) + pack_extra)
         return base, land, pack
 
-    def scan(self, *paths, audio=False, cache=False, configs=()):
+    def scan(self, *paths, audio=False, configs=()):
         args = [str(self.exe), *map(str, paths)]
         for config in configs:
             args += ['--config', str(config)]
         if audio:
-            args += ['--original-archive', str(self.root/'Original.bsa'), '--visible-dir', str(self.root/'visible')]
-        if cache:
-            (self.root/'cache').mkdir(exist_ok=True)
-            args += ['--audio-cache', str(self.root/'cache')]
+            args += ['--audio-pack', str(self.root/'pack'), '--visible-dir', str(self.root/'visible')]
         proc = subprocess.run(args, capture_output=True, text=True, encoding='utf-8', timeout=30)
         self.assertEqual(proc.returncode, 0, proc.stderr)
         return proc.stdout
 
     def resources(self, *, scene=True):
-        self.write('Original.bsa', bsa([('music/fixture/battle.xwm', xwm(b'original')),
-                                      ('music/fixture/other.xwm', xwm(b'other'))]))
+        audio_pack(self.root/'pack', {'music/fixture/battle.xwm': xwm(b'original'), 'music/fixture/other.xwm': xwm(b'other')})
+        self.write('visible/music/fixture/other.xwm', xwm(b'other'))
         self.write('visible/music/fixture/battle.xwm', xwm(b'replacement'))
         if scene:
             self.write('visible/music/land/scene.xwm', xwm(b'scene'))
@@ -231,16 +228,16 @@ class SceneTests(SceneFixture):
         # Force an independent override to hide the author's original exclusion.
         patch = self.write('Independent.esp', header(('Skyrim.esm',)) + audio_track())
         self.resources()
-        out = self.scan(*paths, patch, audio=True, cache=True)
+        out = self.scan(*paths, patch, audio=True)
         use, = rows(out, 'AUDIO_USE')
         self.assertEqual(use['clauses'], self.pack_rule(out)['clauses'])
         self.assertEqual(use['original'], hashlib.sha256(xwm(b'original')).hexdigest())
         self.assertEqual(use['replacement'], hashlib.sha256(xwm(b'replacement')).hexdigest())
         self.assertNotEqual(use['original'], use['replacement'])
-        # A second startup produces the same plan and content-addressed cache.
-        before = {p.name: p.read_bytes() for p in (self.root/'cache').rglob('*.xwm')}
-        self.assertEqual(self.scan(*paths, patch, audio=True, cache=True), out)
-        self.assertEqual({p.name: p.read_bytes() for p in (self.root/'cache').rglob('*.xwm')}, before)
+        # A second startup produces the same plan without writing resources.
+        before = {p.name: p.read_bytes() for p in (self.root/'pack').rglob('*.xwm')}
+        self.assertEqual(self.scan(*paths, patch, audio=True), out)
+        self.assertEqual({p.name: p.read_bytes() for p in (self.root/'pack').rglob('*.xwm')}, before)
 
     def test_missing_scene_audio_pauses_guard_and_audio_pair_together(self):
         paths = self.fixture()

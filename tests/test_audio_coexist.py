@@ -1,12 +1,12 @@
-"""Synthetic BSA/plugin/resource pairs. RIFF fixtures test structure, not decoding."""
+"""Optional-pack activation, content deduplication and atomic main/finale handling."""
 import hashlib
+import json
 import os
 from pathlib import Path
 import struct
 import subprocess
 import tempfile
 import unittest
-
 from test_plugin_scan import header, music, record, script_reference, sub
 from test_auto_combat_scan import condition, single_track
 
@@ -18,26 +18,22 @@ def xwm(payload=b'original-data'):
     return b'RIFF' + struct.pack('<I', len(chunks) + 4) + b'XWMA' + chunks
 
 
-def bsa(entries, *, compressed=False, embedded=False):
-    groups = {}
-    for name, content in entries:
-        folder, filename = name.rsplit('/', 1)
-        groups.setdefault(folder, []).append((filename, content))
-    names = b''.join(name.encode() + b'\0' for rows in groups.values() for name, _ in rows)
-    block_start = 36 + 24 * len(groups)
-    data_start = block_start + sum(2 + len(folder.encode()) + 16 * len(rows) for folder, rows in groups.items()) + len(names)
-    folder_records, blocks, payloads = b'', b'', b''
-    for folder, rows in groups.items():
-        folder_records += struct.pack('<QIIQ', 0, len(rows), 0, block_start + len(blocks) + len(names))
-        blocks += bytes([len(folder.encode()) + 1]) + folder.encode() + b'\0'
-        for name, content in rows:
-            if embedded:
-                content = bytes([len(name)]) + name.encode() + content
-            blocks += struct.pack('<QII', 0, len(content) | (0x40000000 if compressed else 0), data_start + len(payloads))
-            payloads += content
-    h = b'BSA\0' + struct.pack('<8I', 105, 36, 3 | (0x100 if embedded else 0), len(groups), len(entries),
-                               sum(len(s) + 1 for s in groups), len(names), 16)
-    return h + folder_records + blocks + names + payloads
+def audio_pack(root, resources, *, pairs=None, baselines=None):
+    assets = {}
+    for source, data in resources.items():
+        digest = hashlib.sha256(data).hexdigest()
+        name = 'music/harmonia/original/' + digest + '.xwm'
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        baseline = (baselines or {}).get(source, data)
+        assets[source] = {'file': name, 'sha256': digest,
+                          'equivalent_sha256': [hashlib.sha256(baseline).hexdigest()]}
+    manifest = root / 'SKSE/Plugins/HarmoniaOriginalAudio.json'
+    manifest.parent.mkdir(parents=True, exist_ok=True)
+    manifest.write_text(json.dumps({'format': 1, 'assets': assets,
+        'pairs': pairs if pairs is not None else [[s, ''] for s in resources]}), encoding='utf-8')
+    return manifest
 
 
 def audio_track(fid=0x200, *, path=r'Data\Music\Fixture\battle.wav', finale='', terms=(), flags=0):
@@ -59,12 +55,15 @@ class AudioTests(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
         self.visible = self.root / 'visible'
-        self.cache = self.root / 'cache'
-        self.visible.mkdir(); self.cache.mkdir()
+        self.visible.mkdir()
+        self.pack = self.root / 'pack'
         self.original = xwm()
+        self.hq = xwm(b'higher-quality-same-composition')
         self.replacement = xwm(b'different-replacement')
-        self.archive = self.write('Original.bsa', bsa([('music/fixture/battle.xwm', self.original)]))
+        self.main = 'music/fixture/battle.xwm'
+        self.manifest = audio_pack(self.pack, {self.main: self.hq}, baselines={self.main: self.original})
         self.base = self.write('Skyrim.esm', header() + music(0x100, (0x200,)) + audio_track())
+        self.override(self.original)
 
     def write(self, name, content):
         path = self.root / name
@@ -73,131 +72,158 @@ class AudioTests(unittest.TestCase):
         return path
 
     def override(self, content=None, name='music/fixture/battle.xwm'):
-        path = self.visible / name
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(self.replacement if content is None else content)
+        self.write('visible/' + name, self.replacement if content is None else content)
 
-    def scan(self, *plugins, cache=False, archives=None, success=True, configs=()):
-        args = [str(self.exe), str(self.base), *map(str, plugins)]
-        for archive in archives or [self.archive]:
-            args += ['--original-archive', str(archive)]
-        args += ['--visible-dir', str(self.visible)]
+    def scan(self, *plugins, pack=True, success=True, configs=(), extra=()):
+        args = [str(self.exe), str(self.base), *map(str, plugins), '--visible-dir', str(self.visible)]
+        if pack:
+            args += ['--audio-pack', str(self.pack)]
         for config in configs:
-            args += ['--config',str(config)]
-        if cache:
-            args += ['--audio-cache', str(self.cache)]
-        result = subprocess.run(args, capture_output=True, text=True, encoding='utf-8', timeout=30)
+            args += ['--config', str(config)]
+        result = subprocess.run(args + list(extra), capture_output=True, text=True, encoding='utf-8', timeout=30)
         self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
         return result.stdout + result.stderr
 
-    def test_unchanged_original_does_not_create_extra_weight_or_cache(self):
-        out = self.scan(cache=True)
-        self.assertIn('AUDIO_UNCHANGED 1', out)
-        self.assertNotIn('AUDIO_COEXIST ', out)
-        self.assertFalse(list(self.cache.rglob('*.xwm')))
+    def snapshot(self):
+        return {str(p.relative_to(self.root)): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in self.root.rglob('*') if p.is_file()}
 
-    def test_explicit_clear_does_not_restore_original_audio_or_touch_other_owner(self):
+    def test_no_pack_never_restores_originals(self):
+        self.override()
+        self.assertIn('AUDIO_DISABLED ', self.scan(pack=False))
+        self.manifest.unlink()
+        self.assertIn('AUDIO_DISABLED ', self.scan())
+
+    def test_known_vanilla_and_hq_do_not_get_extra_weight(self):
+        for content in (self.original, self.hq):
+            self.override(content)
+            out = self.scan()
+            self.assertIn('AUDIO_DUPLICATE 1', out)
+            self.assertNotIn('AUDIO_COEXIST ', out)
+
+    def test_distinct_replacer_uses_optional_audio_without_writes(self):
+        self.override()
+        before = self.snapshot()
+        out = self.scan()
+        self.assertIn('AUDIO_COEXIST skyrim.esm:256 <- skyrim.esm:512 main=' + hashlib.sha256(self.hq).hexdigest(), out)
+        self.assertEqual(self.snapshot(), before)
+        self.assertEqual(self.scan(), out)
+        self.assertEqual(self.snapshot(), before)
+
+    def test_explicit_clear_does_not_restore_audio_or_touch_other_owner(self):
         self.base.write_bytes(header()+music(0x100,(0x200,))+music(0x101,(0x200,),name='MUSExploreSnow')+audio_track())
         self.override()
         config=self.write('Quiet_MUS.ini',b'[General]\nMUSExploreForest! =\n')
-        out=self.scan(cache=True,configs=(config,))
-        self.assertIn('CLEAR skyrim.esm:256',out)
+        out=self.scan(configs=(config,))
         self.assertNotIn('AUDIO_COEXIST skyrim.esm:256',out)
         self.assertIn('AUDIO_COEXIST skyrim.esm:257',out)
 
-    def test_distinct_replacer_keeps_source_and_caches_exact_original(self):
-        self.override()
-        before = self.archive.read_bytes(), self.base.read_bytes()
-        out = self.scan(cache=True)
-        digest = hashlib.sha256(self.original).hexdigest()
-        self.assertIn('AUDIO_COEXIST skyrim.esm:256 <- skyrim.esm:512 main=' + digest, out)
-        self.assertEqual((self.cache / 'music/harmonia' / (digest + '.xwm')).read_bytes(), self.original)
-        self.assertEqual(before, (self.archive.read_bytes(), self.base.read_bytes()))
-        self.assertEqual((self.visible / 'music/fixture/battle.xwm').read_bytes(), self.replacement)
-        self.assertEqual(self.scan(cache=True), out)
-
-    def test_invalid_winning_resource_skips_without_cache(self):
+    def test_invalid_winning_resource_is_not_used(self):
         for content in (b'not-music', self.replacement[:-1], self.replacement.replace(b'XWMA', b'WAVE')):
             self.override(content)
-            self.assertIn('AUDIO_SKIP ', self.scan(cache=True))
-        self.assertFalse(list(self.cache.rglob('*.xwm')))
+            self.assertIn('AUDIO_SKIP ', self.scan())
 
-    def test_invalid_original_resource_skips(self):
-        self.archive.write_bytes(bsa([('music/fixture/battle.xwm', b'invalid')]))
+    def test_corrupt_or_missing_pack_file_only_disables_that_pair(self):
+        entry=json.loads(self.manifest.read_text())['assets'][self.main]
+        asset=self.pack/entry['file']
         self.override()
-        self.assertNotIn('AUDIO_COEXIST ', self.scan())
+        asset.write_bytes(xwm(b'valid-but-wrong-song'))
+        self.assertIn('missing/changed optional', self.scan())
+        asset.unlink()
+        self.assertIn('missing/changed optional', self.scan())
 
     def test_wav_alternative_is_not_mistaken_for_xwm_precedence(self):
         self.override()
         self.override(b'RIFF actual wav', 'music/fixture/battle.wav')
         self.assertIn('AUDIO_SKIP ', self.scan())
 
-    def test_compressed_member_is_never_read_as_uncompressed_audio(self):
-        self.archive.write_bytes(bsa([('music/fixture/battle.xwm', self.original)], compressed=True))
+    def test_main_and_finale_are_a_verified_atomic_pair(self):
+        end='music/fixture/finale.xwm'
+        finale=xwm(b'finale-original')
+        self.base.write_bytes(header()+music(0x100,(0x200,))+audio_track(finale=end))
         self.override()
-        self.assertNotIn('AUDIO_COEXIST ', self.scan())
+        self.override(finale,end)
+        self.assertIn('no verified main/finale mapping',self.scan())
+        audio_pack(self.pack,{self.main:self.hq,end:finale},pairs=[[self.main,end]])
+        out=self.scan()
+        self.assertIn('finale='+hashlib.sha256(finale).hexdigest(),out)
+        (self.pack/json.loads(self.manifest.read_text())['assets'][end]['file']).unlink()
+        self.assertNotIn('AUDIO_COEXIST ',self.scan())
 
-    def test_embedded_member_names_are_removed_before_validation(self):
-        self.archive.write_bytes(bsa([('music/fixture/battle.xwm', self.original)], embedded=True))
+    def test_changed_finale_alone_preserves_both_optional_resources(self):
+        end='music/fixture/finale.xwm'
+        finale=xwm(b'original-finale')
+        self.base.write_bytes(header()+music(0x100,(0x200,))+audio_track(finale=end))
+        audio_pack(self.pack,{self.main:self.hq,end:finale},pairs=[[self.main,end]],baselines={self.main:self.original})
+        self.override(self.replacement,end)
+        self.assertIn('AUDIO_COEXIST ',self.scan())
+        (self.visible/end).unlink()
+        self.assertIn('missing/invalid winning',self.scan())
+
+    def test_existing_copy_in_list_or_explicit_config_suppresses_duplicate(self):
         self.override()
-        self.assertIn('AUDIO_COEXIST ', self.scan())
+        for blob in (self.original,self.hq):
+            self.override(blob,'music/other/copy.xwm')
+            copy=audio_track(0x01000800,path='music/other/copy.xwm')
+            patch=self.write('Copy.esp',header(('Skyrim.esm',))+copy+music(0x100,(0x200,0x01000800)))
+            self.assertIn('AUDIO_DUPLICATE 1',self.scan(patch))
+            patch.write_bytes(header(('Skyrim.esm',))+copy)
+            config=self.write('Copy_MUS.ini',b'[General]\nMUSExploreForest = 0x800~Copy.esp\n')
+            self.assertIn('AUDIO_DUPLICATE 1',self.scan(patch,configs=(config,)))
 
-    def test_duplicate_original_archives_are_ambiguous(self):
-        second = self.write('Second.bsa', self.archive.read_bytes())
+    def test_two_wrappers_of_same_audio_only_get_one_optional_use_per_list(self):
+        self.base.write_bytes(header()+music(0x100,(0x200,0x201))+audio_track()+audio_track(0x201))
         self.override()
-        self.assertNotIn('AUDIO_COEXIST ', self.scan(archives=[self.archive, second]))
+        out=self.scan()
+        self.assertEqual(out.count('AUDIO_COEXIST '),1)
+        self.assertIn('AUDIO_DUPLICATE 1',out)
 
-    def test_duplicate_members_and_unsafe_archive_paths_are_rejected(self):
-        for names in (['music/fixture/battle.xwm'] * 2, ['music/../escape.xwm']):
-            self.archive.write_bytes(bsa([(name, self.original) for name in names]))
-            self.assertIn('unsafe/duplicate', self.scan(success=False))
-
-    def test_truncated_and_out_of_bounds_archives_are_rejected(self):
-        valid = self.archive.read_bytes()
-        for content in (valid[:35], valid[:-1], valid[:16] + struct.pack('<I', 1000000) + valid[20:]):
-            self.archive.write_bytes(content)
-            self.scan(success=False)
-
-    def test_main_and_finale_are_an_atomic_pair(self):
-        finale = xwm(b'finale-original')
-        self.base.write_bytes(header() + music(0x100, (0x200,)) + audio_track(finale=r'Data\Music\Fixture\finale.wav'))
+    def test_bad_manifest_cannot_redirect_assets_or_break_record_recovery(self):
         self.override()
-        self.assertNotIn('AUDIO_COEXIST ', self.scan(cache=True))
-        self.assertFalse(list(self.cache.rglob('*.xwm')))
-        self.archive.write_bytes(bsa([('music/fixture/battle.xwm', self.original), ('music/fixture/finale.xwm', finale)]))
-        self.assertIn('finale=' + hashlib.sha256(finale).hexdigest(), self.scan(cache=True))
-        self.assertEqual(len(list(self.cache.rglob('*.xwm'))), 2)
+        good=json.loads(self.manifest.read_text())
+        for path in ('music/../escape.xwm','music/vanilla.xwm','music/harmonia/original/../escape.xwm'):
+            bad=json.loads(json.dumps(good));bad['assets'][self.main]['file']=path
+            self.manifest.write_text(json.dumps(bad))
+            self.assertIn('AUDIO_PACK_SKIP ',self.scan())
+            self.assertNotIn('AUDIO_COEXIST ',self.scan())
+        self.manifest.write_text('{"format":1,"format":1}')
+        self.assertIn('AUDIO_PACK_SKIP ',self.scan())
 
-    def test_changed_finale_alone_preserves_both_original_resources(self):
-        self.base.write_bytes(header() + music(0x100, (0x200,)) + audio_track(finale=r'Data\Music\Fixture\finale.wav'))
-        self.archive.write_bytes(bsa([('music/fixture/battle.xwm', self.original), ('music/fixture/finale.xwm', xwm(b'finale'))]))
-        self.override(self.replacement, 'music/fixture/finale.xwm')
-        self.assertIn('AUDIO_COEXIST ', self.scan(cache=True))
-        self.assertEqual(len(list(self.cache.rglob('*.xwm'))), 2)
+    def test_missing_optional_asset_does_not_block_an_independent_pair(self):
+        other='music/fixture/other.xwm'
+        audio_pack(self.pack,{self.main:self.hq,other:xwm(b'other-original')})
+        self.base.write_bytes(header()+music(0x100,(0x200,0x201))+audio_track()+audio_track(0x201,path=other))
+        self.override();self.override(xwm(b'other-replacement'),other)
+        asset=json.loads(self.manifest.read_text())['assets'][self.main]['file']
+        (self.pack/asset).unlink()
+        out=self.scan()
+        self.assertNotIn('AUDIO_COEXIST skyrim.esm:256 <- skyrim.esm:512',out)
+        self.assertIn('AUDIO_COEXIST skyrim.esm:256 <- skyrim.esm:513',out)
 
-    def test_existing_corrupt_cache_is_not_overwritten(self):
-        digest = hashlib.sha256(self.original).hexdigest()
-        corrupt = self.write('cache/music/harmonia/' + digest + '.xwm', b'foreign-content')
-        self.override()
-        self.assertIn('existing audio cache differs', self.scan(cache=True))
-        self.assertEqual(corrupt.read_bytes(), b'foreign-content')
+    def test_same_main_with_a_different_finale_is_not_a_complete_copy(self):
+        end='music/fixture/finale.xwm'
+        self.base.write_bytes(header()+music(0x100,(0x200,))+audio_track(finale=end))
+        audio_pack(self.pack,{self.main:self.hq,end:xwm(b'finale')},pairs=[[self.main,end]])
+        self.override();self.override(xwm(b'replacement-finale'),end)
+        self.override(self.hq,'music/other/copy.xwm')
+        self.override(xwm(b'unrelated-finale'),'music/other/finale.xwm')
+        patch=self.write('Copy.esp',header(('Skyrim.esm',))+music(0x100,(0x200,0x01000800))+
+                         audio_track(0x01000800,path='music/other/copy.xwm',finale='music/other/finale.xwm'))
+        self.assertIn('AUDIO_COEXIST ',self.scan(patch))
 
-    def test_stale_temporary_is_not_overwritten(self):
-        digest = hashlib.sha256(self.original).hexdigest()
-        temporary = self.write('cache/music/harmonia/' + digest + '.xwm.tmp', b'other-writer')
-        self.override()
-        self.assertIn('temporary unavailable', self.scan(cache=True))
-        self.assertEqual(temporary.read_bytes(), b'other-writer')
+    def test_unverified_or_duplicate_pair_and_digest_are_rejected(self):
+        good=json.loads(self.manifest.read_text())
+        changes=[lambda d:d['pairs'].append(d['pairs'][0]),
+                 lambda d:d['pairs'].__setitem__(0,[self.main,'music/wrong.xwm']),
+                 lambda d:d['assets'][self.main].__setitem__('sha256','not-a-hash')]
+        for change in changes:
+            bad=json.loads(json.dumps(good));change(bad)
+            self.manifest.write_text(json.dumps(bad))
+            self.assertIn('AUDIO_PACK_SKIP ',self.scan())
 
-    def test_redirected_cache_is_rejected_before_writing_outside_root(self):
-        target = self.root / 'outside';target.mkdir()
-        link = self.cache / 'music'
-        p = subprocess.run(['cmd', '/c', 'mklink', '/J', str(link), str(target)], capture_output=True)
-        self.assertEqual(p.returncode, 0, p.stderr)
-        self.addCleanup(lambda: os.rmdir(link) if link.exists() else None)
-        self.override()
-        self.assertIn('redirected/non-directory', self.scan(cache=True))
-        self.assertEqual(list(target.iterdir()), [])
+    def test_retired_archive_and_disk_cache_options_are_rejected(self):
+        for option in ('--original-archive','--audio-cache'):
+            self.assertIn('unknown option',self.scan(success=False,extra=(option,str(self.root))))
 
     def test_audio_metadata_override_prevents_original_record_reconstruction(self):
         patch = self.write('Patch.esp', header(('Skyrim.esm',)) + audio_track(path=r'Data\Music\Other.wav'))
@@ -243,8 +269,7 @@ class AudioTests(unittest.TestCase):
         for path in ('Data/Music/../escape.wav', 'C:/outside.wav', 'Music/a:stream.xwm', 'Music/./battle.xwm'):
             self.base.write_bytes(header() + music(0x100, (0x200,)) + audio_track(path=path))
             self.override()
-            self.assertIn('unsupported music path', self.scan(cache=True))
-        self.assertFalse(list(self.cache.rglob('*.xwm')))
+            self.assertIn('unsupported music path', self.scan())
 
 
 if __name__ == '__main__':

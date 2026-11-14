@@ -28,8 +28,7 @@ void Emit(const char* name,const Json::Value& value) {
 int main(int argc,char**argv) {
     try {
         UnifiedMusic::PluginScan scan;
-        std::vector<std::filesystem::path> archives;
-        std::filesystem::path visible,cache;
+        std::filesystem::path visible,packRoot;
         for(int i=1;i<argc;++i) {
             const std::string arg(argv[i]);
             if(arg=="--config-dir") {
@@ -38,27 +37,33 @@ int main(int argc,char**argv) {
             } else if(arg=="--config") {
                 if(++i==argc) throw std::runtime_error("--config requires a file");
                 scan.ReadConfig(argv[i]);
-            } else if(arg=="--selector" || arg=="--selector-dir" || arg=="--original-archive" || arg=="--visible-dir" || arg=="--audio-cache") {
+            } else if(arg=="--selector" || arg=="--selector-dir" || arg=="--audio-pack" || arg=="--visible-dir") {
                 if(++i==argc) throw std::runtime_error(arg+" requires a path");
                 if(arg=="--selector") scan.ReadSelector(argv[i]);
                 else if(arg=="--selector-dir") scan.ReadSelectors(argv[i]);
-                else if(arg=="--original-archive") archives.emplace_back(argv[i]);
-                else if(arg=="--visible-dir") visible=argv[i];
-                else cache=argv[i];
+                else if(arg=="--audio-pack") packRoot=argv[i];
+                else visible=argv[i];
             } else if(arg.starts_with("--")) throw std::runtime_error("unknown option: "+arg);
             else scan.Read(argv[i]);
         }
         auto plan=scan.Plan();
-        UnifiedMusic::OriginalAudio original;
+        UnifiedMusic::OriginalAudioPack pack;
         UnifiedMusic::AudioReader reader;
-        if(!archives.empty()) {
-            if(visible.empty()) throw std::runtime_error("audio comparison requires --visible-dir");
-            for(const auto& path:archives) original.AddArchive(path);
+        if(!packRoot.empty()) {
+            if(visible.empty()) throw std::runtime_error("--audio-pack requires --visible-dir");
+            try {pack.Read(packRoot/UnifiedMusic::AudioManifest);}
+            catch(const std::exception& e) {plan.diagnostics.push_back(std::string("AUDIO_PACK_SKIP ")+e.what());}
+        }
+        if(!visible.empty()) {
             reader=[&](const std::string& path)->std::optional<UnifiedMusic::AudioBytes> {
                 auto wav=path;wav.replace(wav.size()-4,4,".wav");
                 if(std::filesystem::exists(visible/wav)) return {};
                 if(std::filesystem::exists(visible/path)) return UnifiedMusic::ReadAudioFile(visible/path);
-                return original.Read(path);
+                if(!packRoot.empty() && path.starts_with("music/harmonia/original/")) {
+                    if(std::filesystem::exists(packRoot/wav)) return {};
+                    return UnifiedMusic::ReadAudioFile(packRoot/path);
+                }
+                return {};
             };
             for(const auto& [type,reason]:UnifiedMusic::CheckSceneResources(plan.sceneResources,reader)) {
                 plan.diagnostics.push_back("SCENE_RESOURCE_SKIP "+UnifiedMusic::ToString(type)+" "+reason);
@@ -118,18 +123,27 @@ int main(int argc,char**argv) {
             }
             std::cout<<'\n';
         }
-        if(!archives.empty()) {
-            std::cout<<"AUDIO_CANDIDATES "<<plan.audioCandidates.size()<<" (offline loose overlay; not engine BSA precedence)\n";
-            std::size_t unchanged=0;
+        if(reader && !pack.Empty()) {
+            std::cout<<"AUDIO_CANDIDATES "<<plan.audioCandidates.size()<<" (offline resolved loose overlay; not engine VFS execution)\n";
+            std::map<UnifiedMusic::FormKey,std::vector<UnifiedMusic::AudioPaths>> present;
+            const auto append=[&](const UnifiedMusic::FormKey& type,const UnifiedMusic::FormKey& key) {
+                const auto found=scan.Tracks().find(key);
+                if(found==scan.Tracks().end() || found->second.empty()) return;
+                const auto& track=found->second.back();
+                if(track.singleAudio && !track.deleted && !track.invalid) present[type].emplace_back(track.audioPath,track.finalePath);
+            };
+            for(const auto& [type,versions]:scan.Records()) if(!plan.clearedTypes.contains(type) && !versions.empty())
+                for(const auto& key:versions.back().tracks) append(type,key);
+            for(const auto* source:{&plan.additions,&plan.distributions}) for(const auto& [type,keys]:*source)
+                for(const auto& key:keys) append(type,key);
+            if(plan.battleType) for(const auto& rule:plan.combatRules) for(const auto& key:rule.tracks) append(*plan.battleType,key);
+            std::size_t duplicates=0;
             for(const auto& candidate:plan.audioCandidates) {
                 std::string reason;
-                auto pair=UnifiedMusic::CompareAudio(original,reader,candidate.audioPath,candidate.finalePath,reason);
-                if(!pair && reason=="unchanged audio") {++unchanged;continue;}
-                if(pair && !cache.empty()) try {
-                    UnifiedMusic::CacheAudio(cache,pair->track);
-                    if(!pair->finale.empty()) UnifiedMusic::CacheAudio(cache,pair->finale);
-                } catch(const std::exception& e) {reason=e.what();pair.reset();}
+                auto pair=pack.Resolve({candidate.audioPath,candidate.finalePath},present[candidate.musicType],reader,reason);
+                if(!pair && reason=="original already present") {++duplicates;continue;}
                 if(pair) {
+                    present[candidate.musicType].emplace_back(pair->track,pair->finale);
                     std::cout<<"AUDIO_COEXIST "<<UnifiedMusic::ToString(candidate.musicType)<<" <- "<<UnifiedMusic::ToString(candidate.track)
                         <<" main="<<pair->trackHash<<" finale="<<pair->finaleHash<<'\n';
                     Json::Value use;
@@ -140,8 +154,8 @@ int main(int argc,char**argv) {
                 }
                 else std::cout<<"AUDIO_SKIP "<<UnifiedMusic::ToString(candidate.track)<<" "<<reason<<'\n';
             }
-            std::cout<<"AUDIO_UNCHANGED "<<unchanged<<'\n';
-        } else if(!cache.empty() || !visible.empty()) throw std::runtime_error("audio options require --original-archive");
+            std::cout<<"AUDIO_DUPLICATE "<<duplicates<<'\n';
+        } else std::cout<<"AUDIO_DISABLED optional audio pack not installed/valid\n";
         return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }
