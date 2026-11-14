@@ -1,11 +1,11 @@
 {
-  "version": "Harmonia 1.0.0",
+  "version": "Harmonia 1.0.1",
   "installed": {
-    "version": "Harmonia 1.0.0",
+    "version": "Harmonia 1.0.1",
     "plugins": 111,
     "original_configuration_used": true,
-    "record_scan_seconds": 7.086071599973366,
-    "resource_scan_seconds": 5.955984500003979,
+    "record_scan_seconds": 4.783339800022077,
+    "resource_scan_seconds": 5.777726300002541,
     "plan_counts": {
       "VMAD_FALLBACK": 1,
       "RESTORE_AUTHORED": 12,
@@ -131,17 +131,35 @@
     "native_game_execution": false,
     "note": "Inspector proposals plus independent expected outcomes; native Region slots and playback are not executed."
   },
-  "release_equivalence": {
-    "baseline": "0.12.0-alpha",
-    "release": "1.0.0",
+  "reader_refactor_equivalence": {
+    "baseline": "1.0.0",
+    "version": "1.0.1",
     "identical_plan_outputs": {
-      "current-record-plan.txt": true,
-      "current-resource-plan.txt": true,
-      "current-no-pack.txt": true,
-      "current-plus-mrr-resource-plan.txt": true,
-      "explicit-area-and-town-clear.txt": true,
-      "explicit-empty-battle-clear.txt": true
+      "current-record-plan.txt": {
+        "sha256": "27f8ec1fbd03877f18cd4fe0e66f0499778ed48137b14b558f4d8aee4e26bfc4",
+        "identical_to_1_0_0": true
+      },
+      "current-resource-plan.txt": {
+        "sha256": "6940da8451b3b69056d9bb6008a2582e84a40cb4bdc3083d198708eaeb91ab08",
+        "identical_to_1_0_0": true
+      },
+      "current-no-pack.txt": {
+        "sha256": "27f8ec1fbd03877f18cd4fe0e66f0499778ed48137b14b558f4d8aee4e26bfc4",
+        "identical_to_1_0_0": true
+      },
+      "current-plus-mrr-resource-plan.txt": {
+        "sha256": "7090bb154d376065299bf0fb0e93a29b709b915a242ce9448ff878ec53d4924a",
+        "identical_to_1_0_0": true
+      },
+      "explicit-area-and-town-clear.txt": {
+        "sha256": "c2c57b912c35868d31dd4d09b4d4e0f3143b3bbb2555169d1ad8eb58543bb7e2",
+        "identical_to_1_0_0": true
+      },
+      "explicit-empty-battle-clear.txt": {
+        "sha256": "baa69f735cf1bfa7d2dca0105be4bd948e217956055f2544bf18c04b89d0b77c",
+        "identical_to_1_0_0": true
+      }
     },
-    "native_execution": false
+    "native_engine_execution": false
   }
 }

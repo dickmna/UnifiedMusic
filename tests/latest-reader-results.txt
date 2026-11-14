@@ -1,0 +1,1 @@
+Native reader contract: 223 checks passed (engine API double; no game execution)

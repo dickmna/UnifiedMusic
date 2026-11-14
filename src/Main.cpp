@@ -2,8 +2,8 @@
 #include <SKSE/SKSE.h>
 #include <REX/REX.h>
 #include <REX/W32/KERNEL32.h>
-#include <filesystem>
 #include "core/PluginScan.h"
+#include "NativePlugin.h"
 #include "AutoCombat.h"
 #include "AreaMusic.h"
 #include "CombatSelector.h"
@@ -26,7 +26,7 @@ void Distribute() {
         if(!file) continue;
         const auto name=file->GetFilename();
         if(!data->LookupLoadedModByName(name) && !data->LookupLoadedLightModByName(name)) continue;
-        scan.Read(std::filesystem::path("Data") / name);
+        UnifiedMusic::ReadNativePlugin(scan,*file);
     }
     scan.ReadConfigs("Data");
     scan.ReadSelectors("Data/SKSE/Plugins/CombatMusic");
@@ -53,7 +53,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
 }
 extern "C" __declspec(dllexport) constinit auto SKSEPlugin_Version=[] {
     SKSE::PluginVersionData version{};
-    version.PluginVersion(REL::Version(1,0,0,0));
+    version.PluginVersion(REL::Version(1,0,1,0));
     version.PluginName("Harmonia");
     version.AuthorName("UnifiedMusic contributors");
     version.UsesAddressLibrary(); version.UsesUpdatedStructs();

@@ -1,4 +1,5 @@
 #pragma once
+#include "PluginRecords.h"
 #include <cstdint>
 #include <filesystem>
 #include <map>
@@ -117,7 +118,7 @@ struct MergePlan {
 void DropSceneUses(MergePlan& plan, const FormKey& type);
 class PluginScan {
 public:
-    void Read(const std::filesystem::path& path);
+    void Read(std::string source, const ReadRecords& read);
     void ReadConfig(const std::filesystem::path& path);
     void ReadConfigs(const std::filesystem::path& directory);
     void ReadSelector(const std::filesystem::path& path);

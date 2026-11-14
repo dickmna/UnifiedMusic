@@ -1,10 +1,10 @@
 # Harmonia — composer-aware music compatibility
 
-**Harmonia 1.0.0** applies explicit music configurations first, then restores supported contributions, inherits authored scene restrictions for ordinary uses, isolates shared tracks, and optionally lets supported original/replacement audio coexist with the separate HQ audio pack. One SKSE DLL; no patch-generation interface or generated ESP. [中文说明](使用说明.md).
+**Harmonia 1.0.1** applies explicit music configurations first, then restores supported contributions, inherits authored scene restrictions for ordinary uses, isolates shared tracks, and optionally lets supported original/replacement audio coexist with the separate HQ audio pack. One SKSE DLL; no patch-generation interface or generated ESP. [中文说明](使用说明.md).
 
 The DLL remains `UnifiedMusic.dll` for upgrades. This build supports **Steam Skyrim 1.7.104 only**, with matching SKSE and Address Library. It does not require separate MTD or CME DLLs. Offline validation is complete; native playback has not been tested. See [VALIDATION.md](VALIDATION.md).
 
-Version 1.0.0 locks the audited HQ main/finale references at packaging time and removes the leftover generic ranged-file reader. The reference map and supported music behavior are unchanged; no external missing-audio repair was added. The scope and upstream comparison are recorded in [AUDIT.md](AUDIT.md). The final version label does not establish native gameplay validation.
+Version 1.0.1 moves gameplay plugin reading to Skyrim's native `TESFile` interfaces, following the API pattern used by Modex / Help Extender. Portable ESP parsing and zlib remain in the offline inspector only. Both readers feed the same record decoder and music rules. The optional HQ pack stays at 1.0.0; its audited mappings are unchanged. See [AUDIT.md](AUDIT.md) for the implementation and validation boundaries.
 
 ## Composer policy
 
@@ -96,7 +96,7 @@ The shared typed CTDA schema includes functions 18, 56, 58, 59, 74, 67, 310, 359
 
 At DataLoaded, the planner reads enabled plugins and configurations. Each playlist batch prepares additions, local conditions and normalized audio together, reserves capacity, validates witnesses/resources, then commits. Automatic work must match the winning plugin snapshot; pure explicit MTD operations use the loaded list. Both recheck their actual list before committing. Scene-dependent failure retries independent work; if automatic preparation still fails, valid explicit instructions can run through the same prepare/commit path without inference. A failed original-audio candidate alone can be omitted without blocking valid guarded contributions. Exceptions do not retry.
 
-The current DLL and offline inspector share one bounded ESP/ESM/ESL reader. The preferred next architecture separates a Modex-style native `TESFile` reader for the DLL from the offline tool's portable reader, while sharing record decoding and music rules. Offline testing does not require shipping the portable reader in the DLL. This split is not implemented yet; see the [native-reader assessment](AUDIT.md#modex-native-reader-assessment). Both approaches reopen plugin files to recover history. Audio access is separate: Harmonia has no BSA parser or audio cache.
+The DLL reopens enabled plugins through native `TESFile` opening, record/subrecord navigation and data reads. The engine handles compressed records and extended-size fields. Harmonia validates read completion, converts native record-header IDs back to source identities, and submits each complete file to the shared decoder. It retains all relevant versions, rather than only the first or winning definition. The portable file walker and zlib are linked only into the offline inspector. Both paths share CTDA/VMAD decoding, ownership evidence and every music rule; see the [native-reader assessment](AUDIT.md#modex-native-reader-assessment). This still reads plugin history from disk. Audio access is separate: Harmonia has no BSA parser or audio cache.
 
 Explicit area assignments follow, except those whose target playlist failed. Automatic area recovery requires all music batches to succeed; explicit selectors install last. This is not a transaction over every external runtime actor.
 
@@ -104,13 +104,13 @@ If standalone `MusicTypeDistributor.dll`/the MTD plugin identity or `CombatMusic
 
 ## Installation and limits
 
-Install `Harmonia-1.0.0.zip` through the mod manager. For original/replacer coexistence, also install `Harmonia-Original-Audio-HQ-1.0.0.zip`. It contains loose independent audio plus a manifest and needs no plugin registration. Without it, only audio coexistence is disabled. Keep each music pack's own plugins, BSA/audio and supported configuration files. Do not install the inspector/source archive as a gameplay dependency. No generator or additional patch ESP is required. Existing authored compatibility patches should be retained unless their purpose has been verified as covered. Legacy 0.11 audio caches are ignored; this release does not delete them. MRR is not a dependency.
+Install `Harmonia-1.0.1.zip` through the mod manager. For original/replacer coexistence, also install `Harmonia-Original-Audio-HQ-1.0.0.zip`. It contains loose independent audio plus a manifest and needs no plugin registration. Without it, only audio coexistence is disabled. Keep each music pack's own plugins, BSA/audio and supported configuration files. Do not install the inspector/source archive as a gameplay dependency. No generator or additional patch ESP is required. Existing authored compatibility patches should be retained unless their purpose has been verified as covered. Legacy 0.11 audio caches are ignored; this release does not delete them. MRR is not a dependency.
 
 Version 0.7 narrows runtime support from 0.6: **1.7.99, 1.6.x, GOG and VR are not enabled**. Static inspection of 1.7.104 found the pinned SDK declares BGSMusicTrack's condition holder as an inline object although the executable uses a pointer. This release accesses that field through a dedicated adapter and the native single-track factory. That fix and its static evidence are documented in validation; they do not constitute an in-game test.
 
 The current **111-plugin combination**, including ECSS, Bruma, SIRENROOT, Chapter II, Northerner Diaries, Musical Lore, Lorkhan and paid Creations, was inspected with its unmodified configuration. All **195 independently identified missing playlist memberships** are covered by the new plan: 15 town, 11 default battle, five Boss and 164 other uses. Five ordinary combat tracks inherit the authored Bruma/Orsinium exclusions locally. ECSS's five, Bruma's 20 and SIRENROOT's 29 independent types remain unchanged. Actual Lorkhan resources yield original/replacement proposals for **60 original tracks across 244 playlist uses with the optional pack**. These are offline results, not native playback results.
 
-Temporary configuration overlays against the same 111 plugins also verified explicit Location/Region assignment proposals, town clear/refill, empty default-battle clear, retained independent Boss links and equivalent selection from commented versus original ECSS JSON. No deployed configuration was changed. The suite passes 315 Python test methods, 523 selector checks and 28 read-only executable checks.
+Temporary configuration overlays against the same 111 plugins also verified explicit Location/Region assignment proposals, town clear/refill, empty default-battle clear, retained independent Boss links and equivalent selection from commented versus original ECSS JSON. No deployed configuration was changed. The suite passes 315 Python test methods, 523 selector checks, 223 native-reader contract checks and 45 read-only executable checks. All six complete inspector outputs match 1.0.0 byte-for-byte. Contract tests use a scripted API double; the game's reader, Address Library resolution and playback have not been executed.
 
 Two existing referenced audio resources are absent locally: Chapter II's `music/forestfall/mus_palette_forestfall_day_b_17.xwm` and Crone's `music/dread/dread 01 v2.wav` (also no XWM equivalent). Harmonia does not create missing music or delete these authors' references. Arbitrary Papyrus music-stack behavior, dynamic lookups, runtime MusicType creation, unsupported conditions and absent custom battle relationships can still need authored configuration or patches. Other pack versions and every Music Patch for New Lands variant were not tested. See validation for exact scope.
 
@@ -120,12 +120,14 @@ Visual Studio 2022 C++ tools, Windows SDK, Git, CMake 3.24+ and Python. Dependen
 
 ```powershell
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64
-cmake --build build --config Release --target UnifiedMusic UnifiedMusicInspect HarmoniaRuleTests --parallel 4
+cmake --build build --config Release --target UnifiedMusic UnifiedMusicInspect HarmoniaRuleTests HarmoniaReaderTests --parallel 4
 $env:UNIFIED_MUSIC_INSPECT = (Resolve-Path build/Release/UnifiedMusicInspect.exe).Path
 python -m unittest discover -s tests -p 'test_*.py' -v
 ctest --test-dir build -C Release --output-on-failure
 build/Release/UnifiedMusicInspect.exe Skyrim.esm Example.esp --config Example_MUS.ini --selector Example.json
 ```
+
+For a gameplay-only build, configure with `-DHARMONIA_BUILD_INSPECTOR=OFF -DBUILD_TESTING=OFF` and build `UnifiedMusic`. This configuration does not fetch or build zlib. The DLL link map also excludes the portable reader and zlib when development targets are enabled.
 
 Pass all enabled plugins/masters. `--config-dir Data` and `--selector-dir PATH` discover the corresponding root files. The inspector does not change plugins or discover a game load order. Output proposals include `APPEND`, `AUTO_COMBAT`, `CLEAR`, `DISTRIBUTE`, `ASSIGN`, `CONDITION_UNION`, `CONDITION_GUARD`, `ISOLATE_GUARD`, `RESTORE_MAPPING` and `SELECTOR`; `USE_RULES`/`AUDIO_USE` JSON lines expose inferred clauses and audio hashes for offline comparisons. Those clauses describe additions to authored eligibility, not a complete playback trace. IDs after the colon are decimal local IDs. Geographic kinds: 0 Cell, 1 Worldspace, 2 Location, 3 Region. Exit 0 means scanning completed; read handoff/skip diagnostics.
 

@@ -1,7 +1,7 @@
 include_guard(GLOBAL)
 include(FetchContent)
 
-# Keep the previously verified Steam 1.7 SDK and compression-library revisions.
+# Keep the verified Steam 1.7 SDK and other dependency revisions pinned.
 # Optional local Git checkout cache; content is checked before it is used.
 set(UNIFIED_MUSIC_DEPS_DIR "" CACHE PATH "Existing pinned dependency Git checkouts")
 function(unified_music_dependency name repository revision)
@@ -54,13 +54,15 @@ FetchContent_MakeAvailable(jsoncpp)
 unified_music_dependency(simpleini https://github.com/brofield/simpleini.git 09c21bda1dc1b578fa55f4a005d79b0afd481296)
 FetchContent_MakeAvailable(simpleini)
 
-set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-unified_music_dependency(zlib https://github.com/madler/zlib.git 51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf)
-FetchContent_MakeAvailable(zlib)
-target_include_directories(zlibstatic PUBLIC
-    "$<BUILD_INTERFACE:${zlib_SOURCE_DIR}>"
-    "$<BUILD_INTERFACE:${zlib_BINARY_DIR}>")
-set_target_properties(zlib PROPERTIES EXCLUDE_FROM_ALL TRUE)
-if(NOT TARGET ZLIB::ZLIB)
-    add_library(ZLIB::ZLIB ALIAS zlibstatic)
+if(HARMONIA_BUILD_INSPECTOR)
+    set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    unified_music_dependency(zlib https://github.com/madler/zlib.git 51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf)
+    FetchContent_MakeAvailable(zlib)
+    target_include_directories(zlibstatic PUBLIC
+        "$<BUILD_INTERFACE:${zlib_SOURCE_DIR}>"
+        "$<BUILD_INTERFACE:${zlib_BINARY_DIR}>")
+    set_target_properties(zlib PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    if(NOT TARGET ZLIB::ZLIB)
+        add_library(ZLIB::ZLIB ALIAS zlibstatic)
+    endif()
 endif()

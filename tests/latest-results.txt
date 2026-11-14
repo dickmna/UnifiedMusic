@@ -315,6 +315,6 @@ test_unresolved_or_wrong_type_filter_does_not_broaden_rule (test_selectors.Selec
 test_worldspace_rule_resolves_to_loaded_forms (test_selectors.SelectorTests.test_worldspace_rule_resolves_to_loaded_forms) ... ok
 
 ----------------------------------------------------------------------
-Ran 315 tests in 9.720s
+Ran 315 tests in 8.611s
 
 OK

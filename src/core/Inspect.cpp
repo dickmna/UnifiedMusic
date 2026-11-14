@@ -1,4 +1,5 @@
 #include "PluginScan.h"
+#include "offline/PluginFile.h"
 #include "AudioAssets.h"
 #include "Conditions.h"
 #include <json/json.h>
@@ -44,7 +45,7 @@ int main(int argc,char**argv) {
                 else if(arg=="--audio-pack") packRoot=argv[i];
                 else visible=argv[i];
             } else if(arg.starts_with("--")) throw std::runtime_error("unknown option: "+arg);
-            else scan.Read(argv[i]);
+            else UnifiedMusic::ReadPluginFile(scan,argv[i]);
         }
         auto plan=scan.Plan();
         UnifiedMusic::OriginalAudioPack pack;

@@ -1,0 +1,84 @@
+{
+  "version": "1.0.1",
+  "date": "2026-11-15",
+  "native_adapter_contract_checks": 223,
+  "python_test_methods": 315,
+  "selector_checks": 523,
+  "ctest_targets": 2,
+  "executable_static_checks": 45,
+  "transport": "TESFile OpenTES/GetCurrentSubRecordType/ReadData/SeekNextSubrecord/CloseTES, plus 1.7.104 SeekNextForm adapter",
+  "shared_semantics": "PluginDecode and existing music planner",
+  "offline_transport": "PluginFile linked only to the offline inspector, which is exercised by development integration tests",
+  "link_map": {
+    "native_adapter_present": true,
+    "shared_decoder_present": true,
+    "absent_symbols_or_objects": [
+      "zlibstatic",
+      "uncompress",
+      "inflate",
+      "PluginFile.obj",
+      "unified_music_file"
+    ],
+    "sha256": "1a0d5ea7ab77e0184159e71050007bee0235e42ddffc189b648c6b0746152be0"
+  },
+  "dll": {
+    "size": 1309184,
+    "sha256": "de7467bf3ed4d6b403a1f4108ec37f6a89813fa8892114ed48ac1ac1f6cbf86e"
+  },
+  "previous_dll": {
+    "version": "1.0.0",
+    "size": 1329152,
+    "sha256": "21058d1d47600110d072e6fb79b5b47b71dc9323f232dbd181772fc9d77f76f9"
+  },
+  "complete_inspector_output_comparison": {
+    "current-record-plan.txt": {
+      "sha256": "27f8ec1fbd03877f18cd4fe0e66f0499778ed48137b14b558f4d8aee4e26bfc4",
+      "identical_to_1_0_0": true
+    },
+    "current-resource-plan.txt": {
+      "sha256": "6940da8451b3b69056d9bb6008a2582e84a40cb4bdc3083d198708eaeb91ab08",
+      "identical_to_1_0_0": true
+    },
+    "current-no-pack.txt": {
+      "sha256": "27f8ec1fbd03877f18cd4fe0e66f0499778ed48137b14b558f4d8aee4e26bfc4",
+      "identical_to_1_0_0": true
+    },
+    "current-plus-mrr-resource-plan.txt": {
+      "sha256": "7090bb154d376065299bf0fb0e93a29b709b915a242ce9448ff878ec53d4924a",
+      "identical_to_1_0_0": true
+    },
+    "explicit-area-and-town-clear.txt": {
+      "sha256": "c2c57b912c35868d31dd4d09b4d4e0f3143b3bbb2555169d1ad8eb58543bb7e2",
+      "identical_to_1_0_0": true
+    },
+    "explicit-empty-battle-clear.txt": {
+      "sha256": "baa69f735cf1bfa7d2dca0105be4bd948e217956055f2544bf18c04b89d0b77c",
+      "identical_to_1_0_0": true
+    }
+  },
+  "native_game_execution": false,
+  "address_library_resolution_executed": false,
+  "engine_decompression_executed": false,
+  "game_inputs_unchanged": true,
+  "note": "Contract tests execute the production adapter against a scripted API double; current plugin plans execute the shared decoder through the portable reader. Neither is native playback.",
+  "gameplay_only_build": {
+    "configuration": {
+      "HARMONIA_BUILD_INSPECTOR": false,
+      "BUILD_TESTING": false
+    },
+    "release_build_succeeded": true,
+    "zlib_configured": false,
+    "portable_reader_target_configured": false,
+    "native_adapter_and_shared_decoder_in_link_map": true,
+    "absent_symbols_or_objects": [
+      "zlibstatic",
+      "uncompress",
+      "inflate",
+      "PluginFile.obj",
+      "unified_music_file"
+    ],
+    "link_map_sha256": "e16a3f9ee4d103d24fa8c56e346d15504f916bffdeec950fef627d78f17b6b92",
+    "dll_size": 1309184,
+    "dll_sha256": "bb00d399f70e265039a158c71c22525da35851c4bc28c0e3bb7600b184a81c3b"
+  }
+}

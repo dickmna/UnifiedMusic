@@ -85,6 +85,52 @@ def verify(path):
         call = pe.get_data(address, 5)
         require(f'cme_entry_{index}_calls_default_object',
                 call[0] == 0xE8 and address+5+struct.unpack('<i', call[1:])[0] == 0x154440)
+    # TESFile adapter evidence. These addresses were located independently in
+    # this executable. API forwarding through Address Library is not executed.
+    # In particular, the pinned SDK omits SeekNextForm's third Boolean and
+    # describes currentform without documenting its remapped header FormID.
+    open_file = instructions(0x1CA460, 0x24)
+    require('tesfile_open_uses_loaded_filename_and_path',
+            ('lea', 'r8, [rcx + 0x58]') in open_file and
+            ('lea', 'rdx, [rcx + 0x15c]') in open_file)
+    next_form = instructions(0x1CD400, 0x1C5)
+    require('tesfile_next_form_has_third_boolean', ('movzx', 'edi, r8b') in next_form)
+    require('tesfile_skip_ignored_is_separate_from_subrecord_initialization',
+            ('movzx', 'esi, dl') in next_form and
+            ('test', 'dword ptr [rbx + 0x28c], 0x1000') in next_form)
+    advance = instructions(0x1CD5F0, 0x186)
+    require('tesfile_file_offset_at_0x2a8', ('add', 'dword ptr [rcx + 0x2a8], eax') in advance)
+    require('tesfile_eof_compares_file_size_at_0x2a4', ('cmp', 'edx, dword ptr [rcx + 0x2a4]') in advance)
+    require('tesfile_eof_clears_record_header', ('mov', 'qword ptr [rcx + 0x284], rax') in advance)
+    require('tesfile_lazy_next_skips_chunk_initialization', ('test', 'sil, sil') in advance)
+    header = instructions(0x1CF0F0, 0x1E1)
+    require('tesfile_header_uses_master_pointer_table',
+            ('mov', 'rdx, qword ptr [rbx + 0x468]') in header and
+            ('cmp', 'eax, dword ptr [rbx + 0x460]') in header)
+    require('tesfile_header_remaps_full_plugin_id',
+            ('movzx', 'eax, byte ptr [rdi + 0x478]') in header and
+            ('or', 'dword ptr [rbx + 0x290], eax') in header)
+    require('tesfile_header_remaps_light_plugin_id',
+            ('movzx', 'eax, word ptr [rdi + 0x47a]') in header and
+            ('or', 'ecx, 0xfe000000') in header and ('and', 'ecx, 0xfff') in header)
+    chunk_type = instructions(0x1CDC10, 0x2F)
+    require('tesfile_current_subrecord_tag_at_0x29c', ('mov', 'eax, dword ptr [rbx + 0x29c]') in chunk_type)
+    next_chunk = instructions(0x1CDC60, 0xA7)
+    require('tesfile_subrecord_cursor_uses_six_byte_header',
+            ('add', 'eax, 6') in next_chunk and ('add', 'dword ptr [rbx + 0x2ac], eax') in next_chunk)
+    require('tesfile_compressed_subrecord_limit_at_0x4a8', ('mov', 'ecx, dword ptr [rbx + 0x4a8]') in next_chunk)
+    chunk = instructions(0x1CF2E0, 0x1CD)
+    require('tesfile_engine_expands_xxxx',
+            ('cmp', 'ecx, 0x58585858') in chunk and
+            ('mov', 'dword ptr [rbx + 0x2a0], eax') in chunk)
+    read_data = instructions(0x1CDD10, 0x219)
+    require('tesfile_read_data_uses_native_decompressed_buffer',
+            ('mov', 'rax, qword ptr [rdi + 0x4a0]') in read_data and
+            ('mov', 'r8d, dword ptr [rdi + 0x2a0]') in read_data)
+    require('tesfile_read_data_counts_payload_bytes_at_0x2b0',
+            ('mov', 'dword ptr [rdi + 0x2b0], eax') in read_data)
+    close_file = instructions(0x1CAC40, 0x25D)
+    require('tesfile_close_has_nonforcing_path', ('test', 'dl, dl') in close_file)
     return {'executable_version': '.'.join(map(str, version)),
             'executable_sha256': hashlib.sha256(raw).hexdigest(), 'checks': checks,
             'native_execution': False, 'address_library_resolution_executed': False}
