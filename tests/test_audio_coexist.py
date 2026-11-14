@@ -198,13 +198,17 @@ class AudioTests(unittest.TestCase):
         self.override()
         self.assertIn('AUDIO_COEXIST ', self.scan(patch))
 
-    def test_scripted_oneshot_and_boss_lists_are_preserved(self):
+    def test_direct_scripted_track_oneshot_and_boss_lists_are_preserved(self):
         for name, flags, extra in [('MUSCombatBoss', 4, b''), ('MUSExploreForest', 5, b''),
-                                   ('MUSExploreForest', 4, script_reference(0x300, 0x100)),
                                    ('MUSExploreForest', 4, script_reference(0x300, 0x200))]:
             self.base.write_bytes(header() + music(0x100, (0x200,), name=name, music_flags=flags) + audio_track() + extra)
             self.override()
             self.assertIn('AUDIO_CANDIDATES 0 ', self.scan())
+
+    def test_public_list_script_reference_does_not_block_audio_normalization(self):
+        self.base.write_bytes(self.base.read_bytes() + script_reference(0x300, 0x100))
+        self.override()
+        self.assertIn('AUDIO_COEXIST ', self.scan())
 
     def test_palette_children_are_not_flattened(self):
         palette = record('MUST', 0x201, sub('CNAM', struct.pack('<I', 0x23F678C3)) + sub('SNAM', struct.pack('<I', 0x200)))

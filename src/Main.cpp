@@ -6,7 +6,6 @@
 #include "core/PluginScan.h"
 #include "AutoCombat.h"
 #include "AreaMusic.h"
-#include "AudioCoexist.h"
 #include "CombatSelector.h"
 
 namespace {
@@ -36,10 +35,8 @@ void Distribute() {
     if(!UnifiedMusic::PrepareSelectors(plan)) {REX::WARN("Unresolved native selector forms; music batch skipped");return;}
     if(UnifiedMusic::ApplyMusicPlan(plan,scan.Records())) {
         UnifiedMusic::RestoreAreaMusic(plan);
-        try { UnifiedMusic::ApplyAudioCoexist(plan); }
-        catch(const std::exception& e) {REX::WARN("Original audio coexistence skipped: {}",e.what());}
-        UnifiedMusic::InstallSelectors();
-    }
+    } else REX::WARN("Some music uses were preserved; area recovery deferred");
+    UnifiedMusic::InstallSelectors();
     REX::INFO("Automatic planning complete: {} allowed ambient types, {} configured types",plan.allowed.size(),plan.distributions.size());
 }
 void OnMessage(SKSE::MessagingInterface::Message* message) {
@@ -56,7 +53,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
 }
 extern "C" __declspec(dllexport) constinit auto SKSEPlugin_Version=[] {
     SKSE::PluginVersionData version{};
-    version.PluginVersion(REL::Version(0,7,0,0));
+    version.PluginVersion(REL::Version(0,8,0,0));
     version.PluginName("Harmonia");
     version.AuthorName("UnifiedMusic contributors");
     version.UsesAddressLibrary(); version.UsesUpdatedStructs();

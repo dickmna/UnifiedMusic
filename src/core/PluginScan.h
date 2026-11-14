@@ -25,7 +25,10 @@ struct ScriptProperties {
     std::string source;
     std::vector<std::string> masters;
     std::vector<std::uint8_t> bytes;
+    std::set<FormKey> references;
+    bool parsed{};
 };
+void DecodeScriptProperties(ScriptProperties& script, const std::string& recordType);
 enum class AreaKind { Cell, Worldspace, Location, Region };
 struct Area {
     AreaKind kind;
@@ -61,6 +64,7 @@ struct ConditionTerm {
     FormKey parameter;
     std::uint8_t opcode{};
     bool onPlayerReference{};
+    bool isOR{};
     auto operator<=>(const ConditionTerm&) const = default;
 };
 struct ConditionVersion {
@@ -75,6 +79,7 @@ struct ConditionRepair {
     std::vector<FormKey> requiredTracks;
     bool genericGuard{};
     bool isolate{}; // Replace only this playlist's reference with a private instance.
+    std::vector<std::vector<ConditionTerm>> clauses; // AND of OR clauses, appended intact.
 };
 struct AudioCandidate {
     FormKey musicType, track;
@@ -83,7 +88,9 @@ struct AudioCandidate {
 struct ConditionWitness {
     FormKey track;
     std::vector<ConditionVersion> versions;
+    FormKey musicType;
 };
+struct SceneResource { FormKey musicType, track; std::string audioPath, finalePath; };
 enum class SelectorKind { Worldspace, Cell, Location, LocationKeyword, Target, TargetKeyword };
 struct SelectorFilter { SelectorKind kind; bool required{}; std::vector<FormKey> forms; };
 struct SelectorRule { bool combat{}; FormKey music; std::vector<SelectorFilter> filters; std::string source; };
@@ -99,6 +106,7 @@ struct MergePlan {
     std::vector<ConditionWitness> conditionWitnesses;
     std::vector<MappingRepair> mappingRepairs;
     std::vector<AudioCandidate> audioCandidates;
+    std::vector<SceneResource> sceneResources;
     std::vector<SelectorRule> selectors;
     std::vector<std::string> diagnostics;
 };

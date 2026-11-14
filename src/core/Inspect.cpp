@@ -1,6 +1,30 @@
 #include "PluginScan.h"
 #include "AudioAssets.h"
+#include "Conditions.h"
+#include <json/json.h>
+#include <algorithm>
 #include <iostream>
+namespace {
+Json::Value Clauses(const UnifiedMusic::MergePlan& plan,const UnifiedMusic::FormKey& type,const UnifiedMusic::FormKey& track) {
+    Json::Value clauses(Json::arrayValue);
+    for(const auto& repair:plan.conditionRepairs) if(repair.musicType==type && repair.track==track)
+        for(const auto& clause:UnifiedMusic::RepairClauses(repair)) {
+            Json::Value terms(Json::arrayValue);
+            for(const auto& term:clause) {
+                Json::Value t;
+                t["function"]=term.function;t["comparison_bits"]=term.comparison;t["op"]=term.opcode;
+                t["parameter"]=UnifiedMusic::ToString(term.parameter);t["parameter2"]=term.parameter2;
+                t["player_reference"]=term.onPlayerReference;t["or_next"]=term.isOR;terms.append(t);
+            }
+            clauses.append(terms);
+        }
+    return clauses;
+}
+void Emit(const char* name,const Json::Value& value) {
+    Json::StreamWriterBuilder writer;writer["indentation"]="";
+    std::cout<<name<<" "<<Json::writeString(writer,value)<<'\n';
+}
+}
 int main(int argc,char**argv) {
     try {
         UnifiedMusic::PluginScan scan;
@@ -25,6 +49,26 @@ int main(int argc,char**argv) {
             else scan.Read(argv[i]);
         }
         auto plan=scan.Plan();
+        UnifiedMusic::OriginalAudio original;
+        UnifiedMusic::AudioReader reader;
+        if(!archives.empty()) {
+            if(visible.empty()) throw std::runtime_error("audio comparison requires --visible-dir");
+            for(const auto& path:archives) original.AddArchive(path);
+            reader=[&](const std::string& path)->std::optional<UnifiedMusic::AudioBytes> {
+                auto wav=path;wav.replace(wav.size()-4,4,".wav");
+                if(std::filesystem::exists(visible/wav)) return {};
+                if(std::filesystem::exists(visible/path)) return UnifiedMusic::ReadAudioFile(visible/path);
+                return original.Read(path);
+            };
+            for(const auto& [type,reason]:UnifiedMusic::CheckSceneResources(plan.sceneResources,reader)) {
+                plan.diagnostics.push_back("SCENE_RESOURCE_SKIP "+UnifiedMusic::ToString(type)+" "+reason);
+                plan.additions.erase(type);plan.distributions.erase(type);
+                if(plan.battleType && type==*plan.battleType) {plan.combatRules.clear();plan.battleMergeSafe=false;}
+                std::erase_if(plan.conditionRepairs,[&](const auto& r){return r.musicType==type;});
+                std::erase_if(plan.audioCandidates,[&](const auto& r){return r.musicType==type;});
+                std::erase_if(plan.mappingRepairs,[&](const auto& r){return r.music==type;});
+            }
+        }
         for(auto& d:plan.diagnostics) std::cout<<d<<'\n';
         for(const auto& [type,tracks]:plan.distributions) for(const auto& track:tracks)
             std::cout<<"DISTRIBUTE "<<UnifiedMusic::ToString(type)<<" <- "<<UnifiedMusic::ToString(track)<<'\n';
@@ -43,6 +87,9 @@ int main(int argc,char**argv) {
                 std::cout<<static_cast<int>(area.kind)<<':'<<UnifiedMusic::ToString(area.form);
             }
             std::cout<<'\n';
+            Json::Value use;
+            use["type"]=UnifiedMusic::ToString(repair.musicType);use["track"]=UnifiedMusic::ToString(repair.track);
+            use["clauses"]=Clauses(plan,repair.musicType,repair.track);Emit("USE_RULES",use);
         }
         for(const auto& repair:plan.mappingRepairs)
             std::cout<<"RESTORE_MAPPING "<<static_cast<int>(repair.area.kind)<<':'<<UnifiedMusic::ToString(repair.area.form)
@@ -71,14 +118,6 @@ int main(int argc,char**argv) {
             std::cout<<'\n';
         }
         if(!archives.empty()) {
-            if(visible.empty()) throw std::runtime_error("audio comparison requires --visible-dir");
-            UnifiedMusic::OriginalAudio original;for(const auto& path:archives) original.AddArchive(path);
-            const auto reader=[&](const std::string& path)->std::optional<UnifiedMusic::AudioBytes> {
-                auto wav=path;wav.replace(wav.size()-4,4,".wav");
-                if(std::filesystem::exists(visible/wav)) return {};
-                if(std::filesystem::exists(visible/path)) return UnifiedMusic::ReadAudioFile(visible/path);
-                return original.Read(path);
-            };
             std::cout<<"AUDIO_CANDIDATES "<<plan.audioCandidates.size()<<" (offline loose overlay; not engine BSA precedence)\n";
             std::size_t unchanged=0;
             for(const auto& candidate:plan.audioCandidates) {
@@ -89,8 +128,15 @@ int main(int argc,char**argv) {
                     UnifiedMusic::CacheAudio(cache,pair->track);
                     if(!pair->finale.empty()) UnifiedMusic::CacheAudio(cache,pair->finale);
                 } catch(const std::exception& e) {reason=e.what();pair.reset();}
-                if(pair) std::cout<<"AUDIO_COEXIST "<<UnifiedMusic::ToString(candidate.musicType)<<" <- "<<UnifiedMusic::ToString(candidate.track)
-                    <<" main="<<pair->trackHash<<" finale="<<pair->finaleHash<<'\n';
+                if(pair) {
+                    std::cout<<"AUDIO_COEXIST "<<UnifiedMusic::ToString(candidate.musicType)<<" <- "<<UnifiedMusic::ToString(candidate.track)
+                        <<" main="<<pair->trackHash<<" finale="<<pair->finaleHash<<'\n';
+                    Json::Value use;
+                    use["type"]=UnifiedMusic::ToString(candidate.musicType);use["track"]=UnifiedMusic::ToString(candidate.track);
+                    use["original"]=pair->trackHash;use["replacement"]=pair->replacementHash;
+                    use["original_finale"]=pair->finaleHash;use["replacement_finale"]=pair->replacementFinaleHash;
+                    use["clauses"]=Clauses(plan,candidate.musicType,candidate.track);Emit("AUDIO_USE",use);
+                }
                 else std::cout<<"AUDIO_SKIP "<<UnifiedMusic::ToString(candidate.track)<<" "<<reason<<'\n';
             }
             std::cout<<"AUDIO_UNCHANGED "<<unchanged<<'\n';

@@ -184,15 +184,17 @@ class PluginScanTests(unittest.TestCase):
     def test_deleted_record_protects_type(self):
         self.assert_preserved(self.base(), self.addon(flags=0x20))
 
-    def test_late_script_reference_protects_type(self):
+    def test_late_script_reference_keeps_public_type_role(self):
         quest = self.write("Quest.esp", header(("Skyrim.esm",))
                            + script_reference(0x01000900, 0x100))
-        self.assert_preserved(self.base(), self.addon(), quest)
+        _, additions, _ = self.run_scan(self.base(), self.addon(), quest)
+        self.assertEqual(additions, {self.TYPE: ['a.esp:2048']})
 
     def test_vmad_reference_respects_master_order(self):
         quest = self.write("Quest.esp", header(("A.esp", "Skyrim.esm"))
                            + script_reference(0x02000900, 0x01000100))
-        self.assert_preserved(self.base(), self.addon(), quest)
+        _, additions, _ = self.run_scan(self.base(), self.addon(), quest)
+        self.assertEqual(additions, {self.TYPE: ['a.esp:2048']})
 
     def test_unrelated_vmad_same_local_id_does_not_protect_other_plugin(self):
         quest = self.write("Quest.esp", header(("Skyrim.esm", "Other.esm"))
@@ -269,18 +271,24 @@ class PluginScanTests(unittest.TestCase):
         self.assertIn(self.TYPE, allowed, "Protecting one track must not disable the safe target")
         self.assertEqual(additions.get(self.TYPE), ["b.esp:2304"])
 
-    def test_shared_custom_music_track_is_not_restored_to_ambient(self):
+    def assert_shared_membership_restored(self, *plugins: Path):
+        allowed, additions, _ = self.run_scan(*plugins)
+        self.assertIn(self.TYPE, allowed)
+        self.assertEqual(set(additions), {self.TYPE}, 'Dedicated owners receive no additions')
+        self.assertCountEqual(additions[self.TYPE], ['a.esp:2048', 'b.esp:2304'])
+
+    def test_shared_custom_music_track_restores_ordinary_membership_to_ambient(self):
         base, a, b = self.conflicting_addons()
         a.write_bytes(a.read_bytes() + group(music(0x01000A00, (self.A_TRACK,), name="QuestFinale")))
-        self.assert_only_b_restored(base, a, b)
+        self.assert_shared_membership_restored(base, a, b)
 
-    def test_shared_custom_track_protection_is_independent_of_scan_order(self):
+    def test_shared_custom_track_membership_is_independent_of_scan_order(self):
         base, a, b = self.conflicting_addons()
         protection = self.write("Story.esp", header(("Skyrim.esm", "A.esp"))
             + group(music(0x02000A00, (self.A_TRACK,), name="IndependentStoryMusic")))
         for order in itertools.permutations((base, a, b, protection)):
             with self.subTest(order=[p.name for p in order]):
-                self.assert_only_b_restored(*order)
+                self.assert_shared_membership_restored(*order)
 
     def test_direct_script_track_reference_is_not_restored_to_ambient(self):
         base, a, b = self.conflicting_addons()
@@ -301,29 +309,30 @@ class PluginScanTests(unittest.TestCase):
         _, additions, _ = self.run_scan(base, a, b, quest)
         self.assertCountEqual(additions[self.TYPE], ["a.esp:2048", "b.esp:2304"])
 
-    def test_track_shared_with_script_bound_base_type_is_not_restored(self):
+    def test_track_shared_with_script_bound_base_type_restores_ordinary_membership(self):
         base, a, b = self.conflicting_addons()
         base.write_bytes(base.read_bytes() + group(music(0x300, (self.BASE_TRACK,), name="MUSTownScripted")))
         a.write_bytes(a.read_bytes() + group(music(0x300, (self.BASE_TRACK, self.A_TRACK), name="MUSTownScripted")))
         quest = self.write("Story.esp", header(("Skyrim.esm",))
                            + script_reference(0x01000A00, 0x300))
-        self.assert_only_b_restored(base, a, b, quest)
+        _, additions, _ = self.run_scan(base, a, b, quest)
+        self.assertEqual(additions, {self.TYPE: ['a.esp:2048', 'b.esp:2304'], 'skyrim.esm:768': ['a.esp:2048']})
 
-    def test_track_shared_with_one_shot_base_type_is_not_restored(self):
+    def test_track_shared_with_one_shot_base_type_restores_ordinary_membership(self):
         base, a, b = self.conflicting_addons()
         base.write_bytes(base.read_bytes() + group(music(0x300, (self.BASE_TRACK,),
                                                        name="MUSSpecial", music_flags=1)))
         a.write_bytes(a.read_bytes() + group(music(0x300, (self.BASE_TRACK, self.A_TRACK),
                                                   name="MUSSpecial", music_flags=1)))
-        self.assert_only_b_restored(base, a, b)
+        self.assert_shared_membership_restored(base, a, b)
 
-    def test_track_shared_with_native_boss_type_is_not_restored(self):
+    def test_track_shared_with_native_boss_type_restores_ordinary_membership(self):
         base, a, b = self.conflicting_addons()
         base.write_bytes(base.read_bytes() + group(music(0x300, (self.BASE_TRACK,), name="MUSCombatBoss")))
         a.write_bytes(a.read_bytes() + group(music(0x300, (self.BASE_TRACK, self.A_TRACK), name="MUSCombatBoss")))
-        self.assert_only_b_restored(base, a, b)
+        self.assert_shared_membership_restored(base, a, b)
 
-    def test_track_shared_with_other_mapped_type_is_not_restored(self):
+    def test_track_shared_with_other_mapped_type_restores_ordinary_membership(self):
         for signature, field in (("CELL", "XCMO"), ("WRLD", "ZNAM"),
                                  ("LCTN", "NAM1"), ("REGN", "RDMO")):
             with self.subTest(signature=signature):
@@ -332,7 +341,7 @@ class PluginScanTests(unittest.TestCase):
                 a.write_bytes(a.read_bytes() + group(music(0x300, (self.BASE_TRACK, self.A_TRACK), name="MUSSpecial"))
                               + group(record(signature, 0x01000B00,
                                       sub(field, struct.pack("<I", 0x300))), signature.encode("ascii")))
-                self.assert_only_b_restored(base, a, b)
+                self.assert_shared_membership_restored(base, a, b)
 
     def test_ambient_target_own_map_assignment_does_not_block_its_additions(self):
         base, a, b = self.conflicting_addons()
@@ -375,14 +384,14 @@ class PluginScanTests(unittest.TestCase):
                            + group(record("MUST", self.A_TRACK, body), b"MUST"))
         self.assert_only_b_restored(base, a, b, patch)
 
-    def test_track_referenced_by_palette_is_not_restored_to_ambient(self):
+    def test_track_referenced_by_palette_restores_ordinary_membership_to_ambient(self):
         base, a, b = self.conflicting_addons()
         palette = (sub("EDID", b"StoryPalette\0") + sub("CNAM", struct.pack("<I", 0x23F678C3))
                    + sub("SNAM", struct.pack("<I", 0x00000800)))
         # A is index 0 in this plugin, unlike index 1 in A itself.
         other = self.write("Story.esp", header(("A.esp", "Skyrim.esm"))
                            + group(record("MUST", 0x02000C00, palette), b"MUST"))
-        self.assert_only_b_restored(base, a, b, other)
+        self.assert_shared_membership_restored(base, a, b, other)
 
     def malformed(self, body: bytes):
         return self.write("Malformed.esp", header(("Skyrim.esm",)) + body)

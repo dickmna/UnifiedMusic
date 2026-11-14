@@ -1,6 +1,8 @@
 #include "AutoCombat.h"
 #include "NativeTracks.h"
+#include "AudioCoexist.h"
 #include "core/PluginScan.h"
+#include "core/Conditions.h"
 #include <RE/Skyrim.h>
 #include <REX/REX.h>
 #include <algorithm>
@@ -35,16 +37,6 @@ std::optional<RE::FormType> ParameterType(std::uint32_t function)
     }
 }
 
-std::uint32_t AreaFunction(AreaKind kind)
-{
-    switch (kind) {
-    case AreaKind::Cell: return 67;
-    case AreaKind::Worldspace: return 310;
-    case AreaKind::Location: return 359;
-    default: return 0;
-    }
-}
-
 bool Contains(const RE::BGSMusicType* type, Track* track)
 {
     return std::ranges::find(type->tracks,static_cast<RE::BSIMusicTrack*>(track))!=type->tracks.end();
@@ -55,10 +47,10 @@ bool Matches(const Node* node,const ConditionTerm& expected,RE::TESDataHandler* 
     if (!node || expected.opcode>5) return false;
     const auto& actual=node->data;
     const auto type=ParameterType(expected.function);
-    if (!type || (expected.function!=59 && expected.parameter2)) return false;
-    auto* parameter=data->LookupForm<RE::TESForm>(expected.parameter.id,expected.parameter.plugin);
-    if (!parameter || parameter->GetFormType()!=*type) return false;
-    if (actual.flags.isOR || actual.flags.usesAliases || actual.flags.global ||
+    if ((!type && expected.function!=18) || (expected.function!=59 && expected.parameter2)) return false;
+    auto* parameter=type?data->LookupForm<RE::TESForm>(expected.parameter.id,expected.parameter.plugin):nullptr;
+    if (type && (!parameter || parameter->GetFormType()!=*type)) return false;
+    if (actual.flags.isOR!=expected.isOR || actual.flags.usesAliases || actual.flags.global ||
         actual.flags.usePackData || actual.flags.swapTarget ||
         static_cast<std::uint8_t>(actual.flags.opCode)!=expected.opcode ||
         actual.functionData.function.underlying()!=expected.function ||
@@ -90,15 +82,6 @@ bool Matches(const RE::TESCondition* conditions,const ConditionVersion& expected
     return node==nullptr;
 }
 
-bool Excludes(const ConditionVersion& version,const Area& area)
-{
-    return std::ranges::any_of(version.conditions,[&](const auto& condition) {
-        return condition.function==AreaFunction(area.kind) && condition.parameter==area.form &&
-            ((condition.opcode==0 && condition.comparison==0) ||
-             (condition.opcode==1 && condition.comparison==0x3f800000));
-    });
-}
-
 const ConditionVersion* WinningVersion(Track* track,const std::vector<ConditionVersion>& versions)
 {
     auto* source=track->GetFile();
@@ -114,7 +97,6 @@ const ConditionVersion* WinningVersion(Track* track,const std::vector<ConditionV
 
 struct PreparedRepair {
     RE::BGSMusicTrack* track;
-    Node* head;
     Node* tail;
     const ConditionVersion* version;
     std::vector<std::unique_ptr<Node>> nodes;
@@ -143,7 +125,7 @@ bool PlaylistMatches(RE::BGSMusicType* type,const std::vector<MusicRecord>& vers
 }
 }
 
-bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<MusicRecord>>& records)
+static bool ApplyMusicBatch(const MergePlan& plan,const std::map<FormKey,std::vector<MusicRecord>>& records,AudioInputs& audio)
 {
     const auto fail=[](std::string_view reason) {
         REX::WARN("Music batch skipped: {}",reason);
@@ -159,6 +141,7 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
     if(contributions.empty()) return true;
     auto* data=RE::TESDataHandler::GetSingleton();
     if(!data) return fail("data handler unavailable");
+    if(!audio.SceneResourcesMatch(plan)) return fail("scene resources unavailable; keeping the entire affected use unchanged");
     const bool battleWork=!plan.combatRules.empty() || std::ranges::any_of(plan.audioCandidates,[&](const auto& candidate) {
         return plan.battleType && candidate.musicType==*plan.battleType;
     }) || std::ranges::any_of(plan.conditionRepairs,[&](const auto& repair) {
@@ -220,37 +203,49 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
         const auto* version=WinningVersion(wrapper,repair.versions);
         if (!version) return fail("unrecognized winning condition source");
         const auto* originalConditions=TrackConditions(wrapper->track);
-        PreparedRepair prepared{wrapper->track,originalConditions?originalConditions->head:nullptr,nullptr,version,{}};
+        PreparedRepair prepared{wrapper->track,nullptr,version,{}};
         if (!Matches(originalConditions,*version,data,prepared.tail))
             return fail("runtime conditions differ from the scanned winning record");
         prepared.original=wrapper;
         prepared.owner=playlists.at(repair.musicType).target;
-        if(repair.isolate) {
+        {
+            // Every inferred mutation belongs to one playlist use, including
+            // original tracks whose other owners were not visible to our scan.
             prepared.isolated=CloneSingle(wrapper->track);
             if(!prepared.isolated) return fail("could not create an independent native single track");
             prepared.track=prepared.isolated.get();
-            const auto* copied=TrackConditions(prepared.track);prepared.head=copied?copied->head:nullptr;
+            const auto* copied=TrackConditions(prepared.track);
             if(!Matches(copied,*version,data,prepared.tail)) return fail("private conditions differ from original");
         }
         if (std::ranges::any_of(repairs,[&](const auto& prior) {
             return prior.track==prepared.track || (prepared.tail && prior.tail==prepared.tail);
         })) return fail("condition chains have shared ownership");
 
-        std::vector<Area> missing;
-        for (const auto& area:repair.exclusions) {
-            if (Excludes(*version,area) || std::ranges::find(missing,area)!=missing.end()) continue;
-            const auto function=AreaFunction(area.kind);
-            const auto type=ParameterType(function);
-            auto* form=data->LookupForm<RE::TESForm>(area.form.id,area.form.plugin);
-            if (!type || !form || form->GetFormType()!=*type) return fail("unresolved exclusion area");
-            auto* memory=RE::malloc(sizeof(Node));
-            if (!memory) return fail("condition allocation failed");
-            std::unique_ptr<Node> node(std::construct_at(static_cast<Node*>(memory)));
-            node->data.functionData.function=static_cast<RE::FUNCTION_DATA::FunctionID>(function);
-            node->data.functionData.params[0]=form;
-            // Constructor supplies Self, == 0, AND and all other flags clear.
-            prepared.nodes.push_back(std::move(node));
-            missing.push_back(area);
+        const auto clauses=RepairClauses(repair);
+        auto effective=version->conditions;
+        for(const auto& clause:clauses) {
+            if(clause.empty() || HasClause(effective,clause)) continue;
+            for(const auto& term:clause) {
+                const auto type=ParameterType(term.function);
+                auto* form=type?data->LookupForm<RE::TESForm>(term.parameter.id,term.parameter.plugin):nullptr;
+                if((!type && term.function!=18) || (type && (!form || form->GetFormType()!=*type))) return fail("unresolved scene condition parameter");
+                auto* memory=RE::malloc(sizeof(Node));
+                if(!memory) return fail("condition allocation failed");
+                std::unique_ptr<Node> node(std::construct_at(static_cast<Node*>(memory)));
+                node->data.functionData.function=static_cast<RE::FUNCTION_DATA::FunctionID>(term.function);
+                node->data.functionData.params[0]=form;
+                node->data.functionData.params[1]=reinterpret_cast<void*>(static_cast<std::uintptr_t>(term.parameter2));
+                node->data.comparisonValue.f=std::bit_cast<float>(term.comparison);
+                node->data.flags.opCode=static_cast<RE::CONDITION_ITEM_DATA::OpCode>(term.opcode);
+                node->data.flags.isOR=term.isOR;
+                if(term.onPlayerReference) {
+                    auto* player=data->LookupForm<RE::TESObjectREFR>(0x14,"skyrim.esm");
+                    if(!player) return fail("player reference unavailable");
+                    node->data.object=RE::CONDITIONITEMOBJECT::kRef;node->data.runOnRef=player->CreateRefHandle();
+                }
+                prepared.nodes.push_back(std::move(node));
+            }
+            effective.insert(effective.end(),clause.begin(),clause.end());
         }
         conditionCount+=prepared.nodes.size();
         if(!prepared.nodes.empty() && !TrackConditions(prepared.track)) {
@@ -258,24 +253,42 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
             if(!memory) return fail("condition holder allocation failed");
             prepared.newConditions.reset(std::construct_at(static_cast<RE::TESCondition*>(memory)));
         }
+        // Attach only to the private instance now. Audio normalization can copy
+        // the complete effective conditions before any game list is committed.
+        if(!prepared.nodes.empty()) {
+            for(std::size_t i=1;i<prepared.nodes.size();++i) prepared.nodes[i-1]->next=prepared.nodes[i].get();
+            auto* first=prepared.nodes.front().get();
+            if(prepared.newConditions) SetTrackConditions(prepared.track,prepared.newConditions.release());
+            if(prepared.tail) prepared.tail->next=first;else TrackConditions(prepared.track)->head=first;
+            for(auto& node:prepared.nodes) node.release();
+        }
         repairs.push_back(std::move(prepared));
     }
 
+    std::map<FormKey,std::vector<PrivateSingle>> audioUses;
+    for(const auto& candidate:plan.audioCandidates) {
+        auto* wrapper=data->LookupForm<Track>(candidate.track.id,candidate.track.plugin);
+        if(!wrapper || !wrapper->track || !present(candidate.musicType,wrapper)) continue;
+        const RE::BGSMusicTrack* effective=wrapper->track;
+        for(const auto& repair:repairs) if(repair.original==wrapper && repair.owner==playlists.at(candidate.musicType).target)
+            effective=repair.track;
+        auto original=audio.Original(candidate,effective);
+        if(original) audioUses[candidate.musicType].push_back(std::move(original));
+    }
     for(const auto& [key,list]:playlists) {
-        if(list.pending.size()>std::numeric_limits<std::uint32_t>::max()-list.target->tracks.size()) return fail("playlist capacity exceeded");
-        list.target->tracks.reserve(static_cast<std::uint32_t>(list.target->tracks.size()+list.pending.size()));
+        const auto count=list.pending.size()+audioUses[key].size();
+        if(count>std::numeric_limits<std::uint32_t>::max()-list.target->tracks.size()) return fail("playlist capacity exceeded");
+        list.target->tracks.reserve(static_cast<std::uint32_t>(list.target->tracks.size()+count));
     }
     // No logical list mutation precedes this point. Validate once more before
     // the non-allocating commit; never replace or delete existing condition nodes.
     if (!witnessesMatch()) return fail("regional policy changed during preparation");
+    if(!audio.SceneResourcesMatch(plan)) return fail("scene resources changed during preparation");
     for(const auto& [key,list]:playlists) if(!PlaylistMatches(list.target,records.at(key),data))
         return fail("playlist changed during preparation");
     for (const auto& repair:repairs) {
         Node* tail=nullptr;
-        const auto* conditions=TrackConditions(repair.track);
-        if ((conditions?conditions->head:nullptr)!=repair.head || !Matches(conditions,*repair.version,data,tail) || tail!=repair.tail)
-            return fail("condition chain changed during preparation");
-        if(repair.isolated && !Matches(TrackConditions(repair.original->track),*repair.version,data,tail))
+        if(!Matches(TrackConditions(repair.original->track),*repair.version,data,tail))
             return fail("shared source conditions changed during preparation");
     }
     std::size_t appended=0;
@@ -283,12 +296,6 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
     std::size_t repairedTracks=0,isolatedTracks=0;
     for (auto& repair:repairs) {
         if (repair.nodes.empty()) continue;
-        for (std::size_t i=1;i<repair.nodes.size();++i) repair.nodes[i-1]->next=repair.nodes[i].get();
-        auto* first=repair.nodes.front().get();
-        for (auto& node:repair.nodes) node.release();
-        if(repair.newConditions) SetTrackConditions(repair.track,repair.newConditions.release());
-        if (repair.tail) repair.tail->next=first;
-        else TrackConditions(repair.track)->head=first;
         if(repair.isolated) {
             // Scope changes to this list only; other lists, palettes and scripts
             // retain the original wrapper and conditions. No persistent FormID.
@@ -299,7 +306,32 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
         }
         ++repairedTracks;
     }
-    REX::INFO("Music batch: {} contributed tracks, {} condition lists updated, {} exclusions appended, {} playlist-local instances",appended,repairedTracks,conditionCount,isolatedTracks);
+    std::size_t normalized=0;
+    for(auto& [key,uses]:audioUses) for(auto& use:uses) {playlists.at(key).target->tracks.push_back(use.release());++normalized;}
+    REX::INFO("Music batch: {} contributed tracks, {} condition lists, {} condition terms, {} local instances, {} normalized audio inputs",appended,repairedTracks,conditionCount,isolatedTracks,normalized);
     return true;
+}
+
+bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<MusicRecord>>& records) {
+    std::set<FormKey> types;
+    for(const auto* map:{&plan.additions,&plan.distributions}) for(const auto& [type,tracks]:*map) if(!tracks.empty()) types.insert(type);
+    if(plan.battleType && !plan.combatRules.empty()) types.insert(*plan.battleType);
+    for(const auto& repair:plan.conditionRepairs) types.insert(repair.musicType);
+    for(const auto& candidate:plan.audioCandidates) types.insert(candidate.musicType);
+    AudioInputs audio(!plan.audioCandidates.empty());
+    bool complete=true;
+    for(const auto& type:types) {
+        MergePlan batch;batch.battleType=plan.battleType;batch.battleMergeSafe=plan.battleMergeSafe;
+        if(auto it=plan.additions.find(type);it!=plan.additions.end()) batch.additions.emplace(*it);
+        if(auto it=plan.distributions.find(type);it!=plan.distributions.end()) batch.distributions.emplace(*it);
+        if(plan.battleType && type==*plan.battleType) batch.combatRules=plan.combatRules;
+        for(const auto& r:plan.conditionRepairs) if(r.musicType==type) batch.conditionRepairs.push_back(r);
+        for(const auto& r:plan.conditionWitnesses) if(r.musicType==type) batch.conditionWitnesses.push_back(r);
+        for(const auto& r:plan.sceneResources) if(r.musicType==type) batch.sceneResources.push_back(r);
+        for(const auto& r:plan.audioCandidates) if(r.musicType==type) batch.audioCandidates.push_back(r);
+        try {if(!ApplyMusicBatch(batch,records,audio)) complete=false;}
+        catch(const std::exception& e) {REX::WARN("Music use batch {} skipped: {}",ToString(type),e.what());complete=false;}
+    }
+    return complete;
 }
 }

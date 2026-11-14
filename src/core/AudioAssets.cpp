@@ -11,6 +11,18 @@
 #include <bcrypt.h>
 
 namespace UnifiedMusic {
+std::map<FormKey,std::string> CheckSceneResources(const std::vector<SceneResource>& resources,const AudioReader& reader) {
+    std::map<FormKey,std::string> failures;
+    const auto valid=[&](const std::string& path) {
+        const auto normalized=MusicPath(path);
+        const auto bytes=normalized?reader(*normalized):std::nullopt;
+        return bytes && ValidMusic(*bytes);
+    };
+    for(const auto& resource:resources)
+        if(!valid(resource.audioPath) || (!resource.finalePath.empty() && !valid(resource.finalePath)))
+            failures.try_emplace(resource.musicType,"missing/invalid scene resource for "+ToString(resource.track));
+    return failures;
+}
 namespace {
 std::uint32_t U32(std::span<const std::uint8_t> b,std::size_t p) {
     if(p>b.size() || b.size()-p<4) throw std::runtime_error("truncated audio integer");
@@ -142,12 +154,12 @@ std::optional<AudioPair> CompareAudio(const OriginalAudio& original,const AudioR
     const auto mainPath=MusicPath(track);const auto endPath=finale.empty()?std::optional<std::string>{}:MusicPath(finale);
     if(!mainPath || (!finale.empty()&&!endPath)) {reason="unsupported music path";return {};}
     AudioPair pair;bool different=false;
-    const auto read=[&](const std::string& path,AudioBytes& destination,std::string& hash) {
+    const auto read=[&](const std::string& path,AudioBytes& destination,std::string& hash,std::string& replacementHash) {
         auto baseline=original.Read(path);auto current=visible(path);
         if(!baseline || !current || !ValidMusic(*current)) return false;
-        different|=*baseline!=*current; destination=std::move(*baseline);hash=AudioHash(destination);return true;
+        different|=*baseline!=*current; replacementHash=AudioHash(*current);destination=std::move(*baseline);hash=AudioHash(destination);return true;
     };
-    if(!read(*mainPath,pair.track,pair.trackHash) || (endPath&&!read(*endPath,pair.finale,pair.finaleHash))) {
+    if(!read(*mainPath,pair.track,pair.trackHash,pair.replacementHash) || (endPath&&!read(*endPath,pair.finale,pair.finaleHash,pair.replacementFinaleHash))) {
         reason="missing/invalid original or winning main/finale resource";return {};
     }
     if(!different) {reason="unchanged audio";return {};}

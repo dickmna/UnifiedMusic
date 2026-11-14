@@ -116,7 +116,7 @@ void PluginScan::Read(const std::filesystem::path& path) {
                     masters.push_back(master);
                 }
             } else if (!(flags&(0x4000|0x1000))) {
-                if(sig=="MUSC" || sig=="WRLD" || sig=="CELL" || sig=="LCTN" || sig=="KYWD" || sig=="NPC_") {
+                if(sig=="MUSC" || sig=="WRLD" || sig=="CELL" || sig=="LCTN" || sig=="KYWD" || sig=="NPC_" || sig=="QUST" || sig=="GLOB") {
                     Definition definition{Resolve(id,masters,own),own,{},sig,(flags&0x20)!=0};
                     for(const auto& [s,v]:subs) if(s=="EDID") definition.editorID=String(v);
                     definitionPending.push_back(std::move(definition));
@@ -195,7 +195,11 @@ void PluginScan::Read(const std::filesystem::path& path) {
                     // Keep their ownership protection, but never flatten them.
                     if(kind!=AreaKind::Region) mappingPending.push_back(std::move(mapping));
                 }
-                for(auto& [s,v]:subs) if(s=="VMAD") scriptPending.push_back({own,masters,{v.begin(),v.end()}});
+                for(auto& [s,v]:subs) if(s=="VMAD" && !(flags&0x20)) {
+                    ScriptProperties script{own,masters,{v.begin(),v.end()}};
+                    DecodeScriptProperties(script,sig);
+                    scriptPending.push_back(std::move(script));
+                }
             }
             p+=24+n;
         }
@@ -214,10 +218,9 @@ void PluginScan::Read(const std::filesystem::path& path) {
 }
 
 bool PluginScan::ScriptReferences(const FormKey& key,bool modsOnly) const {
-    // A byte-level VMAD search can overprotect, but does not guess incomplete
-    // properties or require script execution to discover an explicit reference.
     for(const auto& script:scripts_) {
         if(modsOnly && IsBase(script.source)) continue;
+        if(script.parsed) {if(script.references.contains(key)) return true;continue;}
         auto it=std::find(script.masters.begin(),script.masters.end(),key.plugin);
         size_t index=it-script.masters.begin();
         if(it==script.masters.end() && script.source!=key.plugin) continue;
@@ -271,6 +274,8 @@ std::set<FormKey> PluginScan::ProtectedTracks(const FormKey& excludedType,const 
 MergePlan PluginScan::Plan() const {
     MergePlan plan;
     if(!PlanDistribution(plan) || !PlanSelectors(plan)) return plan;
+    const auto unknown=std::ranges::count_if(scripts_,[](const auto& s){return !s.parsed;});
+    if(unknown) plan.diagnostics.push_back("VMAD_FALLBACK "+std::to_string(unknown)+" unsupported property blocks retain conservative reference protection");
     // Complete this set before checking tracks shared with any other type.
     for(const auto& [key,chain]:music_) if(ScriptReferences(key)) plan.scriptBound.insert(key);
     for(const auto& rule:plan.selectors) plan.scriptBound.insert(rule.music);
@@ -278,7 +283,8 @@ MergePlan PluginScan::Plan() const {
         const auto origin=std::find_if(chain.begin(),chain.end(),[&](const auto& r){return r.source==key.plugin;});
         if(origin==chain.end() || !Ambient(*origin)) continue;
         const auto& base=*origin;
-        bool protectedType=plan.scriptBound.contains(key);
+        // Known public ambient lists retain their public role when referenced.
+        bool protectedType=false;
         for(size_t i=0;i<chain.size();++i) {
             const auto& r=chain[i];
             if(r.deleted || r.settings!=base.settings) protectedType=true;
@@ -291,18 +297,19 @@ MergePlan PluginScan::Plan() const {
             }
         }
         if(protectedType) {
-            plan.diagnostics.push_back("PRESERVE "+ToString(key)+" "+base.editorID+" (script reference, metadata change, deletion or track removal)");
+            plan.diagnostics.push_back("PRESERVE "+ToString(key)+" "+base.editorID+" (metadata change, deletion or track removal)");
             continue;
         }
         plan.allowed.insert(key);
         auto& additions=plan.additions[key];
-        const auto protectedTracks=ProtectedTracks(key,plan);
         for(const auto& r:chain) {
             if(IsBase(r.source)) continue;
             for(const auto& track:r.tracks) {
                 if(IsBase(track.plugin) || Contains(base.tracks,track) || Contains(additions,track)) continue;
-                if(protectedTracks.contains(track) || ScriptReferences(track)) {
-                    plan.diagnostics.push_back("SKIP_TRACK "+ToString(track)+" -> "+ToString(key)+" (shared, scripted, deleted or invalid track)");
+                const auto found=tracks_.find(track);
+                const bool invalid=found!=tracks_.end() && std::ranges::any_of(found->second,[](const auto& r){return r.deleted || r.invalid;});
+                if(invalid || ScriptReferences(track)) {
+                    plan.diagnostics.push_back("SKIP_TRACK "+ToString(track)+" -> "+ToString(key)+" (scripted, deleted or invalid track)");
                     continue;
                 }
                 additions.push_back(track);
@@ -310,9 +317,9 @@ MergePlan PluginScan::Plan() const {
         }
     }
     InferCombat(plan);
+    PlanAudio(plan);
     InferConditionRepairs(plan);
     InferMappings(plan);
-    PlanAudio(plan);
     return plan;
 }
 }

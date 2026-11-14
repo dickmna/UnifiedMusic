@@ -7,6 +7,7 @@
 #include <span>
 #include <string>
 #include <vector>
+#include "PluginScan.h"
 
 namespace UnifiedMusic {
 using AudioBytes=std::vector<std::uint8_t>;
@@ -27,9 +28,10 @@ private:
     std::vector<std::string> ambiguous_;
 };
 using AudioReader=std::function<std::optional<AudioBytes>(const std::string&)>;
-struct AudioPair { AudioBytes track,finale; std::string trackHash,finaleHash; };
+struct AudioPair { AudioBytes track,finale; std::string trackHash,finaleHash,replacementHash,replacementFinaleHash; };
 // No writes. Returns only complete, valid, byte-distinct original/replacer pairs.
 std::optional<AudioPair> CompareAudio(const OriginalAudio& original,const AudioReader& visible,
     const std::string& track,const std::string& finale,std::string& reason);
 std::string CacheAudio(const std::filesystem::path& dataRoot,const AudioBytes& bytes);
+std::map<FormKey,std::string> CheckSceneResources(const std::vector<SceneResource>& resources,const AudioReader& reader);
 }

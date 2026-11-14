@@ -1,0 +1,134 @@
+{
+  "version": "Harmonia 0.8.0-alpha",
+  "installed": {
+    "plugins": 94,
+    "seconds": 3.223436300002504,
+    "APPEND": 0,
+    "AUTO_COMBAT": 0,
+    "CONDITION_UNION": 0,
+    "CONDITION_GUARD": 0,
+    "RESTORE_MAPPING": 0,
+    "DISTRIBUTE": 0,
+    "CONFIG_HANDOFF": 0,
+    "ISOLATE_GUARD": 0
+  },
+  "installed_plus_mrr": {
+    "plugins": 95,
+    "seconds": 3.243596999993315,
+    "APPEND": 0,
+    "AUTO_COMBAT": 0,
+    "CONDITION_UNION": 0,
+    "CONDITION_GUARD": 0,
+    "RESTORE_MAPPING": 0,
+    "DISTRIBUTE": 295,
+    "CONFIG_HANDOFF": 0,
+    "ISOLATE_GUARD": 0,
+    "valid_config_pairs": 303,
+    "paused_default_battle_pairs": [
+      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2062",
+      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2077",
+      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2078",
+      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2079",
+      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2080",
+      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2081",
+      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2082",
+      "DISTRIBUTE skyrim.esm:213390 <- music_replacer_reverter.esp:2298"
+    ],
+    "executed_types": 55,
+    "unique_types": 56,
+    "unique_tracks": 118,
+    "exact_config_pairs_after_scene_pause": true,
+    "missing_config_track_ids": [
+      "0x83d",
+      "0x84f",
+      "0x850",
+      "0x853",
+      "0x854",
+      "0x855",
+      "0x856",
+      "0x857",
+      "0x858",
+      "0x859",
+      "0x85a",
+      "0x85b"
+    ],
+    "missing_config_pairs": 32
+  },
+  "real_mrr_synthetic_land": {
+    "plugins": 7,
+    "seconds": 2.4845573999918997,
+    "APPEND": 0,
+    "AUTO_COMBAT": 1,
+    "CONDITION_UNION": 0,
+    "CONDITION_GUARD": 3,
+    "RESTORE_MAPPING": 0,
+    "DISTRIBUTE": 303,
+    "CONFIG_HANDOFF": 0,
+    "ISOLATE_GUARD": 2,
+    "guarded_copy_ids": [
+      "music_replacer_reverter.esp:2062",
+      "music_replacer_reverter.esp:2079",
+      "music_replacer_reverter.esp:2080"
+    ],
+    "civil_war_shared_copies_isolated_in_battle_only": [
+      "music_replacer_reverter.esp:2077",
+      "music_replacer_reverter.esp:2078"
+    ],
+    "dragon_boss_copies_preserved": [
+      "0x821",
+      "0x822",
+      "0x8fa"
+    ],
+    "synthetic_original_ordinary_tracks": 5,
+    "is_synthetic_land": true
+  },
+  "profile_unchanged": true,
+  "creation_plugin_hashes_verified": [
+    "kinggathcreations_bard.esm",
+    "legacyorsinium.esm",
+    "unveiling the abstruse.esm",
+    "kinggathcreations_spirit.esm",
+    "cronemod.esm",
+    "ltstarmadeblade.esm",
+    "msjm02_thunder.esm",
+    "tlfrozenhunt.esm",
+    "kinggathcreations_eastempirecompany.esp",
+    "piv_vampiricweapons.esp",
+    "sd02innkeeper.esp",
+    "js_dragonslayer_expansion.esp",
+    "legacyorsinium - overhaul compatibility patch.esp",
+    "legendarydungeons-dwemer.esp"
+  ],
+  "mrr_local_sha256": {
+    "Music_Replacer_Reverter.esp": "bffa194d1847e8bcb891a119d35fb0e592400d285def648e204ad222d52a174f",
+    "Music_Replacer_Reverter_MUS.ini": "834326f41792022433ed79e1b188de89b2185ff586772924a3f194820b3f8460"
+  },
+  "native_game_execution": false,
+  "audio": {
+    "version": "Harmonia 0.8.0-alpha",
+    "official_plugins": 5,
+    "original_archives": 1,
+    "candidate_line": "AUDIO_CANDIDATES 243 (offline loose overlay; not engine BSA precedence)",
+    "unchanged_candidates": 243,
+    "baseline_skipped_candidates": 0,
+    "baseline_additions": 0,
+    "synthetic_replacement_additions": 1,
+    "local_original_cache_bytes": 643446,
+    "main_and_finale_cache_files": 2,
+    "local_original_cache_sha256": "aef56f5c35575bcc1b25779432888632989acdd577c0690eb3fa0005f6a0c608",
+    "cache_exact_original": true,
+    "repeat_content_stable": true,
+    "official_archives_unchanged": true,
+    "replacement_overlay_unchanged": true,
+    "game_data_written": false,
+    "runtime_vfs_executed": false,
+    "native_audio_playback": false,
+    "fixture_note": "Actual original audio; a different stock track used only in a private test overlay. Not a Lorkhan installation."
+  },
+  "loadorder_membership_verified": {
+    "official_base_plugins": 5,
+    "Skyrim_ccc_entries": 75,
+    "enabled_plugins_txt_entries": 14,
+    "union_matches_loadorder": true
+  }
+}

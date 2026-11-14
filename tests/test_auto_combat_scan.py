@@ -167,10 +167,16 @@ class AutoCombatScanTests(unittest.TestCase):
         _, rules, _ = self.scan(self.base(script_bound=True), self.land())
         self.assertEqual(rules, [(('1:' + self.REGION,), (self.TRACK,))])
 
-    def test_new_mod_script_owner_preserves_author_battle_playlist(self):
+    def test_new_mod_script_reference_keeps_public_battle_role(self):
         _, rules, result = self.scan(self.base(), self.land(extra=script_reference(0x01000C00, 0x100)))
-        self.assertEqual(rules, [])
-        self.assertIn('SKIP_COMBAT explicit/mod-scripted battle owner', result.stdout)
+        self.assertEqual(rules, [(('1:' + self.REGION,), (self.TRACK,))])
+        self.assertNotIn('APPEND land.esp:', result.stdout)
+
+    def assert_public_membership_restored(self, *paths):
+        _, rules, result = self.scan(*paths)
+        self.assertEqual(rules, [(('1:' + self.REGION,), (self.TRACK,))])
+        self.assertNotIn('APPEND ', result.stdout)
+        self.assertNotIn('USE_RULES ', result.stdout)
 
     def test_ordinary_negative_dragon_role_is_restored_without_boss_rule(self):
         for flags, comparison in [(0, 0.0), (0x20, 1.0)]:
@@ -237,41 +243,41 @@ class AutoCombatScanTests(unittest.TestCase):
                            + music(0x100, (0x200,), name='MUSCombat', priority=2))
         self.assert_no_auto(base, land, patch)
 
-    def test_added_track_shared_with_script_bound_type_is_protected(self):
+    def test_added_track_shared_with_script_bound_type_retains_authored_ordinary_membership(self):
         extra = (music(0x01000A00, (0x01000800,), name='QuestMusic', priority=2)
                  + script_reference(0x01000B00, 0x01000A00))
-        self.assert_no_auto(self.base(), self.land(extra=extra))
+        self.assert_public_membership_restored(self.base(), self.land(extra=extra))
 
-    def test_track_shared_with_unbound_custom_type_is_protected(self):
+    def test_track_shared_with_unbound_custom_type_retains_authored_ordinary_membership(self):
         extra = music(0x01000A00, (0x01000800,), name='IndependentMusic', priority=2)
-        self.assert_no_auto(self.base(), self.land(extra=extra))
+        self.assert_public_membership_restored(self.base(), self.land(extra=extra))
 
-    def test_single_track_inside_special_palette_is_protected(self):
+    def test_single_track_inside_special_palette_retains_authored_ordinary_membership(self):
         palette = (sub('EDID', b'BossPalette\0') + sub('CNAM', struct.pack('<I', 0x23F678C3))
                    + sub('SNAM', struct.pack('<I', 0x01000800)))
         # The custom MusicType owns the palette, not the candidate directly.
         extra = (record('MUST', 0x01000C00, palette)
                  + music(0x01000A00, (0x01000C00,), name='BossMusic', priority=2))
-        self.assert_no_auto(self.base(), self.land(extra=extra))
+        self.assert_public_membership_restored(self.base(), self.land(extra=extra))
 
-    def test_track_shared_with_native_boss_type_is_protected(self):
+    def test_track_shared_with_native_boss_type_retains_authored_ordinary_membership(self):
         base = self.base()
         base.write_bytes(base.read_bytes() + group(music(0x400, (0x200,), name='MUSCombatBoss', priority=2)))
         extra = music(0x400, (0x200, 0x01000800), name='MUSCombatBoss', priority=2)
-        self.assert_no_auto(base, self.land(extra=extra))
+        self.assert_public_membership_restored(base, self.land(extra=extra))
 
-    def test_added_track_shared_with_one_shot_type_is_protected(self):
+    def test_added_track_shared_with_one_shot_type_retains_authored_ordinary_membership(self):
         extra = music(0x01000A00, (0x01000800,), name='SpecialMusic', priority=2)
         extra = extra.replace(sub('FNAM', struct.pack('<I', 4)), sub('FNAM', struct.pack('<I', 5)))
-        self.assert_no_auto(self.base(), self.land(extra=extra))
+        self.assert_public_membership_restored(self.base(), self.land(extra=extra))
 
-    def test_track_used_by_authored_area_music_is_protected(self):
+    def test_track_used_by_authored_area_music_retains_authored_ordinary_membership(self):
         for signature, field in [('CELL', 'XCMO'), ('WRLD', 'ZNAM'),
                                  ('LCTN', 'NAM1'), ('REGN', 'RDMO')]:
             with self.subTest(signature=signature):
                 extra = music(0x01000A00, (0x01000800,), name='AuthoredMusic', priority=2)
                 extra += record(signature, 0x01000B00, sub(field, struct.pack('<I', 0x01000A00)))
-                self.assert_no_auto(self.base(), self.land(extra=extra))
+                self.assert_public_membership_restored(self.base(), self.land(extra=extra))
 
     def test_direct_script_reference_to_track_is_protected(self):
         self.assert_no_auto(self.base(), self.land(extra=script_reference(0x01000B00, 0x01000800)))

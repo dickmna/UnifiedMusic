@@ -181,8 +181,10 @@ class GuardTests(Fixture):
         normal = (condition(707, 0x35D59, comparison=0, run_on=2, reference=0x14),)
         self.assertEqual(len(self.guards(*self.fixture(base_conditions=normal, dragon=True))), 1)
 
-    def test_inconsistent_original_tracks_do_not_define_exclusivity(self):
-        self.assertEqual(self.guards(*self.fixture(all_excluded=False)), [])
+    def test_partial_original_exclusion_defines_takeover_default(self):
+        self.assertEqual(self.guards(*self.fixture(all_excluded=False)),
+                         ['CONDITION_GUARD pack.esp:2048 <- 1:land.esp:2304',
+                          'CONDITION_GUARD skyrim.esm:513 <- 1:land.esp:2304'])
 
     def test_quest_gated_replacement_cannot_guarantee_coverage(self):
         terms = (condition(), condition(58, 0x01000A00, comparison=40))
@@ -191,7 +193,7 @@ class GuardTests(Fixture):
     def test_mixed_area_replacement_does_not_cover_whole_world(self):
         terms = (condition(), condition(67, 0x01000901))
         self.assertEqual(self.guards(*self.fixture(replacement_conditions=terms,
-                         land_extra=area('CELL', 0x01000901))), [])
+                         land_extra=area('CELL', 0x01000901))), ['CONDITION_GUARD pack.esp:2048 <- '])
 
     def test_or_replacement_is_not_used_as_evidence(self):
         self.assertEqual(self.guards(*self.fixture(replacement_conditions=(condition(flags=1),))), [])
@@ -228,7 +230,9 @@ class GuardTests(Fixture):
     def test_deliberate_policy_removal_is_respected(self):
         paths = self.fixture()
         patch = self.write('Patch.esp', header(('Skyrim.esm', 'Land.esp')) + single_track(0x200))
-        self.assertEqual(self.guards(*paths, patch), [])
+        # The explicitly restored original is exempt; a second original still
+        # supplies independent evidence for the scene default on new songs.
+        self.assertEqual(self.guards(*paths, patch), ['CONDITION_GUARD pack.esp:2048 <- 1:land.esp:2304'])
 
     def test_padding_does_not_change_positive_gate_identity(self):
         paths = self.fixture()
@@ -264,12 +268,13 @@ class GuardTests(Fixture):
         self.assertIn('CONDITION_GUARD pack.esp:2048', output)
         self.assertNotIn('CONDITION_UNION skyrim.esm:512', output)
 
-    def test_shared_original_with_competing_policies_cannot_prove_both(self):
+    def test_shared_original_with_two_policies_is_local_to_ordinary_owner(self):
         base, land, generic = self.fixture()
         base.write_bytes(base.read_bytes() + music(0x101, (0x200,), name='MUSSpecialBattle'))
         second = self.write('Second.esp', land.read_bytes())
         output = self.scan(base, land, second, generic)
-        self.assertNotIn('CONDITION_GUARD ', output)
+        self.assertIn('CONDITION_GUARD pack.esp:2048 <- 1:land.esp:2304,1:second.esp:2304', output)
+        self.assertIn('ISOLATE_GUARD skyrim.esm:512 IN skyrim.esm:256', output)
         self.assertNotIn('CONDITION_UNION skyrim.esm:512', output)
 
 

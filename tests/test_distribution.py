@@ -63,10 +63,10 @@ class DistributionTests(unittest.TestCase):
         config = self.write('Pack_MUS.ini', '[General]\n' + name + '=0x800~Pack.esl\n')
         return base, land, pack, config
 
-    def assert_guard(self, paths, expected=True, extra=(), configs=()):
+    def assert_guard(self, paths, expected=True, extra=(), configs=(), distributed=True):
         output = self.scan(*paths[:-1], *extra, configs=(paths[-1], *configs))
         self.assertEqual('CONDITION_GUARD pack.esl:2048' in output, expected, output)
-        self.assertIn('DISTRIBUTE skyrim.esm:256 <- pack.esl:2048', output)
+        self.assertEqual('DISTRIBUTE skyrim.esm:256 <- pack.esl:2048' in output, distributed, output)
         return output
 
     def assert_isolated(self, paths, extra=(), configs=()):
@@ -218,7 +218,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_plugin_boss_sharing_and_direct_script_reference_block_guard(self):
         self.assert_isolated(self.regional(pack_extra=music(0x01000101, (0x01000800,), name='Boss')))
-        out = self.assert_guard(self.regional(pack_extra=script_reference(0x01000A00, 0x01000800)), False)
+        out = self.assert_guard(self.regional(pack_extra=script_reference(0x01000A00, 0x01000800)), False, distributed=False)
         self.assertNotIn('ISOLATE_GUARD ', out)
 
     def test_palette_child_is_not_globally_restricted(self):
@@ -226,9 +226,10 @@ class DistributionTests(unittest.TestCase):
                          + sub('SNAM', struct.pack('<I', 0x01000800)))
         self.assert_isolated(self.regional(pack_extra=palette))
 
-    def test_partial_policy_and_quest_gated_replacement_do_not_invent_coverage(self):
-        self.assert_guard(self.regional(all_excluded=False), False)
-        self.assert_guard(self.regional(replacement=(condition(), condition(58, 0x200))), False)
+    def test_partial_policy_is_used_but_unresolved_quest_pauses_distribution(self):
+        self.assert_guard(self.regional(all_excluded=False))
+        out = self.assert_guard(self.regional(replacement=(condition(), condition(58, 0x200))), False, distributed=False)
+        self.assertIn('SCENE_UNSUPPORTED ', out)
 
     def test_missing_replacement_keeps_distribution_without_silencing_copy(self):
         paths = self.regional(replacement=())
@@ -239,9 +240,9 @@ class DistributionTests(unittest.TestCase):
                         single_track(0x01000800, (condition(58, 0x200),))):
             paths = self.regional()
             patch = self.write('Patch.esp', header(('Skyrim.esm', 'Pack.esl')) + changed)
-            self.assert_guard(paths, False, extra=(patch,))
+            self.assert_guard(paths, False, extra=(patch,), distributed=False)
 
-    def test_ambient_config_copy_uses_unanimous_geography(self):
+    def test_ambient_config_copy_uses_related_scene_evidence(self):
         self.assert_guard(self.regional(battle=False))
 
     def test_ambient_shared_copy_is_not_changed_for_another_biome(self):
@@ -249,11 +250,11 @@ class DistributionTests(unittest.TestCase):
         other = self.write('Other_MUS.ini', '[General]\nMUSExploreSnow=800~Pack.esl')
         self.assert_isolated(paths, configs=(other,))
 
-    def test_ambient_original_policies_are_read_only(self):
+    def test_ambient_original_policies_are_restored_locally(self):
         paths = self.regional(battle=False)
         second = self.write('Second.esp', paths[1].read_bytes())
-        out = self.assert_guard(paths, False, extra=(second,))
-        self.assertNotIn('CONDITION_UNION ', out)
+        out = self.assert_guard(paths, extra=(second,))
+        self.assertEqual(sum(s.startswith('CONDITION_UNION ') for s in out.splitlines()), 2)
 
     def test_conditional_ambient_copy_does_not_lose_time_or_quest_semantics(self):
         self.assert_guard(self.regional(battle=False, copy_role=(condition(74, 0x200),)), False)
@@ -270,10 +271,13 @@ class DistributionTests(unittest.TestCase):
         other = self.write('Land_MUS.ini', '[General]\nMUSCombat=800~Land.esp')
         self.assert_guard(paths, configs=(other,))
 
-    def test_configured_boss_replacement_does_not_prove_generic_coverage(self):
+    def test_scoped_replacement_can_keep_a_separate_configured_boss_use(self):
         paths = self.regional(base_extra=music(0x101, (), name='MUSCombatBoss'))
         other = self.write('Boss_MUS.ini', '[General]\nMUSCombatBoss=800~Land.esp')
-        self.assert_guard(paths, False, configs=(other,))
+        out = self.assert_guard(paths, configs=(other,))
+        self.assertIn('DISTRIBUTE skyrim.esm:257 <- land.esp:2048', out)
+        self.assertNotIn('CONDITION_GUARD land.esp:', out)
+        self.assertNotIn('ISOLATE_GUARD land.esp:', out)
 
     def test_guard_result_is_independent_of_plugin_and_config_argument_order(self):
         base, land, pack, config = self.regional()

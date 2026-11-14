@@ -99,13 +99,13 @@ class SelectorTests(unittest.TestCase):
                      dict(self.rule, isCombatMusic='true')):
             self.assertIn('CONFIG_HANDOFF', self.scan([rule]))
 
-    def test_explicit_selector_target_is_not_automatically_merged(self):
+    def test_explicit_selector_can_still_choose_enriched_public_type(self):
         self.base.write_bytes(header() + music(0x100, (0x200,), name='MUSExploreForest') + single_track(0x200))
         addition = self.write('Pack.esp', header(('Skyrim.esm',)) + music(0x100, (0x200, 0x01000800)) + single_track(0x01000800))
         self.rule['newMusic'] = 'MUSExploreForest'
         out = self.scan(extra=[addition])
         self.assertIn('SELECTOR battle -> skyrim.esm:256', out)
-        self.assertNotIn('APPEND ', out)
+        self.assertIn('APPEND skyrim.esm:256 <- pack.esp:2048', out)
 
     def test_invalid_selector_pauses_playlist_restoration_too(self):
         addition = self.write('Pack.esp', header(('Skyrim.esm',)) + music(0x100, (0x200, 0x01000800), name='MUSCombat') + single_track(0x01000800))
