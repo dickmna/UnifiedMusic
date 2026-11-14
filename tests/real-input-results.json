@@ -1,11 +1,11 @@
 {
-  "version": "Harmonia 0.12.0-alpha",
+  "version": "Harmonia 1.0.0",
   "installed": {
-    "version": "Harmonia 0.12.0-alpha",
+    "version": "Harmonia 1.0.0",
     "plugins": 111,
     "original_configuration_used": true,
-    "record_scan_seconds": 4.733973500027787,
-    "resource_scan_seconds": 5.693138599977829,
+    "record_scan_seconds": 7.086071599973366,
+    "resource_scan_seconds": 5.955984500003979,
     "plan_counts": {
       "VMAD_FALLBACK": 1,
       "RESTORE_AUTHORED": 12,
@@ -102,7 +102,9 @@
     "game_data_written": false,
     "native_game_execution": false,
     "codec_playback_validated": false,
-    "note": "Offline resource overlay uses verified deployed loose audio and uniquely resolved relevant BSA members; not engine VFS execution."
+    "note": "Offline resource overlay uses verified deployed loose audio and uniquely resolved relevant BSA members; not engine VFS execution.",
+    "release_reused_verified_resource_overlay": true,
+    "bsa_read_for_this_run": false
   },
   "mrr_deduplication": {
     "plugins": 112,
@@ -128,5 +130,18 @@
     "game_inputs_unchanged": true,
     "native_game_execution": false,
     "note": "Inspector proposals plus independent expected outcomes; native Region slots and playback are not executed."
+  },
+  "release_equivalence": {
+    "baseline": "0.12.0-alpha",
+    "release": "1.0.0",
+    "identical_plan_outputs": {
+      "current-record-plan.txt": true,
+      "current-resource-plan.txt": true,
+      "current-no-pack.txt": true,
+      "current-plus-mrr-resource-plan.txt": true,
+      "explicit-area-and-town-clear.txt": true,
+      "explicit-empty-battle-clear.txt": true
+    },
+    "native_execution": false
   }
 }

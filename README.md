@@ -1,8 +1,10 @@
 # Harmonia — composer-aware music compatibility
 
-**Harmonia 0.12.0-alpha** applies explicit music configurations first, then restores supported contributions, inherits authored scene restrictions for ordinary uses, isolates shared tracks, and optionally lets supported original/replacement audio coexist with the separate HQ audio pack. One SKSE DLL; no patch-generation interface or generated ESP. [中文说明](使用说明.md).
+**Harmonia 1.0.0** applies explicit music configurations first, then restores supported contributions, inherits authored scene restrictions for ordinary uses, isolates shared tracks, and optionally lets supported original/replacement audio coexist with the separate HQ audio pack. One SKSE DLL; no patch-generation interface or generated ESP. [中文说明](使用说明.md).
 
 The DLL remains `UnifiedMusic.dll` for upgrades. This build supports **Steam Skyrim 1.7.104 only**, with matching SKSE and Address Library. It does not require separate MTD or CME DLLs. Offline validation is complete; native playback has not been tested. See [VALIDATION.md](VALIDATION.md).
+
+Version 1.0.0 locks the audited HQ main/finale references at packaging time and removes the leftover generic ranged-file reader. The reference map and supported music behavior are unchanged; no external missing-audio repair was added. The scope and upstream comparison are recorded in [AUDIT.md](AUDIT.md). The final version label does not establish native gameplay validation.
 
 ## Composer policy
 
@@ -100,13 +102,13 @@ If standalone `MusicTypeDistributor.dll`/the MTD plugin identity or `CombatMusic
 
 ## Installation and limits
 
-Install `Harmonia-0.12.0-alpha.zip` through the mod manager. For original/replacer coexistence, also install `Harmonia-Original-Audio-HQ-1.zip`. It contains loose independent audio plus a manifest and needs no plugin registration. Without it, only audio coexistence is disabled. Keep each music pack's own plugins, BSA/audio and supported configuration files. Do not install the inspector/source archive as a gameplay dependency. No generator or additional patch ESP is required. Existing authored compatibility patches should be retained unless their purpose has been verified as covered. Legacy 0.11 audio caches are ignored; this release does not delete them. MRR is not a dependency.
+Install `Harmonia-1.0.0.zip` through the mod manager. For original/replacer coexistence, also install `Harmonia-Original-Audio-HQ-1.0.0.zip`. It contains loose independent audio plus a manifest and needs no plugin registration. Without it, only audio coexistence is disabled. Keep each music pack's own plugins, BSA/audio and supported configuration files. Do not install the inspector/source archive as a gameplay dependency. No generator or additional patch ESP is required. Existing authored compatibility patches should be retained unless their purpose has been verified as covered. Legacy 0.11 audio caches are ignored; this release does not delete them. MRR is not a dependency.
 
 Version 0.7 narrows runtime support from 0.6: **1.7.99, 1.6.x, GOG and VR are not enabled**. Static inspection of 1.7.104 found the pinned SDK declares BGSMusicTrack's condition holder as an inline object although the executable uses a pointer. This release accesses that field through a dedicated adapter and the native single-track factory. That fix and its static evidence are documented in validation; they do not constitute an in-game test.
 
 The current **111-plugin combination**, including ECSS, Bruma, SIRENROOT, Chapter II, Northerner Diaries, Musical Lore, Lorkhan and paid Creations, was inspected with its unmodified configuration. All **195 independently identified missing playlist memberships** are covered by the new plan: 15 town, 11 default battle, five Boss and 164 other uses. Five ordinary combat tracks inherit the authored Bruma/Orsinium exclusions locally. ECSS's five, Bruma's 20 and SIRENROOT's 29 independent types remain unchanged. Actual Lorkhan resources yield original/replacement proposals for **60 original tracks across 244 playlist uses with the optional pack**. These are offline results, not native playback results.
 
-Temporary configuration overlays against the same 111 plugins also verified explicit Location/Region assignment proposals, town clear/refill, empty default-battle clear, retained independent Boss links and equivalent selection from commented versus original ECSS JSON. No deployed configuration was changed. The suite passes 310 Python test methods, 523 selector checks and 28 read-only executable checks.
+Temporary configuration overlays against the same 111 plugins also verified explicit Location/Region assignment proposals, town clear/refill, empty default-battle clear, retained independent Boss links and equivalent selection from commented versus original ECSS JSON. No deployed configuration was changed. The suite passes 315 Python test methods, 523 selector checks and 28 read-only executable checks.
 
 Two existing referenced audio resources are absent locally: Chapter II's `music/forestfall/mus_palette_forestfall_day_b_17.xwm` and Crone's `music/dread/dread 01 v2.wav` (also no XWM equivalent). Harmonia does not create missing music or delete these authors' references. Arbitrary Papyrus music-stack behavior, dynamic lookups, runtime MusicType creation, unsupported conditions and absent custom battle relationships can still need authored configuration or patches. Other pack versions and every Music Patch for New Lands variant were not tested. See validation for exact scope.
 

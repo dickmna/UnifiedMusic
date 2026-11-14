@@ -53,7 +53,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
 }
 extern "C" __declspec(dllexport) constinit auto SKSEPlugin_Version=[] {
     SKSE::PluginVersionData version{};
-    version.PluginVersion(REL::Version(0,12,0,0));
+    version.PluginVersion(REL::Version(1,0,0,0));
     version.PluginName("Harmonia");
     version.AuthorName("UnifiedMusic contributors");
     version.UsesAddressLibrary(); version.UsesUpdatedStructs();

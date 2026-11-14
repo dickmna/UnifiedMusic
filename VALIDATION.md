@@ -1,10 +1,14 @@
-# Validation — Harmonia 0.12.0-alpha, 2026-11-15
+# Validation — Harmonia 1.0.0, 2026-11-15
 
 Release x64 DLL, inspector and selector test executable built with VS 2022 / MSVC 19.44, CMake 4.3.3 and pinned dependencies. Python 3.14 executed the integration fixtures. **Steam 1.7.104 is the only enabled runtime.** No Skyrim process was launched.
 
 ## Automated checks
 
-**310 Python test methods passed**, including parameterized subcases (`tests/latest-results.txt`). **523 selector logic checks passed**, with CTest reporting one passing test target (`tests/latest-selector-results.txt`). These count different kinds of checks and are not combined into an engine-test total.
+The 1.0.0 release audit changes no playlist/scene policy. All 247 original/HQ record mappings were rechecked using the unchanged original plugin evidence and freshly parsed MRR records; all 231 main/finale pairs, 19 finale-bearing records and 239 packaged resources agree. Zero missing or orphaned pack assets were found. Four legacy unresolved records remain excluded, and no missing external reference is redirected. Packaging now rejects any unaudited manifest change, including a rearranged finale whose individual file hash is still valid. Five packaging regression tests cover successful byte preservation, LF/CRLF equivalence, altered pairs, changed audio and missing finales. See [AUDIT.md](AUDIT.md) and `tests/audio-pack-results.json`.
+
+Six complete inspector outputs match the 0.12.0-alpha baseline exactly: current record-only, with-pack, without-pack, real-MRR overlay, explicit town/area assignments and empty battle clear. The release rerun reused the previously extracted resource overlay and verified its recorded file hashes; it opened no BSA. All 111 plugin/profile/configuration inputs remain unchanged. This establishes offline behavior equivalence for those cases, not equivalence for every possible load order or native execution.
+
+**315 Python test methods passed**, including parameterized subcases (`tests/latest-results.txt`). **523 selector logic checks passed**, with CTest reporting one passing test target (`tests/latest-selector-results.txt`). These count different kinds of checks and are not combined into an engine-test total.
 
 Coverage includes bounded plugin/manifest parsing, compressed records, master remapping, independent contributions, dependent removals, explicit configuration, protected roles, field-only mapping repair, optional resource integrity, absent-pack behavior, exact known-encoding deduplication and:
 

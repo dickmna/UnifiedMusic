@@ -1,3 +1,1 @@
-Harmonia 0.12.0-alpha / HarmoniaRuleTests / Release
 Selector logic: 523 checks passed
-CTest composer_selector_rules: passed

@@ -29,12 +29,6 @@ std::uint32_t U32(std::span<const std::uint8_t> b,std::size_t p) {
     if(p>b.size() || b.size()-p<4) throw std::runtime_error("truncated audio integer");
     return b[p]|(std::uint32_t(b[p+1])<<8)|(std::uint32_t(b[p+2])<<16)|(std::uint32_t(b[p+3])<<24);
 }
-AudioBytes ReadAt(std::ifstream& f,std::uint64_t offset,std::size_t count,std::uint64_t length) {
-    if(offset>length || count>length-offset || count>MaxAudioBytes) throw std::runtime_error("audio file bounds exceeded");
-    AudioBytes b(count); f.clear(); f.seekg(static_cast<std::streamoff>(offset));
-    if(count && !f.read(reinterpret_cast<char*>(b.data()),count)) throw std::runtime_error("short audio file read");
-    return b;
-}
 bool Tag(std::span<const std::uint8_t> b,std::size_t p,const char* s) {return p<=b.size() && b.size()-p>=4 && !std::memcmp(b.data()+p,s,4);}
 std::string Lower(std::string s) {for(auto& c:s) {if(c=='\\') c='/'; if(c>='A'&&c<='Z') c+=32;} return s;}
 }
@@ -87,7 +81,10 @@ std::string AudioHash(std::span<const std::uint8_t> bytes) {
 std::optional<AudioBytes> ReadAudioFile(const std::filesystem::path& path) {
     std::ifstream f(path,std::ios::binary|std::ios::ate);if(!f) return {};
     const auto n=f.tellg();if(n<0 || n>MaxAudioBytes) return {};
-    return ReadAt(f,0,static_cast<std::size_t>(n),static_cast<std::uint64_t>(n));
+    AudioBytes bytes(static_cast<std::size_t>(n));f.seekg(0);
+    if(!bytes.empty() && !f.read(reinterpret_cast<char*>(bytes.data()),static_cast<std::streamsize>(bytes.size())))
+        throw std::runtime_error("short audio file read");
+    return bytes;
 }
 
 void OriginalAudioPack::Read(const std::filesystem::path& manifest) {

@@ -24,8 +24,13 @@ def main():
     repo = Path(__file__).resolve().parent.parent
     manifest_path = repo / 'audio-pack/HarmoniaOriginalAudio.json'
     audit_path = repo / 'tests/audio-pack-results.json'
-    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     audit = json.loads(audit_path.read_text(encoding='utf-8'))
+    manifest_text = manifest_path.read_text(encoding='utf-8')
+    # This pins the audited main/finale relationships as well as the asset map.
+    # Re-audit changed references before distributing an updated resource pack.
+    if hashlib.sha256(manifest_text.encode('utf-8')).hexdigest() != audit['manifest_sha256']:
+        raise ValueError('Audio references changed since their source audit')
+    manifest = json.loads(manifest_text)
     if set(manifest['assets']) != set(audit['mapping']):
         raise ValueError('Manifest and source mapping differ')
     entries = {}

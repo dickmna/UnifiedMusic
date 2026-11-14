@@ -1020,8 +1020,23 @@
     "all_decode_without_errors": true,
     "decoder": "ffmpeg-win-x86_64-v9.0.2.exe",
     "decoder_sha256": "3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec",
-    "elapsed_seconds": 5.075517099990975,
+    "elapsed_seconds": 4.64781530003529,
     "failures": [],
     "game_playback_executed": false
+  },
+  "manifest_sha256": "cee607a03a02afa570f6714a1a06a979544393c9b563c08b3e3c96157626fed6",
+  "reference_audit": {
+    "date": "2026-11-15",
+    "original_plugin_fingerprints_unchanged": true,
+    "source_records_rechecked": 247,
+    "verified_pairs": 231,
+    "all_main_finale_paths_match_original_records": true,
+    "all_native_cue_points_match_source_records": true,
+    "all_hq_resource_fingerprints_match": true,
+    "orphan_assets": 0,
+    "missing_hq_assets": 0,
+    "unverified_legacy_records_excluded": 4,
+    "external_missing_references_modified": false,
+    "bsa_read_for_this_audit": false
   }
 }
