@@ -1,5 +1,5 @@
 #pragma once
+#include "core/PluginScan.h"
 namespace UnifiedMusic {
-struct MergePlan;
-void RestoreAreaMusic(const MergePlan& plan);
+void RestoreAreaMusic(const MergePlan& plan,const std::set<FormKey>& failed,bool automaticComplete);
 }

@@ -1,4 +1,4 @@
-"""Additive MTD configurations and copied-track guards; no downloaded assets."""
+"""MTD configuration precedence and copied-track guards; no downloaded assets."""
 import itertools
 import os
 from pathlib import Path
@@ -122,30 +122,29 @@ class DistributionTests(unittest.TestCase):
             self.assertIn('DISTRIBUTE skyrim.esm:256', out)
             self.assertNotIn('CONDITION_GUARD ', out)
 
-    def test_clear_new_type_location_region_and_unknown_section_pause_all_writes(self):
+    def test_unresolved_new_type_location_and_region_pause_all_writes(self):
         base, land, pack, config = self.regional()
-        for body in ('[General]\nMUSCombat!=800~Pack.esl', '[General]\nMissingType=800~Pack.esl',
-                     '[Location]\nNewLand=MUSCombat', '[Region]\nNewLand=MUSCombat', '[Unknown]\n'):
+        for body in ('[General]\nMissingType=800~Pack.esl',
+                     '[Location]\nNewLand=MUSCombat', '[Region]\nNewLand=MUSCombat'):
             other = self.write('Other_MUS.ini', body)
             out = self.scan(base, land, pack, configs=(config, other))
             self.assertIn('CONFIG_HANDOFF', out)
-            for action in ('DISTRIBUTE ', 'APPEND ', 'AUTO_COMBAT ', 'CONDITION_', 'RESTORE_MAPPING '):
+            for action in ('CLEAR ', 'ASSIGN ', 'DISTRIBUTE ', 'APPEND ', 'AUTO_COMBAT ', 'CONDITION_', 'RESTORE_MAPPING '):
                 self.assertFalse(any(s.startswith(action) for s in out.splitlines()), out)
 
     def test_bad_tokens_do_not_partially_distribute_valid_prefix(self):
         base, pack, config = self.simple()
         for token in ('', '~Pack.esl', '0x~Pack.esl', '0~Pack.esl', '0xFE000800~Pack.esl', '0x1000000~Pack.esl', '-800~Pack.esl',
                       '800junk~Pack.esl', '800~../Pack.esl', '800~Pack.esl~extra',
-                      '800~Pack.dll', '800~Pack.esl ; inline comment'):
+                      '800~Pack.dll'):
             config.write_text('[General]\nMUSExploreForest=800~Pack.esl,' + token, encoding='utf-8')
             out = self.scan(base, pack, configs=(config,))
             self.assertIn('CONFIG_HANDOFF', out, token)
             self.assertNotIn('DISTRIBUTE ', out, token)
 
-    def test_malformed_and_utf16_files_are_reported(self):
+    def test_utf16_and_embedded_nul_files_are_reported(self):
         base, pack, config = self.simple()
-        for body in (b'[General\n', b'MUSExploreForest=800~Pack.esl', b'[General]\nMUSExploreForest',
-                     '[General]'.encode('utf-16'), b'[General]\nMUSExploreForest=800~Pack.esl\0'):
+        for body in ('[General]'.encode('utf-16'), b'[General]\nMUSExploreForest=800~Pack.esl\0'):
             config.write_bytes(body)
             self.assertIn('CONFIG_HANDOFF', self.scan(base, pack, configs=(config,)))
 
@@ -168,15 +167,15 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual(out.count('CONFIG_SKIP '), 2)
         self.assertNotIn('CONFIG_HANDOFF', out)
 
-    def test_configuration_does_not_resurrect_deliberately_removed_track(self):
+    def test_explicit_configuration_outranks_a_plugin_membership_removal(self):
         base, pack, config = self.simple()
         author = self.write('Author.esp', header(('Skyrim.esm', 'Pack.esl'))
                             + music(0x100, (0x200, 0x01000800), name='MUSExploreForest'))
         patch = self.write('Patch.esp', header(('Skyrim.esm', 'Author.esp'))
                            + music(0x100, (0x200,), name='MUSExploreForest'))
         out = self.scan(base, pack, author, patch, configs=(config,))
-        self.assertIn('dependent playlist removal', out)
-        self.assertNotIn('DISTRIBUTE ', out)
+        self.assertIn('DISTRIBUTE skyrim.esm:256 <- pack.esl:2048', out)
+        self.assertNotIn('CONFIG_HANDOFF', out)
 
     def test_ambiguous_editor_id_does_not_choose_an_arbitrary_type(self):
         base, pack, config = self.simple(extra=music(0x101, (), name='MUSExploreForest'))
@@ -224,7 +223,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_plugin_boss_sharing_and_direct_script_reference_block_guard(self):
         self.assert_isolated(self.regional(pack_extra=music(0x01000101, (0x01000800,), name='Boss')))
-        out = self.assert_guard(self.regional(pack_extra=script_reference(0x01000A00, 0x01000800)), False, distributed=False)
+        out = self.assert_guard(self.regional(pack_extra=script_reference(0x01000A00, 0x01000800)), False)
         self.assertNotIn('ISOLATE_GUARD ', out)
 
     def test_palette_child_is_not_globally_restricted(self):
@@ -234,7 +233,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_partial_policy_is_used_but_unresolved_quest_pauses_distribution(self):
         self.assert_guard(self.regional(all_excluded=False))
-        out = self.assert_guard(self.regional(replacement=(condition(), condition(58, 0x200))), False, distributed=False)
+        out = self.assert_guard(self.regional(replacement=(condition(), condition(58, 0x200))), False)
         self.assertIn('SCENE_UNSUPPORTED ', out)
 
     def test_missing_replacement_keeps_distribution_without_silencing_copy(self):
@@ -246,7 +245,7 @@ class DistributionTests(unittest.TestCase):
                         single_track(0x01000800, (condition(58, 0x200),))):
             paths = self.regional()
             patch = self.write('Patch.esp', header(('Skyrim.esm', 'Pack.esl')) + changed)
-            self.assert_guard(paths, False, extra=(patch,), distributed=False)
+            self.assert_guard(paths, False, extra=(patch,))
 
     def test_ambient_config_copy_uses_related_scene_evidence(self):
         self.assert_guard(self.regional(battle=False))

@@ -17,6 +17,7 @@ void PluginScan::InferMappings(MergePlan& plan) const {
         return valid;
     };
     for(const auto& [key,records]:mappings_) {
+        if(!records.empty() && plan.assignments.contains(records.front().area)) continue;
         if(records.size()<2) continue;
         const auto origin=std::ranges::find_if(records,[&](const auto& r){return r.source==key.plugin;});
         if(origin==records.end()) continue;

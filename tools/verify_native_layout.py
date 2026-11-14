@@ -58,6 +58,22 @@ def verify(path):
     require('type_uses_track_interface_status', ('call', 'qword ptr [rax + 0x40]') in update)
     require('type_uses_track_interface_update', ('jmp', 'qword ptr [rax + 8]') in update)
 
+    # MTD-style Location/Region assignment touches only these native music
+    # fields. Verify the manager's existing sound-entry cast rather than adding
+    # another region interpretation or relying on an unchecked virtual layout.
+    require('region_manager_sound_cast_entry', entry(0x1809918, 8) == 0x2519B0)
+    region_cast = instructions(0x2519B0, 0x2D)
+    require('region_cast_checks_native_type_seven',
+            ('call', 'qword ptr [rax + 0x18]') in region_cast and ('cmp', 'eax, 7') in region_cast)
+    require('region_sound_type_entry', entry(0x1809DB0, 3) == 0x253310)
+    require('region_sound_type_is_seven', instructions(0x253310, 6) == [('mov', 'eax, 7'), ('ret', '')])
+    require('region_sound_music_pointer_at_0x10',
+            ('mov', 'qword ptr [rcx + 0x10], rdx') in instructions(0x253320, 0x10))
+    require('data_handler_region_manager_at_0xdb0',
+            ('mov', 'rcx, qword ptr [rax + 0xdb0]') in instructions(0x24F4CC, 0x18))
+    require('location_music_pointer_at_0x58',
+            instructions(0x299C80, 4) == [('mov', 'rax, qword ptr [rcx + 0x58]')])
+
     # These RVAs were independently located in the local executable. PDATA can
     # split one function into several ranges; its subrange starts are not the
     # Address Library function bases. Runtime also checks all six call sites.

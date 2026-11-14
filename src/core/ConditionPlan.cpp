@@ -227,7 +227,7 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
             if(!ready) {
                 plan.sceneUses[type].insert(key);
                 unresolvedOrdinaryScene=true;
-                plan.diagnostics.push_back("SCENE_UNSUPPORTED "+ToString(type)+" <- "+ToString(key)+"; ordinary uses paused, other roles retained");
+                plan.diagnostics.push_back("SCENE_UNSUPPORTED "+ToString(type)+" <- "+ToString(key)+"; automatic ordinary uses paused, explicit memberships retained");
                 continue;
             }
             group.witnesses.push_back(musicWitness);
@@ -241,7 +241,8 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
     if(scenes.empty() && !unresolvedOrdinaryScene) return;
     const auto blockAddition=[&](const FormKey& key) {
         if(auto it=plan.additions.find(type);it!=plan.additions.end()) std::erase(it->second,key);
-        if(auto it=plan.distributions.find(type);it!=plan.distributions.end()) std::erase(it->second,key);
+        // An uncertain inferred scene may cancel automatic contributions, but
+        // never the explicit membership that MTD was instructed to distribute.
         if(battle) {
             for(auto& rule:plan.combatRules) std::erase(rule.tracks,key);
             std::erase_if(plan.combatRules,[](const auto& rule){return rule.tracks.empty();});
@@ -325,7 +326,7 @@ void PluginScan::InferConditionsFor(MergePlan& plan,const FormKey& type,bool bat
 void DropSceneUses(MergePlan& plan,const FormKey& type) {
     const auto found=plan.sceneUses.find(type);if(found==plan.sceneUses.end()) return;
     const auto& uses=found->second;
-    for(auto* additions:{&plan.additions,&plan.distributions}) if(auto it=additions->find(type);it!=additions->end())
+    if(auto it=plan.additions.find(type);it!=plan.additions.end())
         std::erase_if(it->second,[&](const auto& track){return uses.contains(track);});
     if(plan.battleType && type==*plan.battleType) {
         for(auto& rule:plan.combatRules) std::erase_if(rule.tracks,[&](const auto& key){return uses.contains(key);});

@@ -50,6 +50,10 @@ set(BUILD_OBJECT_LIBS OFF CACHE BOOL "" FORCE)
 unified_music_dependency(jsoncpp https://github.com/open-source-parsers/jsoncpp.git 89e2973c754a9c02a49974d839779b151e95afd6)
 FetchContent_MakeAvailable(jsoncpp)
 
+# Use MTD's established INI parser rather than maintaining a second grammar.
+unified_music_dependency(simpleini https://github.com/brofield/simpleini.git 09c21bda1dc1b578fa55f4a005d79b0afd481296)
+FetchContent_MakeAvailable(simpleini)
+
 set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 unified_music_dependency(zlib https://github.com/madler/zlib.git 51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf)
 FetchContent_MakeAvailable(zlib)

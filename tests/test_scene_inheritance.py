@@ -74,24 +74,26 @@ class InheritanceTests(SceneFixture):
         config=self.write('Pack_MUS.ini',b'[General]\nMUSCombat=800~Pack.esp,801~Pack.esp\n')
         return paths,config
 
-    def assert_dragon_survives(self,out):
+    def assert_explicit_memberships_survive(self,out):
         self.assertIn('DISTRIBUTE skyrim.esm:256 <- pack.esp:2049',out)
-        self.assertNotIn('DISTRIBUTE skyrim.esm:256 <- pack.esp:2048',out)
+        # Failed inference cannot revoke either explicit MTD membership. The
+        # dragon predicate and ordinary track's authored conditions are kept.
+        self.assertIn('DISTRIBUTE skyrim.esm:256 <- pack.esp:2048',out)
         self.assertNotIn('AUTO_COMBAT ',out)
         self.assertFalse(rows(out,'USE_RULES'))
 
-    def test_unreadable_cue_pauses_ordinary_use_but_retains_dragon_distribution(self):
+    def test_unreadable_cue_pauses_inference_but_retains_explicit_distribution(self):
         paths,config=self.with_dragon_distribution(scope=(condition(),condition(999,0)))
         out=self.scan(*paths,configs=(config,))
         self.assertIn('SCENE_UNSUPPORTED ',out)
-        self.assert_dragon_survives(out)
+        self.assert_explicit_memberships_survive(out)
 
-    def test_missing_scene_audio_drops_only_dependent_uses(self):
+    def test_missing_scene_audio_drops_inference_but_keeps_explicit_memberships(self):
         paths,config=self.with_dragon_distribution()
         self.resources(scene=False)
         out=self.scan(*paths,configs=(config,),audio=True)
         self.assertIn('SCENE_RESOURCE_SKIP ',out)
-        self.assert_dragon_survives(out)
+        self.assert_explicit_memberships_survive(out)
 
     def test_reordered_same_source_witnesses_produce_identical_common_rules(self):
         restriction=(condition(comparison=0),condition(58,0x01000A00,flags=0x20,comparison=40))

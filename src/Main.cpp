@@ -33,9 +33,9 @@ void Distribute() {
     const auto plan=scan.Plan();
     for(const auto& entry:plan.diagnostics) REX::INFO("{}",entry);
     if(!UnifiedMusic::PrepareSelectors(plan)) {REX::WARN("Unresolved native selector forms; music batch skipped");return;}
-    if(UnifiedMusic::ApplyMusicPlan(plan,scan.Records())) {
-        UnifiedMusic::RestoreAreaMusic(plan);
-    } else REX::WARN("Some music uses were preserved; area recovery deferred");
+    std::set<UnifiedMusic::FormKey> failed;
+    const bool complete=UnifiedMusic::ApplyMusicPlan(plan,scan.Records(),failed);
+    UnifiedMusic::RestoreAreaMusic(plan,failed,complete);
     UnifiedMusic::InstallSelectors();
     REX::INFO("Automatic planning complete: {} allowed ambient types, {} configured types",plan.allowed.size(),plan.distributions.size());
 }
@@ -53,7 +53,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
 }
 extern "C" __declspec(dllexport) constinit auto SKSEPlugin_Version=[] {
     SKSE::PluginVersionData version{};
-    version.PluginVersion(REL::Version(0,10,0,0));
+    version.PluginVersion(REL::Version(0,11,0,0));
     version.PluginName("Harmonia");
     version.AuthorName("UnifiedMusic contributors");
     version.UsesAddressLibrary(); version.UsesUpdatedStructs();

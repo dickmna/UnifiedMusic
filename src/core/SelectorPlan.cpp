@@ -23,25 +23,25 @@ void PluginScan::ReadSelector(const std::filesystem::path& path) {
     try {
         if(std::filesystem::file_size(path)>4*1024*1024) throw std::runtime_error("file exceeds 4 MiB");
         std::ifstream file(path,std::ios::binary);if(!file) throw std::runtime_error("cannot open JSON");
-        Json::CharReaderBuilder builder;builder["collectComments"]=false;builder["allowComments"]=false;
+        Json::CharReaderBuilder builder;builder["collectComments"]=false;builder["allowComments"]=true;
         builder["rejectDupKeys"]=true;builder["failIfExtra"]=true;builder["stackLimit"]=32;
         Json::Value root;std::string error;
         if(!Json::parseFromStream(builder,file,&root,&error)) throw std::runtime_error("invalid JSON");
-        if(!root.isObject() || root.getMemberNames()!=std::vector<std::string>{"combatMusic"} ||
+        if(!root.isObject() ||
             !root["combatMusic"].isArray() || root["combatMusic"].size()>4096) throw std::runtime_error("expected combatMusic array");
         std::vector<RawSelector> pending;
         for(const auto& entry:root["combatMusic"]) {
             if(!entry.isObject() || !entry["isCombatMusic"].isBool() || !entry["newMusic"].isString() || entry["newMusic"].asString().empty())
                 throw std::runtime_error("expected isCombatMusic and newMusic");
-            for(const auto& key:entry.getMemberNames())
-                if(key!="isCombatMusic" && key!="newMusic" && std::ranges::find(fields,key)==std::end(fields))
-                    throw std::runtime_error("unknown selector field: "+key);
+            // CME reads its named fields and ignores descriptive metadata.
             RawSelector rule{entry["isCombatMusic"].asBool(),entry["newMusic"].asString(),path.filename().string(),{}};
             for(int kind=0;kind<6;++kind) if(entry.isMember(fields[kind])) {
                 const auto& filter=entry[fields[kind]];
-                if(!filter.isObject() || filter.getMemberNames()!=std::vector<std::string>{"AND","forms"} ||
-                    !filter["AND"].isBool() || !filter["forms"].isArray() || filter["forms"].empty() || filter["forms"].size()>4096)
-                    throw std::runtime_error("invalid/empty selector filter");
+                if(!filter.isObject() || !filter["AND"].isBool() || !filter["forms"].isArray() || filter["forms"].size()>4096)
+                    throw std::runtime_error("invalid selector filter");
+                // Upstream does not install empty filters. A completely empty
+                // rule has rank zero, so omit it rather than making it global.
+                if(filter["forms"].empty()) continue;
                 RawFilter f{static_cast<SelectorKind>(kind),filter["AND"].asBool(),{}};
                 for(const auto& form:filter["forms"]) {
                     if(!form.isString() || form.asString().empty() || form.asString().size()>512 || form.asString().find('\0')!=std::string::npos)
@@ -50,14 +50,12 @@ void PluginScan::ReadSelector(const std::filesystem::path& path) {
                 }
                 rule.filters.push_back(std::move(f));
             }
-            if(rule.filters.empty()) throw std::runtime_error("selector has no filters");
-            pending.push_back(std::move(rule));
+            if(!rule.filters.empty()) pending.push_back(std::move(rule));
         }
         selectorInputs_.insert(selectorInputs_.end(),std::make_move_iterator(pending.begin()),std::make_move_iterator(pending.end()));
     } catch(const std::exception& e) {configErrors_.push_back(path.filename().string()+": "+e.what());}
 }
-bool PluginScan::PlanSelectors(MergePlan& plan) const {
-    const auto resolve=[&](const std::string& token,const std::string& type)->std::optional<FormKey> {
+std::optional<FormKey> PluginScan::ResolveConfigForm(const std::string& token,const std::string& type) const {
         std::optional<FormKey> explicitKey;
         const auto delimiter=token.find('|');
         if(delimiter!=std::string::npos) {
@@ -78,15 +76,16 @@ bool PluginScan::PlanSelectors(MergePlan& plan) const {
             origin|=d.source==key.plugin;
         }
         return origin?std::optional<FormKey>(key):std::nullopt;
-    };
+}
+bool PluginScan::PlanSelectors(MergePlan& plan) const {
     std::vector<SelectorRule> resolved;
     for(const auto& raw:selectorInputs_) {
-        const auto music=resolve(raw.music,"MUSC");bool valid=music.has_value();
+        const auto music=ResolveConfigForm(raw.music,"MUSC");bool valid=music.has_value();
         SelectorRule rule{raw.combat,music.value_or(FormKey{}),{},raw.source};
         for(const auto& rawFilter:raw.filters) {
             SelectorFilter f{rawFilter.kind,rawFilter.required,{}};
             for(const auto& name:rawFilter.forms) {
-                const auto form=resolve(name,types[static_cast<int>(f.kind)]);
+                const auto form=ResolveConfigForm(name,types[static_cast<int>(f.kind)]);
                 if(!form) {valid=false;break;}
                 f.forms.push_back(*form);
             }

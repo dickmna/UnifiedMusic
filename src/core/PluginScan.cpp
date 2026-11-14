@@ -378,6 +378,16 @@ MergePlan PluginScan::Plan() const {
         }
     }
     InferCombat(plan);
+    // A clear is an explicit complete playlist, not a missing contribution.
+    // Resolve ordinary/Boss links first so clearing one owner cannot suppress
+    // independent recovery in another; then exclude this owner from inference.
+    for(const auto& type:plan.clearedTypes) {
+        plan.additions.erase(type);
+        plan.allowed.erase(type);
+        if(plan.battleType && type==*plan.battleType) {
+            plan.combatRules.clear();plan.battleMergeSafe=false;
+        }
+    }
     PlanAudio(plan);
     InferConditionRepairs(plan);
     InferMappings(plan);

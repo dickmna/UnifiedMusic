@@ -77,11 +77,13 @@ class AudioTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(self.replacement if content is None else content)
 
-    def scan(self, *plugins, cache=False, archives=None, success=True):
+    def scan(self, *plugins, cache=False, archives=None, success=True, configs=()):
         args = [str(self.exe), str(self.base), *map(str, plugins)]
         for archive in archives or [self.archive]:
             args += ['--original-archive', str(archive)]
         args += ['--visible-dir', str(self.visible)]
+        for config in configs:
+            args += ['--config',str(config)]
         if cache:
             args += ['--audio-cache', str(self.cache)]
         result = subprocess.run(args, capture_output=True, text=True, encoding='utf-8', timeout=30)
@@ -93,6 +95,15 @@ class AudioTests(unittest.TestCase):
         self.assertIn('AUDIO_UNCHANGED 1', out)
         self.assertNotIn('AUDIO_COEXIST ', out)
         self.assertFalse(list(self.cache.rglob('*.xwm')))
+
+    def test_explicit_clear_does_not_restore_original_audio_or_touch_other_owner(self):
+        self.base.write_bytes(header()+music(0x100,(0x200,))+music(0x101,(0x200,),name='MUSExploreSnow')+audio_track())
+        self.override()
+        config=self.write('Quiet_MUS.ini',b'[General]\nMUSExploreForest! =\n')
+        out=self.scan(cache=True,configs=(config,))
+        self.assertIn('CLEAR skyrim.esm:256',out)
+        self.assertNotIn('AUDIO_COEXIST skyrim.esm:256',out)
+        self.assertIn('AUDIO_COEXIST skyrim.esm:257',out)
 
     def test_distinct_replacer_keeps_source_and_caches_exact_original(self):
         self.override()

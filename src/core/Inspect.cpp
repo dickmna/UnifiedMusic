@@ -67,8 +67,12 @@ int main(int argc,char**argv) {
             }
         }
         for(auto& d:plan.diagnostics) std::cout<<d<<'\n';
+        for(const auto& type:plan.clearedTypes) std::cout<<"CLEAR "<<UnifiedMusic::ToString(type)<<'\n';
         for(const auto& [type,tracks]:plan.distributions) for(const auto& track:tracks)
             std::cout<<"DISTRIBUTE "<<UnifiedMusic::ToString(type)<<" <- "<<UnifiedMusic::ToString(track)<<'\n';
+        for(const auto& [area,music]:plan.assignments)
+            std::cout<<"ASSIGN "<<static_cast<int>(area.kind)<<':'<<UnifiedMusic::ToString(area.form)
+                <<" <- "<<UnifiedMusic::ToString(music)<<'\n';
         for(auto& [type,tracks]:plan.additions) {
             std::cout<<"ALLOW "<<UnifiedMusic::ToString(type)<<'\n';
             for(auto& track:tracks) std::cout<<"APPEND "<<UnifiedMusic::ToString(type)<<" <- "<<UnifiedMusic::ToString(track)<<'\n';

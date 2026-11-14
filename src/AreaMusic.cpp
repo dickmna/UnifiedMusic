@@ -5,11 +5,31 @@
 #include <memory>
 
 namespace UnifiedMusic {
-void RestoreAreaMusic(const MergePlan& plan) {
+void RestoreAreaMusic(const MergePlan& plan,const std::set<FormKey>& failed,bool automaticComplete) {
     auto* data=RE::TESDataHandler::GetSingleton();
     if(!data) return;
+    for(const auto& [area,music]:plan.assignments) {
+        if(failed.contains(music)) {REX::WARN("Configured area {} deferred: target playlist failed",ToString(area.form));continue;}
+        auto* form=data->LookupForm<RE::TESForm>(area.form.id,area.form.plugin);
+        auto* desired=data->LookupForm<RE::BGSMusicType>(music.id,music.plugin);
+        if(!form || !desired) {REX::WARN("Configured area {} missing native form",ToString(area.form));continue;}
+        std::size_t assigned=0;
+        // Same native operations as MTD Distributor::Distribute. Region entry
+        // flags/priority, sound effects, weather and geometry remain untouched.
+        if(area.kind==AreaKind::Location) {
+            if(auto* location=form->As<RE::BGSLocation>()) {location->musicType=desired;++assigned;}
+        } else if(area.kind==AreaKind::Region) {
+            if(auto* region=form->As<RE::TESRegion>();region && region->dataList && data->regionDataManager)
+                for(auto* entry:region->dataList->regionDataList)
+                    if(entry) if(auto* sound=data->regionDataManager->AsRegionDataSound(entry)) {sound->music=desired;++assigned;}
+        }
+        REX::INFO("Configured area {} -> {}: {} music slots assigned",ToString(area.form),ToString(music),assigned);
+    }
+    // An unrelated automatic failure must not cancel valid explicit mappings.
+    if(!automaticComplete) {REX::WARN("Automatic area recovery deferred after a music preparation failure");return;}
     std::size_t restored=0;
     for(const auto& repair:plan.mappingRepairs) {
+        if(plan.assignments.contains(repair.area)) continue;
         const auto skip=[&](const char* reason){REX::WARN("Preserve area {}: {}",ToString(repair.area.form),reason);};
         auto* form=data->LookupForm<RE::TESForm>(repair.area.form.id,repair.area.form.plugin);
         auto* desired=data->LookupForm<RE::BGSMusicType>(repair.music.id,repair.music.plugin);

@@ -1,20 +1,23 @@
-# Validation — Harmonia 0.10.0-alpha, 2026-11-14
+# Validation — Harmonia 0.11.0-alpha, 2026-11-15
 
 Release x64 DLL, inspector and selector test executable built with VS 2022 / MSVC 19.44, CMake 4.3.3 and pinned dependencies. Python 3.14 executed the integration fixtures. **Steam 1.7.104 is the only enabled runtime.** No Skyrim process was launched.
 
 ## Automated checks
 
-**295 Python test methods passed**, including parameterized subcases (`tests/latest-results.txt`). **523 selector logic checks passed**, with CTest reporting one passing test target (`tests/latest-selector-results.txt`). These count different kinds of checks and are not combined into an engine-test total.
+**310 Python test methods passed**, including parameterized subcases (`tests/latest-results.txt`). **523 selector logic checks passed**, with CTest reporting one passing test target (`tests/latest-selector-results.txt`). These count different kinds of checks and are not combined into an engine-test total.
 
 Coverage includes bounded plugin/BSA parsing, compressed records, master remapping, independent contributions, dependent removals, explicit configuration, protected roles, field-only mapping repair, audio cache verification and:
 
 - Case-insensitive unique CME/MTD EditorIDs; case collisions still fail even when one spelling matches exactly. Actual renames, deleted forms and unresolved references remain rejected.
+- Explicit Location/Region assignments, alphabetical-file last-assignment precedence, repeated keys and priority over automatic area repair. Wrong-kind, missing and ambiguous references do not leak partial assignments.
+- Clear-then-configure, deliberately empty lists, mixed plain/clear keys, missing optional tracks and shared Boss memberships. Cleared playlists reject automatic restoration, guards and original-audio proposals while other owners retain their own plans.
+- SimpleIni BOM/CRLF/comments/multiline/metadata syntax, plus whitespace-delimited end comments. CME JSON comments, extra metadata and empty filters preserve the intended selector; an all-empty rule does not become global. Duplicate JSON keys and invalid recognized references still fail.
 - Official area evidence for test-named ordinary town lists, with Boss/one-shot counterexamples. Original tracks reused by another plugin can be restored to their authored additional lists.
 - Membership restoration independent of winning battle priority/fade settings. Dependency-completed framework tracks retain their final supported conditions. Conflicting final branches remain unresolved; input scan order does not choose a branch.
 - Exact additional Boss memberships, explicit dependent Boss removal, and independent dragon membership after an ordinary scene-resource failure. No general pool is copied into dedicated lists.
 - Bounded Location ancestry, conflicting parents and cycles. Read-only Region, Location-keyword and platform predicates retain their original expression.
 - Scene policies require a related scoped song and matching authored ordinary exclusions, without a song-count threshold. Complete added clauses are inherited; baseline time/dragon eligibility, song-specific exceptions and dependent reversions remain local.
-- Independent truth tables cover world/quest intervals, world/cell and world/time clauses. Cue conditions are never negated; terminal OR can remain read-only evidence. Missing or unsupported scene evidence pauses dependent ordinary actions while independent roles can remain.
+- Independent truth tables cover world/quest intervals, world/cell and world/time clauses. Cue conditions are never negated; terminal OR can remain read-only evidence. Missing or unsupported scene evidence pauses dependent automatic actions while independent roles and explicit memberships remain. Explicit membership overrides an ESP removal without rewriting the track's authored eligibility.
 - Playlist-local instances isolate inferred conditions, including original/shared tracks, config-only Civil War/Boss owners, palette owners and explicit positive mixing. Original and replacement audio receive the same effective ordinary rules.
 - Typed VMAD properties protect actual script references; scalar bytes that happen to match an ID do not establish ownership. Unsupported structures retain conservative fallback protection.
 - CME's six filters, combat/cleared channels, priority, ambiguity, unavailable targets and all 512 three-filter required/optional/matched/actor combinations. A failed highest-ranked Boss target does not fall through to generic regional music.
@@ -67,6 +70,18 @@ These are existing missing inputs. Harmonia does not fabricate audio or delete t
 
 All 111 plugin hashes, load-order/profile files, Vortex deployment metadata and the original ECSS JSON were unchanged after verification. One unsupported VMAD block retains reference fallback. One competing mapping remains unrepaired. Skip diagnostics for unsupported condition cases are retained; this is not a claim that arbitrary conditions or scripts are now supported.
 
+## Explicit configuration against the installed combination
+
+A separate private configuration overlay used the same 111 plugins and verified resources. It selected an actual ECSS Location and Region, an existing ECSS MusicType and a Chapter II track. No fixture plugin or deployed configuration was changed. The independent expected outcomes were:
+
+- Both area assignments resolve to the specified ECSS type. The selected Region has one existing sound-data block; this establishes a meaningful target for the native operation, but the slot assignment itself is not executed offline.
+- Clearing the ordinary town list retains only its explicitly configured Chapter II member. Automatic additions and original-audio candidates do not reappear there. Ordinary battle guards and independently restored Boss links match the baseline.
+- A second overlay explicitly leaves the default battle list empty. It produces no automatic battle membership, guard or audio additions. Independent Boss membership restoration and the original ECSS selector remain unchanged.
+- A copy of the actual ECSS JSON with BOM, comments, descriptive metadata and an empty optional filter resolves to exactly the same selectors as the unmodified file.
+- ECSS, Bruma and SIRENROOT independent playlist contents remain unchanged. Input plugin/profile/deployment/configuration hashes remain unchanged.
+
+Aggregate results are recorded as `configuration_priority` in `tests/real-input-results.json`. These are inspector proposals checked against independent expectations, not a native playback trace.
+
 ## Original-audio regression with a simulated replacer
 
 A separate check reads local `Skyrim - Sounds.bsa` with the five official plugins. **252 eligible original track/list pairs** are unchanged with an empty overlay; no coexistence instances are proposed. A different valid stock combat track placed at Combat 01's path in a private overlay produces exactly one coexistence proposal.
@@ -75,17 +90,20 @@ Original Combat 01 (643,446 bytes) and its finale (76,010 bytes) are cached sepa
 
 ## Native implementation and executable inspection
 
-`tools/verify_native_layout.py` passed **21 read-only checks** on Steam SkyrimSE.exe 1.7.104.0, SHA-256 `846efccf0c1374d71f892907f46549560f2fcb0a75cb87a3eed438baa0f1402f`. Aggregate evidence is in `tests/native-layout-results.json`; no executable bytes/disassembly are distributed.
+`tools/verify_native_layout.py` passed **28 read-only checks** on Steam SkyrimSE.exe 1.7.104.0, SHA-256 `846efccf0c1374d71f892907f46549560f2fcb0a75cb87a3eed438baa0f1402f`. Aggregate evidence is in `tests/native-layout-results.json`; no executable bytes/disassembly are distributed.
 
-The SDK's inline-looking conditions field is accessed as the executable's TESCondition pointer at offset 0x10. Checks cover the separate 8-byte holder, 0x80 native single factory, fresh sound handles/loop pointer, MusicType virtual dispatch and six CME call sites. Address Library resolution, factory calls and condition evaluation are not executed offline.
+The SDK's inline-looking conditions field is accessed as the executable's TESCondition pointer at offset 0x10. Checks cover the separate 8-byte holder, 0x80 native single factory, fresh sound handles/loop pointer, MusicType virtual dispatch and six CME call sites. Seven new checks cover the Region manager cast entry, sound-data type dispatch, music-field offset, DataHandler manager field and Location music field used by the MTD-style assignments. Address Library resolution, factory calls, area assignments and condition evaluation are not executed offline.
 
-Runtime prepares one playlist batch at a time, validates its winning snapshot, typed conditions and scene resources, prepares local conditions and original-audio instances, reserves capacity and rechecks before committing. Other owners retain original objects. An explicit pre-commit failure removes scene-dependent actions and retries the independent remainder; exceptions do not retry. Earlier independent batches and validated cache files may remain. Application runs once at DataLoaded; area recovery is deferred if any runtime music batch fails. This release does not change that lifecycle.
+Runtime prepares one playlist batch at a time, validates typed conditions and scene resources, prepares local conditions and original-audio instances, reserves capacity and rechecks before committing. Automatic work additionally checks the winning plugin snapshot; pure explicit MTD operations use the actual loaded list. Clear removes references from only that list, then appends configured members. Other owners retain their original objects.
+
+A pre-commit failure removes scene-dependent automatic actions and retries the independent remainder. If preparation still fails, valid explicit instructions can retry alone through the same path. Exceptions do not retry. Earlier independent batches and validated cache files may remain. Application still runs once at DataLoaded. Explicit area assignments can proceed except where their target playlist failed; automatic area recovery is deferred after any music preparation failure. This fallback and native list/area mutations are reviewed and compiled, not executed by the offline test suite.
 
 ## Remaining boundaries
 
 - Native allocation/destruction, hook timing, cache visibility, playback, condition evaluation, random selection, combat end, transitions and save/reload remain untested. Joint offline validation of the installed mods is not joint in-game validation.
-- Unknown functions, unresolved/alias conditions, incomplete editable clauses, direct script mutation, independent custom combat libraries and unsupported MTD operations can need authored rules, original-framework setups or patches. Harmonia pauses if standalone MTD/CME is loaded; they are not co-executed.
+- Unknown functions, unresolved/alias conditions, incomplete editable clauses, direct script mutation, independent custom combat libraries and runtime-created MusicTypes can need authored rules, original-framework setups or patches. CME's optional polling fix is not included. Harmonia pauses if standalone MTD/CME is loaded; they are not co-executed.
+- Keeping explicit membership during an inference failure preserves MTD-style behavior under the authored conditions; it does not prove automatic protection for an unreadable script/scene. Explicit configuration is authoritative, including deliberate changes to dedicated lists.
 - Audio normalization covers the original plus final visible winner, not every losing replacer. Changed record audio metadata, palette restructuring, compressed/unsupported original audio and invalid resources are not reconstructed. Re-encodings and MRR copies are not composition-deduplicated; extra candidates alter probabilities.
 - Inferred scene takeover remains a deliberate default. Other pack versions and every Music Patch for New Lands variant were not checked. Unsupported evidence is diagnosed, not proof of universal author intent or compatibility.
 
-Historical 0.7/0.8/0.9 results remain in their tags and are not counted as current native playback validation.
+Historical results remain in their tags and are not counted as current native playback validation.

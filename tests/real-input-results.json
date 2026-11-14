@@ -1,11 +1,11 @@
 {
-  "version": "Harmonia 0.10.0-alpha",
+  "version": "Harmonia 0.11.0-alpha",
   "installed": {
-    "version": "Harmonia 0.10.0-alpha",
+    "version": "Harmonia 0.11.0-alpha",
     "plugins": 111,
     "original_configuration_used": true,
-    "record_scan_seconds": 4.67377680001664,
-    "resource_scan_seconds": 5.626620499999262,
+    "record_scan_seconds": 5.330826299963519,
+    "resource_scan_seconds": 6.528290499991272,
     "plan_counts": {
       "VMAD_FALLBACK": 1,
       "RESTORE_AUTHORED": 12,
@@ -70,8 +70,24 @@
       "invalid_master_order": []
     }
   },
+  "configuration_priority": {
+    "plugins": 111,
+    "temporary_configuration_only": true,
+    "location_assignment_verified": true,
+    "region_assignment_verified": true,
+    "selected_region_sound_blocks": 1,
+    "explicit_town_clear_has_only_configured_member": true,
+    "clear_blocks_automatic_original_audio": true,
+    "explicit_empty_battle_clear_verified": true,
+    "independent_boss_memberships_retained": true,
+    "original_ecss_and_documented_ecss_select_identically": true,
+    "dedicated_playlist_contents_unchanged": true,
+    "game_inputs_unchanged": true,
+    "native_game_execution": false,
+    "note": "Inspector proposals plus independent expected outcomes; native Region slots and playback are not executed."
+  },
   "controlled_original_audio_regression": {
-    "version": "Harmonia 0.10.0-alpha",
+    "version": "Harmonia 0.11.0-alpha",
     "official_plugins": 5,
     "original_archives": 1,
     "candidate_line": "AUDIO_CANDIDATES 252 (offline loose overlay; not engine BSA precedence)",

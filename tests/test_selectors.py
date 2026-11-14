@@ -78,9 +78,8 @@ class SelectorTests(unittest.TestCase):
         self.write('selectors/ignore.txt', 'bad')
         self.assertIn('SELECTOR battle', self.scan(directory=True))
 
-    def test_bad_json_unknown_fields_duplicate_keys_or_trailing_content_pause(self):
-        for raw in ('{', '{"combatMusic":[],"combatMusic":[]}', '{"combatMusic":[]} junk',
-                    '{"combatMusic":[],"typo":true}', json.dumps({'combatMusic': [dict(self.rule, musicType='Typo')]})):
+    def test_bad_json_duplicate_keys_or_trailing_content_pause(self):
+        for raw in ('{', '{"combatMusic":[],"combatMusic":[]}', '{"combatMusic":[]} junk'):
             self.assertIn('CONFIG_HANDOFF', self.scan(raw=raw))
 
     def test_unresolved_or_wrong_type_filter_does_not_broaden_rule(self):
@@ -106,12 +105,26 @@ class SelectorTests(unittest.TestCase):
                                record('WRLD', 0x01000900, sub('EDID', name.encode() + b'\0'), flags=flags))
             self.assertIn('CONFIG_HANDOFF', self.scan(extra=[patch]))
 
-    def test_empty_filters_and_missing_required_fields_are_not_global_rules(self):
-        for rule in ({'isCombatMusic': True, 'newMusic': 'LandBattle'},
-                     dict(self.rule, worldspaces={'AND': True, 'forms': []}),
-                     dict(self.rule, worldspaces={'forms': ['LandWorld']}),
+    def test_missing_required_fields_are_not_global_rules(self):
+        for rule in (dict(self.rule, worldspaces={'forms': ['LandWorld']}),
                      dict(self.rule, isCombatMusic='true')):
             self.assertIn('CONFIG_HANDOFF', self.scan([rule]))
+
+    def test_cme_comments_metadata_and_empty_filters_preserve_matching_rule(self):
+        expected=self.scan()
+        self.rule['note']='Author documentation'
+        self.rule['worldspaces']['note']='Keep this geographical condition'
+        self.rule['cells']={'AND':True,'forms':[]}
+        payload=json.dumps({'author':'Composer','combatMusic':[self.rule]})
+        raw='\ufeff/* header */\n'+payload.replace('"combatMusic":','// rules\n"combatMusic":')+'\n// end'
+        self.assertEqual(self.scan(raw=raw),expected)
+
+    def test_all_empty_cme_filters_have_no_effect_as_upstream(self):
+        for rule in ({'isCombatMusic':True,'newMusic':'LandBattle'},
+                     dict(self.rule,worldspaces={'AND':True,'forms':[]})):
+            out=self.scan([rule])
+            self.assertNotIn('CONFIG_HANDOFF',out)
+            self.assertNotIn('SELECTOR ',out)
 
     def test_explicit_selector_can_still_choose_enriched_public_type(self):
         self.base.write_bytes(header() + music(0x100, (0x200,), name='MUSExploreForest') + single_track(0x200))

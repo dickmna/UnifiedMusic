@@ -97,6 +97,8 @@ struct SelectorRule { bool combat{}; FormKey music; std::vector<SelectorFilter> 
 struct MergePlan {
     std::map<FormKey, std::vector<FormKey>> additions;
     std::map<FormKey, std::vector<FormKey>> distributions;
+    std::set<FormKey> clearedTypes; // Explicit MTD clears own this list's complete membership.
+    std::map<Area, FormKey> assignments; // Explicit MTD Location/Region assignments.
     std::set<FormKey> allowed;
     std::set<FormKey> scriptBound;
     std::optional<FormKey> battleType;
@@ -138,6 +140,7 @@ private:
     void InferMappings(MergePlan& plan) const;
     void PlanAudio(MergePlan& plan) const;
     bool PlanSelectors(MergePlan& plan) const;
+    std::optional<FormKey> ResolveConfigForm(const std::string& token, const std::string& type) const;
     std::map<FormKey, std::vector<MusicRecord>> music_;
     std::map<FormKey, std::vector<TrackRecord>> tracks_;
     std::map<FormKey, AreaKind> areaForms_;
@@ -146,8 +149,10 @@ private:
     std::set<FormKey> deletedAreas_, mappedTypes_, nestedTracks_;
     std::vector<ScriptProperties> scripts_;
     std::map<std::string, std::vector<std::string>> dependencies_;
-    struct DistributionEntry { std::string target, source; std::vector<FormKey> tracks; };
+    struct DistributionEntry { std::string target, source; std::vector<FormKey> tracks; bool clear{}; };
     std::vector<DistributionEntry> distributionEntries_;
+    struct AssignmentEntry { AreaKind kind; std::string area, music, source; };
+    std::map<std::filesystem::path, std::vector<AssignmentEntry>> assignmentEntries_;
     std::vector<std::string> configErrors_;
     struct Definition { FormKey key; std::string source,editorID,type; bool deleted{}; };
     std::vector<Definition> definitions_;

@@ -135,6 +135,7 @@ static bool ApplyMusicBatch(const MergePlan& plan,const std::map<FormKey,std::ve
     std::map<FormKey,std::set<FormKey>> contributions;
     for(const auto* source:{&plan.additions,&plan.distributions}) for(const auto& [type,tracks]:*source)
         if(!tracks.empty()) contributions[type].insert(tracks.begin(),tracks.end());
+    for(const auto& type:plan.clearedTypes) contributions.try_emplace(type);
     if(plan.battleType) for(const auto& rule:plan.combatRules)
         contributions[*plan.battleType].insert(rule.tracks.begin(),rule.tracks.end());
     for(const auto& repair:plan.conditionRepairs) contributions.try_emplace(repair.musicType);
@@ -144,7 +145,7 @@ static bool ApplyMusicBatch(const MergePlan& plan,const std::map<FormKey,std::ve
     if(!data) return fail("data handler unavailable");
     if(!audio.SceneResourcesMatch(plan)) return fail("scene resources unavailable; keeping the entire affected use unchanged");
     const bool battleWork=plan.battleType && contributions.contains(*plan.battleType);
-    if(battleWork) {
+    if(battleWork && plan.battleMergeSafe) {
         auto* objects=RE::BGSDefaultObjectManager::GetSingleton();
         if(!objects || !plan.battleType || !plan.battleMergeSafe) return fail("unavailable or protected default battle list");
         auto* target=data->LookupForm<RE::BGSMusicType>(plan.battleType->id,plan.battleType->plugin);
@@ -153,24 +154,36 @@ static bool ApplyMusicBatch(const MergePlan& plan,const std::map<FormKey,std::ve
     }
 
     // Prepare all list additions and condition nodes before either is applied.
-    struct Playlist { RE::BGSMusicType* target; std::vector<Track*> pending; };
+    struct Playlist {
+        RE::BGSMusicType* target;
+        std::vector<Track*> pending;
+        bool clear{};
+        std::vector<RE::BSIMusicTrack*> snapshot;
+    };
+    const bool automatic=std::ranges::any_of(plan.additions,[](const auto& entry){return !entry.second.empty();}) ||
+        !plan.combatRules.empty() || !plan.conditionRepairs.empty() || !plan.audioCandidates.empty();
     std::map<FormKey,Playlist> playlists;
     for(const auto& [type,tracks]:contributions) {
         auto* target=data->LookupForm<RE::BGSMusicType>(type.id,type.plugin);
         const auto found=records.find(type);
-        if(found==records.end() || !PlaylistMatches(target,found->second,data)) return fail("native playlist differs from winning plugin snapshot");
-        auto& list=playlists.emplace(type,Playlist{target,{}}).first->second;
+        if(!target || found==records.end()) return fail("unresolved target MusicType");
+        if(automatic && !PlaylistMatches(target,found->second,data)) return fail("native playlist differs from winning plugin snapshot");
+        // Explicit MTD operations work on the loaded list, including changes
+        // made by an earlier runtime distributor. Only inference needs the ESP
+        // snapshot; all operations still recheck their actual pre-commit state.
+        auto& list=playlists.emplace(type,Playlist{target,{},plan.clearedTypes.contains(type),
+            {target->tracks.begin(),target->tracks.end()}}).first->second;
         for(const auto& key:tracks) {
             auto* track=data->LookupForm<Track>(key.id,key.plugin);
             // Explicit distributions may contain palettes/silence. Only
             // condition edits below require single tracks.
             if(!track || !track->track) return fail("unresolved/unusable contributed track");
-            if(!Contains(target,track)) list.pending.push_back(track);
+            if(list.clear || !Contains(target,track)) list.pending.push_back(track);
         }
     }
     const auto present=[&](const FormKey& type,Track* track) {
         const auto& list=playlists.at(type);
-        return Contains(list.target,track) || std::ranges::find(list.pending,track)!=list.pending.end();
+        return (!list.clear && Contains(list.target,track)) || std::ranges::find(list.pending,track)!=list.pending.end();
     };
 
     const auto witnessesMatch=[&] {
@@ -281,15 +294,20 @@ static bool ApplyMusicBatch(const MergePlan& plan,const std::map<FormKey,std::ve
     // the non-allocating commit; never replace or delete existing condition nodes.
     if (!witnessesMatch()) return fail("regional policy changed during preparation");
     if(!audio.SceneResourcesMatch(plan)) return fail("scene resources changed during preparation");
-    for(const auto& [key,list]:playlists) if(!PlaylistMatches(list.target,records.at(key),data))
-        return fail("playlist changed during preparation");
+    for(const auto& [key,list]:playlists)
+        if(!std::ranges::equal(list.target->tracks,list.snapshot)) return fail("playlist changed during preparation");
     for (const auto& repair:repairs) {
         Node* tail=nullptr;
         if(!Matches(TrackConditions(repair.original->track),*repair.version,data,tail))
             return fail("shared source conditions changed during preparation");
     }
-    std::size_t appended=0;
-    for(const auto& [key,list]:playlists) for(auto* track:list.pending) {list.target->tracks.push_back(track);++appended;}
+    std::size_t appended=0,cleared=0;
+    for(const auto& [key,list]:playlists) {
+        // MTD's established clear-then-append operation, after preparation.
+        // Only references in this playlist are removed; shared tracks survive.
+        if(list.clear) {list.target->tracks.clear();++cleared;}
+        for(auto* track:list.pending) {list.target->tracks.push_back(track);++appended;}
+    }
     std::size_t repairedTracks=0,isolatedTracks=0;
     for (auto& repair:repairs) {
         if (repair.nodes.empty()) continue;
@@ -305,12 +323,12 @@ static bool ApplyMusicBatch(const MergePlan& plan,const std::map<FormKey,std::ve
     }
     std::size_t normalized=0;
     for(auto& [key,uses]:audioUses) for(auto& use:uses) {playlists.at(key).target->tracks.push_back(use.release());++normalized;}
-    REX::INFO("Music batch: {} contributed tracks, {} condition lists, {} condition terms, {} local instances, {} normalized audio inputs",appended,repairedTracks,conditionCount,isolatedTracks,normalized);
+    REX::INFO("Music batch: {} cleared lists, {} contributed tracks, {} condition lists, {} condition terms, {} local instances, {} normalized audio inputs",cleared,appended,repairedTracks,conditionCount,isolatedTracks,normalized);
     return true;
 }
 
-bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<MusicRecord>>& records) {
-    std::set<FormKey> types;
+bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<MusicRecord>>& records,std::set<FormKey>& failed) {
+    std::set<FormKey> types=plan.clearedTypes;
     for(const auto* map:{&plan.additions,&plan.distributions}) for(const auto& [type,tracks]:*map) if(!tracks.empty()) types.insert(type);
     if(plan.battleType && !plan.combatRules.empty()) types.insert(*plan.battleType);
     for(const auto& repair:plan.conditionRepairs) types.insert(repair.musicType);
@@ -319,6 +337,7 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
     bool complete=true;
     for(const auto& type:types) {
         MergePlan batch;batch.battleType=plan.battleType;batch.battleMergeSafe=plan.battleMergeSafe;
+        if(plan.clearedTypes.contains(type)) batch.clearedTypes.insert(type);
         if(auto it=plan.additions.find(type);it!=plan.additions.end()) batch.additions.emplace(*it);
         if(auto it=plan.distributions.find(type);it!=plan.distributions.end()) batch.distributions.emplace(*it);
         if(plan.battleType && type==*plan.battleType) batch.combatRules=plan.combatRules;
@@ -330,16 +349,25 @@ bool ApplyMusicPlan(const MergePlan& plan,const std::map<FormKey,std::vector<Mus
         try {
             if(!ApplyMusicBatch(batch,records,audio)) {
                 complete=false;
+                bool recovered=false;
                 // Explicit failure returns before commit. Retry only actions
                 // independent of the scene, such as dragon/Boss distributions.
                 if(batch.sceneUses.contains(type)) {
                     DropSceneUses(batch,type);
                     REX::INFO("Scene preparation failed in {}; retaining independent uses",ToString(type));
-                    ApplyMusicBatch(batch,records,audio);
+                    recovered=ApplyMusicBatch(batch,records,audio);
                 }
+                if(!recovered && (batch.distributions.contains(type) || batch.clearedTypes.contains(type))) {
+                    MergePlan explicitPlan;
+                    explicitPlan.distributions=batch.distributions;
+                    explicitPlan.clearedTypes=batch.clearedTypes;
+                    REX::INFO("Automatic preparation failed in {}; applying only explicit MTD instructions",ToString(type));
+                    recovered=ApplyMusicBatch(explicitPlan,records,audio);
+                }
+                if(!recovered) failed.insert(type);
             }
         }
-        catch(const std::exception& e) {REX::WARN("Music use batch {} skipped: {}",ToString(type),e.what());complete=false;}
+        catch(const std::exception& e) {REX::WARN("Music use batch {} skipped: {}",ToString(type),e.what());complete=false;failed.insert(type);}
     }
     return complete;
 }
