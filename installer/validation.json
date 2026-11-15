@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-15",
+  "archive": "Harmonia-1.0.1-FOMOD.zip",
+  "sha256": "1124a4057fb41e916837aa9a497a909c130d40e52c1c39058f79e6b01aa04512",
+  "bytes": 451682208,
+  "engine": "Vortex @nexusmods/fomod-installer-native 0.13.4",
+  "xmlValidation": true,
+  "coreOnlyFiles": 16,
+  "withHQFiles": 258,
+  "hqAudioFiles": 239,
+  "hqDefaultSelected": false,
+  "exactDestinationMatch": true,
+  "payloadBytesUnchanged": true,
+  "gameDataModified": false,
+  "mo2Test": "static format/layout only",
+  "gameTested": false
+}

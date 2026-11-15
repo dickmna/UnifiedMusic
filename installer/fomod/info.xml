@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fomod>
+  <Name>Harmonia - Automatic Music Integration</Name>
+  <Author>dickman290</Author>
+  <Version>1.0.1</Version>
+  <Website>https://github.com/dickmna/UnifiedMusic</Website>
+  <Description>Automatic playlist recovery and composer-aware scene protection. One SKSE plugin with optional Original Audio HQ. Supports Steam Skyrim 1.7.104 only.</Description>
+</fomod>

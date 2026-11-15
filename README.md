@@ -6,6 +6,8 @@ The DLL remains `UnifiedMusic.dll` for upgrades. This build supports **Steam Sky
 
 Version 1.0.1 moves gameplay plugin reading to Skyrim's native `TESFile` interfaces, following the API pattern used by Modex / Help Extender. Portable ESP parsing and zlib remain in the offline inspector only. Both readers feed the same record decoder and music rules. The optional HQ pack stays at 1.0.0; its audited mappings are unchanged. See [AUDIT.md](AUDIT.md) for the implementation and validation boundaries.
 
+The Nexus installer combines the unchanged 1.0.1 core and 1.0.0 HQ pack in one FOMOD: the core is required and **Original Audio HQ** is an optional checkbox, off by default. Both selections passed the installed Vortex FOMOD engine with exact destination checks (16 or 258 files). MO2 compatibility is structural, not a claimed MO2 UI test. See [packaging instructions](installer/README.md) and the [Nexus description](docs/NEXUS.md).
+
 ## Composer policy
 
 The unit of compatibility is **a track's use in one playlist**. Music A and B enrich their authored ordinary playlists. When scene C supplies scoped music and a related plugin excludes ordinary music in the matching scope, Harmonia treats that as a scene arrangement. The author's existing ordinary-track restrictions supply the inherited rule. There is no song-count threshold. This is an explicit player policy, not a claim to prove every author's intent.

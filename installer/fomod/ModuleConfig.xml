@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://qconsulting.ca/fo3/ModConfig5.0.xsd">
+  <moduleName>Harmonia 1.0.1</moduleName>
+  <requiredInstallFiles>
+    <folder source="00 Core" destination="" priority="0" />
+  </requiredInstallFiles>
+  <installSteps order="Explicit">
+    <installStep name="Original music alongside replacers">
+      <optionalFileGroups order="Explicit">
+        <group name="Optional audio" type="SelectAny">
+          <plugins order="Explicit">
+            <plugin name="Original Audio HQ">
+              <description>Adds 239 independently named original-music audio files and their verified main/finale manifest. Enables supported original music to play alongside the final winning replacer, such as Lorkhan, while following Harmonia's playlist and scene rules.
+
+Leave unchecked for playlist integration and scene protection without adding original audio. This option is not required by music mods. Existing original copies are retained and recognized copies in the same playlist suppress extra Harmonia copies.
+
+Audio: MRR / UHDAP, with credit to MadAborModding, sharrken, Bethesda and the original composers. 48 kHz / 192 kbit/s XWMA. No MRR ESP or INI is installed.
+
+Core requirement: Steam Skyrim 1.7.104, matching SKSE and Address Library.</description>
+              <files>
+                <folder source="10 Original Audio" destination="" priority="0" />
+              </files>
+              <typeDescriptor><type name="Optional" /></typeDescriptor>
+            </plugin>
+          </plugins>
+        </group>
+      </optionalFileGroups>
+    </installStep>
+  </installSteps>
+</config>
