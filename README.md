@@ -1,5 +1,7 @@
 # Harmonia — composer-aware music compatibility
 
+[Nexus Mods — downloads and description](https://www.nexusmods.com/skyrimspecialedition/mods/199219)
+
 **Harmonia 1.0.1** applies explicit music configurations first, then restores supported contributions, inherits authored scene restrictions for ordinary uses, isolates shared tracks, and optionally lets supported original/replacement audio coexist with the separate HQ audio pack. One SKSE DLL; no patch-generation interface or generated ESP. [中文说明](使用说明.md).
 
 The DLL remains `UnifiedMusic.dll` for upgrades. This build supports **Steam Skyrim 1.7.104 only**, with matching SKSE and Address Library. It does not require separate MTD or CME DLLs. Offline validation is complete; native playback has not been tested. See [VALIDATION.md](VALIDATION.md).

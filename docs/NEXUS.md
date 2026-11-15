@@ -58,8 +58,12 @@ Harmonia is an automatic compatibility tool, not a guarantee for every scripted 
 
 The 1.0.1 native-reader build preserves the offline plans from 1.0.0. Checks against a 111-plugin setup included Lorkhan, Chapter II, Northerner Diaries, Beyond Skyrim: Bruma, Extended Cut: Saints & Seducers and SIRENROOT. The FOMOD's core-only and HQ selections were also checked through Vortex's installed installer engine. MO2 compatibility was checked structurally. **In-game playback, transitions and save/reload behavior still need validation.**
 
-## Source
-
-[Source code, build instructions and validation reports](https://github.com/dickmna/UnifiedMusic)
-
 [SKSE](https://skse.silverlock.org/) · [Address Library](https://www.nexusmods.com/skyrimspecialedition/mods/32444)
+
+## Credits and disclosure
+
+Includes adaptations of ThirdEyeSqueegee's [Music Type Distributor](https://github.com/stop-sine/MusicTypeDistributor-RE) and SeaSparrowOG's [Combat Music Extender](https://github.com/SeaSparrowOG/CombatMusic). Optional audio comes from MadAborModding's [Music Replacer Reverter](https://www.nexusmods.com/skyrimspecialedition/mods/137806), sourced from sharrken's [UHDAP](https://www.nexusmods.com/skyrimspecialedition/mods/18115); original music by Bethesda's soundtrack creators, including Jeremy Soule. [Dependency credits and license notices](https://github.com/dickmna/UnifiedMusic/blob/main/PROVENANCE.md).
+
+Generative AI (ChatGPT/Codex) was used to produce the custom implementation, page text and cover artwork. The optional original soundtrack is not AI-generated.
+
+[GitHub — source code, build instructions and validation reports](https://github.com/dickmna/UnifiedMusic)
